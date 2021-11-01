@@ -1,4 +1,4 @@
-package profiles
+package github.com/mgord9518/aisap/profiles
 
 type AppImagePerms struct {
 	Level	      int
