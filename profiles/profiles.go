@@ -1,4 +1,4 @@
-package github.com/mgord9518/aisap/profiles
+package profiles
 
 // List of all profiles supported by aisal out of the box.
 var Profiles = map[string]AppImagePerms{
