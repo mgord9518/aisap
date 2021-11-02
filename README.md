@@ -24,7 +24,7 @@ The ultimate goal is to have as many popular AppImages in aisap's internal libra
 
 Unfortunately, I've been unable to find a Golang binding for squashfuse, so my current *hacky* workaround is to simply use squashfuse's binary executable, which needs to be in the same directory as any project that uses this library or on the host system. Once I get sandboxing to a more stable state, I fully intend to create a proper binding of squashfuse for Golang, which would certainly benefit more than this project (unless someone else wants to knock that part out 😉)
 
-### Usage of aisap-bin
+## Usage of aisap-bin
 
 aisap-bin is a simple command line utility that serves as a proof-of-concept. I created it to demonstrate some basic usage of the API, but I also intend it to eventually be a decent program on its own. It works, and I use it on my system daily, but *DO NOT* use it for anything serious. Its very likely that there are some bugs in the way permissions are interpreted and sent to brwap.
 
@@ -35,8 +35,9 @@ aisap-bin f.appimage
 
 It also includes several command line flags:
 ```
-  -h, --help    Shows usage
-  -v, --verbose Be verbose (NEI)
+  -h, --help       Shows usage
+  -v, --verbose    Be verbose (NEI)
+  -l, --list-perms List permissions to be granted by the AppImage's profile
 
   --add-file    Allow sandbox to access additional files
   --add-dev     Allow sandbox to access additional device files
@@ -48,7 +49,19 @@ It also includes several command line flags:
   --perm-file   Manually specify an INI format permissions profile for the AppImage
 ```
 
+## Sandboxing levels
+Sandboxing levels allow for a base configuration of system files to grant by default. For AppImages that lack an internal profile with aisap, the default is 1.
+
+`Level 0` lacks sandboxing entirely, it does the exact same thing as simply launching the AppImage directly
+
+`Level 1` is the most lenient sandbox, it gives access to many system files but still restricts home files
+
+`Level 2` is intended to be the target for most GUI apps when creating a profile. It gives access to common system files, restricts device files and home files
+
+`Level 3` is the most strict. It only grants access to very basic system files (binaries, libraries and themes). It should mainly be used for console applications
+
 ## Basic API for aisap
+
 ### MountAppImage
 ```
 MountAppImage(src string, dest string) error
