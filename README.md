@@ -13,12 +13,12 @@ aisap itself is a Golang library, but it also provides an executable as a basic 
 
 In order for aisap to sandbox an AppImage, it requires a basic profile, which is a desktop entry (INI format) containing at least one of the following flags:
 ```
-X-AppImage-File-Permissios
-X-AppImage-Device-Permissions
-X-AppImage-Socket-Permissions
-X-AppImage-Share-Permissions
+X-AppImage-Sandbox-Files
+X-AppImage-Sandbox-Devices
+X-AppImage-Sandbox-Sockets
+X-AppImage-Sandbox-Share
 ```
-These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--perm-file` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
+These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
 
 The ultimate goal is to have as many popular AppImages in aisap's internal library as possible, while smaller, less known ones may request their own permssions per the developer. Running programs sandboxed should mostly be seamless and feel native with the system
 
@@ -39,14 +39,14 @@ It also includes several command line flags:
   -v, --verbose    Be verbose (NEI)
   -l, --list-perms List permissions to be granted by the AppImage's profile
 
-  --add-file    Allow sandbox to access additional files
-  --add-dev     Allow sandbox to access additional device files
-  --add-soc     Allow sandbox to access additional sockets
-  --add-share   Allow sandbox to access additional shares
+  --file     Add file to sandbox
+  --device   Allow sandbox to access additional device files
+  --socket   Allow sandbox to access additional sockets
+  --share    Add share to sandbox (eg: network)
 
-  --level       Change base level of sandbox (min: 0, max: 3)
+  --level    Change base level of sandbox (min: 0, max: 3)
 
-  --perm-file   Manually specify an INI format permissions profile for the AppImage
+  --profile  Manually specify an INI format permissions profile for the AppImage
 ```
 
 ## Sandboxing levels
@@ -61,6 +61,7 @@ Sandboxing levels allow for a base configuration of system files to grant by def
 `Level 3` is the most strict. It only grants access to very basic system files (binaries, libraries and themes). It should mainly be used for console applications
 
 ## Basic API for aisap
+NOTICE: API is under heavy development and many aspects are likely to change! This should currently be used for testing ONLY
 
 ### MountAppImage
 ```
@@ -115,3 +116,72 @@ Wrap takes an AppImage and sandboxes it using the permissions offered. Returns e
 GetWrapArgs(perms *profiles.AppImagePerms) []string
 ```
 GetWrapArgs takes aisap permissions and translates them into bwrap command line flags
+### (AppImage) Thumbnail
+```
+(ai AppImage) Thumbnail() (io.Reader, error)
+```
+AppImage.Thumbnail() attempts to extract a thumbnail from the AppImage if available. If provided in a format other than PNG (eg: SVG, XPM) it attempts to convert it to PNG before serving
+### (AppImage) TempDir
+```
+(ai AppImage) TempDir() string
+```
+Returns the AppImage's temporary directory. By default, it will be `/tmp/.aisapTemp_...`
+### (AppImage) MountDir
+```
+(ai AppImage) MountDir() string
+```
+Returns the AppImage's mountpoint. With aisap, all AppImage structs will be mounted on creation
+### (AppImage) RunId
+```
+(ai AppImage) RunId() string
+```
+Returns the AppImage's run ID. This is a random string of characters used in the mount point and sandboxed temporary directory
+### (AppImage) AddFiles
+```
+(ai AppImage) AddFiles(s []string)
+```
+Give the sandbox access to specified files and directories. Every file must either be provided as an XDG standard name (eg: `xdg-download`, `xdg-home`) or a full path
+### (AppImage) AddDevices
+```
+(ai AppImage) AddDevices(s []string)
+```
+Allow the sandbox to access more device files
+### (AppImage) AddSockets
+```
+(ai AppImage) AddSockets(s []string)
+```
+Share sockets with the sandbox (eg: x11, pulseaudio)
+### (AppImage) AddShare
+```
+(ai AppImage) AddShare(s []string)
+```
+Share other parts of your system with the sandbox (eg: network)
+### (AppImage) SetPerms
+```
+(ai AppImage) SetPerms(entryFile string) error
+```
+### (AppImage) SetRootDir
+```
+(ai AppImage) SetRootDir(d string)
+```
+Change the directoy that the sandbox grabs system files from. This is useful if you want to hide your real system files or utilize another Linux distro's libraries for compatibility
+### (AppImage) SetDataDir
+```
+(ai AppImage) SetDataDir(d string)
+```
+Change the `HOME` directory of the AppImage. By default, this is `[APPIMAGE NAME].home`
+### (AppImage) SetTempDir
+```
+(ai AppImage) SetTempDir(d string)
+```
+Change the temporary directory of the AppImage sandbox. This is the sandbox's `/tmp`
+### (AppImage) Type
+```
+(ai AppImage) Type() int
+```
+Return the type of AppImage
+### (AppImage) ExtractFile
+```
+(ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
+```
+Extract a file from the AppImage to `dest`. If `resolveSymlinks` is set to false, the raw symlink will be extracted instead of its target
