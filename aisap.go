@@ -48,10 +48,7 @@ var (
 	tempDir	 = "/tmp"
 	mnt		 *exec.Cmd
 
-	preFilePerms   []string
-	preSocketPerms []string
-	preSharePerms  []string
-	preDevicePerms []string
+	err      error
 )
 
 func loadName(permLevel int) {
