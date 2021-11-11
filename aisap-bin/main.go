@@ -27,7 +27,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"io"
 
 	aisap	"github.com/mgord9518/aisap"
 	flag	 "github.com/spf13/pflag"
