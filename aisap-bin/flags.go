@@ -11,56 +11,66 @@ type arrayFlags []string
 
 var (
     // Normal flags
-    help      = flag.BoolP("help",    "h", false, "")
-    verbose   = flag.BoolP("verbose", "v", false, "")
+    help      = flag.BoolP("help",       "h", false, "")
+    verbose   = flag.BoolP("verbose",    "v", false, "")
+    listPerms = flag.BoolP("list-perms", "l", false, "")
 
     // Long-only flags
-    permFile = flag.String("perm-file", "", "")
-    level    = flag.Int("level",        1,  "")
+    permFile = flag.String("profile", "", "")
+    level    = flag.Int("level",        -1, "")
 
 	// Flags that can be called multiple times
-	addFile arrayFlags
-	addDev  arrayFlags
-	addSoc  arrayFlags
+	addFile  arrayFlags
+	addDev   arrayFlags
+	addSoc   arrayFlags
+	addShare arrayFlags
 )
 
 // Initialization of global variables and help menu
 func init() {
     var present bool
 
-    flag.Var(&addFile, "add-file", "")
-    flag.Var(&addDev,  "add-dev",  "")
-    flag.Var(&addSoc,  "add-soc",  "")
+    flag.Var(&addFile,  "file",   "")
+    flag.Var(&addDev,   "device", "")
+    flag.Var(&addSoc,   "socket", "")
+    flag.Var(&addShare, "share",  "")
 
+	// Prefer AppImage-provided variable `ARGV0` if present
     if argv0, present = os.LookupEnv("ARGV0"); !present {
         argv0 = os.Args[0]
     }
 
     flag.Usage = func() {
-        fmt.Printf("Usage: %s [OPTIONS] [APPIMAGE]\n", argv0)
-        fmt.Println("Easily sandbox AppImages in BubbleWrap\n")
-        fmt.Println("With no PERMFILE, read permissions directly from AppImage")
-        fmt.Println("Sandbox level of 0 only changes data directory, not actually sandboxed!\n")
-        fmt.Println("Normal options:")
-        fmt.Println("  -h, --help    Display this help menu")
-        fmt.Println("  -v, --verbose Be more verbose (NEI)\n")
-        fmt.Println("Long-only options:")
-        fmt.Println("  --add-file   Allow access to additional files")
-        fmt.Println("  --add-soc    Allow access to additional sockets")
-        fmt.Println("  --add-dev    Allow access to additional /dev files")
-        fmt.Println("  --level      Change the base security level of the sandbox (min: 0, max: 3)")
-        fmt.Println("  --perm-file  Look for permissions in this entry instead of the AppImage\n")
-        fmt.Println("Examples:")
-        fmt.Printf("  %s --perm-file=./f.desktop -- ./f.app\n", argv0)
-        fmt.Println("    Sandbox `f.app` using permissions from `f.desktop`\n")
-        fmt.Printf("  %s ./f.app --level=2\n", argv0)
-        fmt.Println("    Tighten `f.app` sandbox to level 2 (default: 1)\n")
-        fmt.Printf("  %s --add-file=./f.txt --add-file ./other.bin ./f.app\n", argv0)
-        fmt.Println("    Allow sandbox to access files `f.txt` and `other.bin`\n")
-        fmt.Println("WARNING: No sandbox is impossible to escape! This is to *aid* security, not")
-        fmt.Println("guarentee safety when downloading sketchy stuff online. Don't be stupid!\n")
-        fmt.Println("Plus, this is ALPHA software! Very little testing has been done; USE AT YOUR")
-        fmt.Println("OWN RISK!")
+		g := "\033[32m" // Green
+		y := "\033[33m" // Yellow
+		r := "\033[31m" // Red
+		z := "\033[0m"  // Reset
+
+        fmt.Printf("Usage: %s%s%s [OPTIONS] [APPIMAGE]\n\n", g, argv0, z)
+        fmt.Printf("Easily sandbox AppImages in BubbleWrap\n")
+        fmt.Printf("With no PERMFILE, read permissions directly from AppImage\n")
+        fmt.Printf("Sandbox level of 0 only changes data directory, not actually sandboxed!\n\n")
+        fmt.Printf("%sNormal options:\n", y)
+        fmt.Printf("%s  -h, --help    %sDisplay this help menu\n", g, z)
+        fmt.Printf("%s  -v, --verbose %sBe more verbose (NEI)\n\n", g, z)
+        fmt.Printf("%sLong-only options:\n", y)
+        fmt.Printf("%s  --file    %sAdd file to sandbox\n", g, z)
+        fmt.Printf("%s  --socket  %sAllow access to additional sockets\n", g, z)
+	fmt.Printf("%s  --share   %sAdd share to sandbox (eg: network)\n", g, z)
+        fmt.Printf("%s  --device  %sAllow access to additional /dev files\n", g ,z)
+        fmt.Printf("%s  --level   %sChange the base security level of the sandbox (min: 0, max: 3)\n", g, z)
+        fmt.Printf("%s  --profile %sLook for permissions in this entry instead of the AppImage\n\n", g, z)
+        fmt.Printf("%sExamples:%s\n", y, z)
+        fmt.Printf("  %s%s --profile%s=./f.desktop -- ./f.app\n", g, argv0, z)
+        fmt.Printf("    Sandbox `f.app` using permissions from `f.desktop`\n\n")
+        fmt.Printf("  %s%s ./f.app --level%s=2\n", g, argv0, z)
+        fmt.Printf("    Tighten `f.app` sandbox to level 2 (default: 1)\n\n")
+        fmt.Printf("  %s%s --file%s=./f.txt %s--file%s ./other.bin ./f.app\n", g, argv0, z, g, z)
+        fmt.Printf("    Allow sandbox to access files `f.txt` and `other.bin`\n\n")
+        fmt.Printf("%sWARNING:%s No sandbox is impossible to escape! This is to *aid* security, not\n", r, z)
+        fmt.Printf("guarentee safety when downloading sketchy stuff online. Don't be stupid!\n\n")
+        fmt.Printf("Plus, this is ALPHA software! Very little testing has been done;\n")
+        fmt.Printf("%sUSE AT YOUR OWN RISK!%s\n", r, z)
         os.Exit(0)
     }
 
