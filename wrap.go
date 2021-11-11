@@ -14,29 +14,7 @@ import (
 
 // Run the AppImage with zero sandboxing
 func Run(ai *AppImage, args []string) error {
-	if dataDir == "" {
-		dataDir = ai.Path+".home"
-	}
-
-	if !helpers.DirExists(dataDir) {
-		err := os.MkdirAll(dataDir, 0744)
-		if err != nil { return err }
-	}
-
-	if !helpers.DirExists(dataDir+"/.local/share/appimagekit/") {
-		err := os.MkdirAll(dataDir+"/.local/share/appimagekit/", 0744)
-		if err != nil { return err }
-	}
-
-	// Tell AppImages not to ask for integration
-	noIntegrate, err := os.Create(dataDir+"/.local/share/appimagekit/no_desktopintegration")
-	noIntegrate.Close()
-	if err != nil { return err }
-
-	// Set required vars to correctly mount our target AppImage
-	os.Setenv("TMPDIR", ai.TempDir())
-	os.Setenv("HOME",   dataDir)
-//	mntDir := ai.MountDir()
+	err = setupRun(ai)
 	if err != nil { return err }
 
 	cmd := exec.Command(ai.MountDir()+"/AppRun", args...)
@@ -46,7 +24,6 @@ func Run(ai *AppImage, args []string) error {
 	cmd.Stdin  = os.Stdin
 	cmd.Start()
 	err = cmd.Wait()
-	//mnt.Process.Signal(syscall.SIGINT)
 	if err != nil { return err }
 
 	// Clean up after the app is closed
@@ -59,8 +36,6 @@ func Run(ai *AppImage, args []string) error {
 
 // Wrap is a re-implementation of the aibwrap shell script, allowing execution of AppImages through bwrap
 func Wrap(ai *AppImage, perms *profiles.AppImagePerms, args []string) error {
-	//runId := helpers.RandString(int(time.Now().UTC().UnixNano()), 8)
-
 	bwrapArgs := GetWrapArgs(perms)
 
 	if _, err := exec.LookPath("bwrap"); err != nil {
@@ -68,30 +43,7 @@ func Wrap(ai *AppImage, perms *profiles.AppImagePerms, args []string) error {
 		return err
 	}
 
-	if dataDir == "" {
-		dataDir = ai.Path+".home"
-	}
-
-	if !helpers.DirExists(dataDir) {
-		err := os.MkdirAll(dataDir, 0744)
-		if err != nil { return err }
-	}
-
-	if !helpers.DirExists(dataDir+"/.local/share/appimagekit/") {
-		err := os.MkdirAll(dataDir+"/.local/share/appimagekit/", 0744)
-		if err != nil { return err }
-	}
-
-	// Tell AppImages not to ask for integration
-	noIntegrate, err := os.Create(dataDir+"/.local/share/appimagekit/no_desktopintegration")
-	noIntegrate.Close()
-	if err != nil { return err }
-
-	// Set required vars to correctly mount our target AppImage
-	os.Setenv("TMPDIR", ai.TempDir())
-	//mntDir, _ := helpers.MakeTemp(runDir, ".mount_"+runId)
-	//mntDir := ai.TempDir()+"/.mount_"+ai.RunId()
-	//err = MountAppImage(ai.Path, mntDir)
+	err = setupRun(ai)
 	if err != nil { return err }
 
 	// Bind the fake /home and /tmp dirs
@@ -113,81 +65,46 @@ func Wrap(ai *AppImage, perms *profiles.AppImagePerms, args []string) error {
 	bwrap.Stdin  = os.Stdin
 	bwrap.Start()
 	err = bwrap.Wait()
-	//mnt.Process.Signal(syscall.SIGINT)
 	if err != nil { return err }
 
 	// Clean up after the app is closed
-	// Sleep is needed to wait until the AppImage is unmounted before deleting the temporary dir
 	err = UnmountAppImage(ai)
 	if err != nil {return err}
-	//time.Sleep(50 * time.Millisecond)
 	err = os.RemoveAll(ai.TempDir())
 	return err
 }
 
+func setupRun(ai *AppImage) error {
+	if dataDir == "" {
+		dataDir = ai.Path+".home"
+	}
+
+	if !helpers.DirExists(dataDir) {
+		err := os.MkdirAll(dataDir, 0744)
+		if err != nil { return err }
+	}
+
+	if !helpers.DirExists(dataDir+"/.local/share/appimagekit/") {
+		err := os.MkdirAll(dataDir+"/.local/share/appimagekit/", 0744)
+		if err != nil { return err }
+	}
+
+	// Tell AppImages not to ask for integration
+	noIntegrate, err := os.Create(dataDir+"/.local/share/appimagekit/no_desktopintegration")
+	noIntegrate.Close()
+
+	// Set required vars to correctly mount our target AppImage
+	// If sandboxed, these values will be overwritten
+	os.Setenv("TMPDIR", ai.TempDir())
+	os.Setenv("HOME",   dataDir)
+
+	return err
+}
+
 func GetWrapArgs(perms *profiles.AppImagePerms) []string {
-	var devicePermArgs []string
-	var filePermArgs []string
-	var socketPermArgs []string
-	var sharePermArgs []string
-	var stdArgs     []string
-
-	ruid := strconv.Itoa(os.Getuid()) // Real UID, for level 1 RUID and UID are the same value
-
-	// Convert device perms to bwrap format
-	for _, v := range(perms.DevicePerms) {
-		device := v
-		devicePermArgs = append(devicePermArgs, "--dev-bind-try", "/dev/"+device, "/dev/"+device)
-	}
-
-	// Convert directory perms to bwrap format
-	fp := getXdg(perms.FilePerms, perms.Level)
-	for i, _ := range fp {
-		dir  := strings.Split(i, ":")[0] // The directory at hand
-		auth := strings.Split(i, ":")[1] // Whether it has ro or rw permissions
-		genericDir := fp[i]
-
-		// Convert "rw"/"ro" into bwrap command line syntax so we can call it
-		if auth == "rw" {
-			filePermArgs = append(filePermArgs, "--bind-try", dir, genericDir)
-		} else if auth == "ro" {
-			filePermArgs = append(filePermArgs, "--ro-bind-try", dir, genericDir)
-		}
-	}
-
-	// Level 1 is minimal sandboxing, grants access to most system files, all devices and only really attempts to isolate home files
-	if perms.Level == 1 {
-		stdArgs = []string{
-			"--dev-bind",    "/dev", "/dev",
-			"--ro-bind",	 "/sys", "/sys",
-			"--ro-bind",	 "/usr", "/usr",
-			"--ro-bind-try", "/etc", "/etc",
-			"--ro-bind-try", xdg.Home+"/.fonts",                     homed+"/.fonts",
-			"--ro-bind-try", xdg.ConfigHome+"/fontconfig",           homed+"/.config/fontconfig",
-			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0/gtk.css",      homed+"/.config/gtk-3.0/gtk.css",
-			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0/settings.ini", homed+"/.config/gtk-3.0/settings.ini",
-		}
-	// Level 2 grants access to fewer system files, and all themes
-	} else if perms.Level == 2 {
-		stdArgs = []string{
-			"--ro-bind-try", "/etc/fonts",              "/etc/fonts",
-			"--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
-			"--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
-			"--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
-			"--ro-bind-try", "/usr/share/libdrm",       "/usr/share/librdm",
-			"--ro-bind-try", "/usr/share/glvnd",        "/usr/share/glvnd",
-			"--ro-bind-try", "/usr/share/glib-2.0",     "/usr/share/glib-2.0",
-			"--ro-bind-try", xdg.Home+"/.fonts",           homed+"/.fonts",
-			"--ro-bind-try", xdg.ConfigHome+"/fontconfig", homed+"/.config/fontconfig",
-			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0",    homed+"/.config/gtk-3.0",
-		}
-	// Level 3 grants access to only minimal system files (only binaries and libraries and system themes)
-	} else if perms.Level == 3 {
-		stdArgs = []string{}
-	}
-
-	// Basic arguments to be used at any sandboxing level
-	stdEnv := []string{
+	loadName(perms.Level)
+	// Basic arguments to be used at all sandboxing levels
+	cmdArgs := []string{
 			"--setenv",	  "TMPDIR",              "/tmp",
 			"--setenv",	  "HOME",                homed,
 			"--setenv",	  "XDG_DESKTOP_DIR",     homed+"/Desktop",
@@ -209,7 +126,8 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 			"--die-with-parent",
 			"--new-session",
 			"--dev",		 "/dev",
-			"--proc",		"/proc",
+			"--proc",        "/proc",
+			"--ro-bind",	 "/opt",              "/opt",
 			"--ro-bind",	 "/bin",              "/bin",
 			"--ro-bind",	 "/lib",              "/lib",
 			"--ro-bind-try", "/lib32",            "/lib32",
@@ -223,11 +141,61 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 			"--ro-bind-try", "/usr/share/themes", "/usr/share/themes",
 	}
 
+	ruid := strconv.Itoa(os.Getuid()) // Real UID, for level 1 RUID and UID are the same value
+
+	// Convert device perms to bwrap format
+	for _, v := range(perms.Devices) {
+		cmdArgs = append(cmdArgs, "--dev-bind-try", "/dev/"+v, "/dev/"+v)
+	}
+
+	// Convert XDG standards into real paths eg: `xdg-desktop` becomes `~/Desktop`
+	stdDirs := getXdg(perms.Files, perms.Level)
+	// Convert directory permissions to bwrap flags
+	for i, _ := range stdDirs {
+		dir := strings.Split(i, ":")[0]
+
+		// Convert "rw"/"ro" into bwrap command line syntax so we can call it
+		if strings.Split(i, ":")[1] == "rw" {
+			cmdArgs = append(cmdArgs, "--bind-try", dir, stdDirs[i])
+		} else {
+			cmdArgs = append(cmdArgs, "--ro-bind-try", dir, stdDirs[i])
+		}
+	}
+
+	// Level 1 is minimal sandboxing, grants access to most system files, all devices and only really attempts to isolate home files
+	if perms.Level == 1 {
+		cmdArgs = append(cmdArgs, []string{
+			"--dev-bind",    "/dev", "/dev",
+			"--ro-bind",	 "/sys", "/sys",
+			"--ro-bind",	 "/usr", "/usr",
+			"--ro-bind-try", "/etc", "/etc",
+			"--ro-bind-try", xdg.Home+"/.fonts",                     homed+"/.fonts",
+			"--ro-bind-try", xdg.ConfigHome+"/fontconfig",           homed+"/.config/fontconfig",
+			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0/gtk.css",      homed+"/.config/gtk-3.0/gtk.css",
+			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0/settings.ini", homed+"/.config/gtk-3.0/settings.ini",
+		}...)
+	// Level 2 grants access to fewer system files, and all themes
+	// Likely to add more files here for compatability.
+	// This should be the typical level for created profiles
+	} else if perms.Level == 2 {
+		cmdArgs = append(cmdArgs, []string{
+			"--ro-bind-try", "/etc/fonts",              "/etc/fonts",
+			"--ro-bind-try", "/etc/ssl",                "/etc/ssl",
+			"--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
+			"--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
+			"--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
+			"--ro-bind-try", "/usr/share/libdrm",       "/usr/share/librdm",
+			"--ro-bind-try", "/usr/share/glvnd",        "/usr/share/glvnd",
+			"--ro-bind-try", "/usr/share/glib-2.0",     "/usr/share/glib-2.0",
+			"--ro-bind-try", xdg.Home+"/.fonts",           homed+"/.fonts",
+			"--ro-bind-try", xdg.ConfigHome+"/fontconfig", homed+"/.config/fontconfig",
+			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0",    homed+"/.config/gtk-3.0",
+		}...)
+	}
+
 	// These vars will only be used if x11 socket is granted access
 	xAuthority := os.Getenv("XAUTHORITY")
-	xDisplay := strings.Replace(os.Getenv("DISPLAY"), ":", "", 1)
-
-	stdArgs = append(stdEnv, stdArgs...)
+	xDisplay := strings.ReplaceAll(os.Getenv("DISPLAY"), ":", "")
 
 	// Used if this socket is enabled
 	var sockets = map[string][]string {
@@ -241,14 +209,14 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 			"--setenv",      "DISPLAY",                       ":"+xDisplay,
 		},
 		"pulseaudio": {
-			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+uid+"/pulse",
+			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
 		},
 	}
 
 	for socket, _ := range(sockets) {
-		_, present := helpers.Contains(perms.SocketPerms, socket)
+		_, present := helpers.Contains(perms.Sockets, socket)
 		if present {
-			socketPermArgs = append(socketPermArgs, sockets[socket]...)
+			cmdArgs = append(cmdArgs, sockets[socket]...)
 		}
 	}
 
@@ -256,28 +224,22 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 		"user":    "--unshare-user-try",
 		"ipc":     "--unshare-ipc",
 		"pid":     "--unshare-pid",
-		"net":     "--unshare-net",
 		"network": "--unshare-net",
 		"uts":     "--unshare-uts",
 		"cgroup":  "--unshare-cgroup-try",
 	}
 
 	for s, _ := range unshares {
-		_, present := helpers.Contains(perms.SharePerms, s)
+		_, present := helpers.Contains(perms.Share, s)
 		if present {
 			// Single exception, network share requires `/etc/resolv.conf`
-			if s == "net" || s == "network" {
-				sharePermArgs = append(sharePermArgs, "--share-net", "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf")
+			if s == "network" {
+				cmdArgs = append(cmdArgs, "--share-net", "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf")
 			}
 		} else {
-			sharePermArgs = append(sharePermArgs, unshares[s])
+			cmdArgs = append(cmdArgs, unshares[s])
 		}
 	}
-
-	cmdArgs := append(stdArgs, devicePermArgs...)
-	cmdArgs  = append(cmdArgs, filePermArgs...)
-	cmdArgs  = append(cmdArgs, socketPermArgs...)
-	cmdArgs  = append(cmdArgs, sharePermArgs...)
 
 	return cmdArgs
 }
@@ -285,7 +247,6 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 // Parses requested file and directories into bwrap flags
 func getXdg(s []string, level int) map[string]string {
     var genericDir string
-	loadName(level)
     dirPerms := make(map[string]string)
 
     // Map out the XDG directories
@@ -305,7 +266,7 @@ func getXdg(s []string, level int) map[string]string {
     }
 
     // Anonymize directories by giving them generic names in case the user has
-    // changed the location of their XDG-dirs
+    // changed the location of their XDG-dirs (unlikely but happens)
     var xdgGeneric = map[string]string {
         "xdg-home":        homed,
         "xdg-desktop":     homed+"/Desktop",
@@ -321,26 +282,22 @@ func getXdg(s []string, level int) map[string]string {
         "xdg-data":        homed+"/.local/share",
     }
 
-    //s := helpers.DesktopSlice(dirs)
     for i, _ := range s {
         str := s[i]
-
-        // If neither "ro" or "rw" provided, assume "ro"
-        l := len(str) //
-        if l <= 3 || str[l-3:] != ":ro" && str[l-3:] != ":rw" {
-           str = str+":ro"
-        }
 
         // Replace the xdg-* strings with the corresponding directories on the user's machine
         for key, val := range xdgDirs {
 
             // If length of key bigger than requested directory or not equal to it continue because there is no reason to look at it further
             if len(key) > len(str) || key != str[:len(key)] {
+				// Replace real home directory with sandboxed one
+                genericDir = strings.Split(str, ":")[0]
+				genericDir = strings.Replace(genericDir, xdg.Home, homed, 1)
                 continue
             }
 
             // If the last byte of the requested path shortened to key length is a '/' or ':' we know it's the parent dir, so resolve it using the xdgDirs map
-            c := str[len(key)]          // The final byte of the key (used for splitting)
+            c := str[len(key)]  // The final byte of the key (used for splitting)
             r := str[len(key):] // Every string after that byte
             if c == byte('/') || c == byte(':') {
                 genericDir = xdgGeneric[key] + strings.Split(r, ":")[0]
