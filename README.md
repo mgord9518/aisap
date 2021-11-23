@@ -20,7 +20,7 @@ X-AppImage-Sandbox-Devices
 X-AppImage-Sandbox-Sockets
 X-AppImage-Sandbox-Share
 ```
-These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
+These flags can be included in the AppImage's internal desktop file [(a simple example)](example/profile.desktop), another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
 
 The ultimate goal is to have as many popular AppImages in [aisap's internal library](profiles/README.md) as possible, while smaller, less known ones may request their own permssions per the developer. Running programs sandboxed should mostly be seamless and feel native with the system
 
