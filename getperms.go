@@ -9,7 +9,7 @@ import (
 
 	helpers  "github.com/mgord9518/aisap/helpers"
 	profiles "github.com/mgord9518/aisap/profiles"
-	ini	  "gopkg.in/ini.v1"
+	ini	     "gopkg.in/ini.v1"
 )
 
 // GetPerms attemps to read permissions from a provided desktop entry, if
@@ -45,7 +45,7 @@ func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 
 	// Use the aisap internal profile as a base if it exists
 	// If not, set its level as invalid
-	if aiPerms, present = profiles.Profiles[ai.Name]; !present {
+	if aiPerms, present = profiles.Profiles[strings.ToLower(ai.Name)]; !present {
 		aiPerms.Level = -1
 	}
 
