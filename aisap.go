@@ -43,10 +43,11 @@ var (
 	homed string
 	uid   string
 
-	dataDir	   string
-	rootDir	 = "/"
-	tempDir	 = "/tmp"
-	mnt		 *exec.Cmd
+	dataDir	    string
+	rootDir	 =  "/"
+	tempDir	 =  "/tmp"
+	mnt		   *exec.Cmd
+	rmMountDir  bool
 
 	err      error
 )
