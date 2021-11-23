@@ -45,12 +45,12 @@ func UnmountAppImageFile(mntPt string) error {
 	var mntCmd string
 	var err error
 
-	if mntCmd, err = exec.LookPath("fusermount"); err != nil{
+	if mntCmd, err = exec.LookPath("fusermount"); err != nil {
 		mntCmd, err = exec.LookPath("mount")
 	}
 
 	umount := exec.Command(mntCmd, "-u", mntPt)
-	err = umount.Run()
+	err := umount.Run()
 
 	return err
 }
