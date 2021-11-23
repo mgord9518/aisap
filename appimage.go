@@ -6,6 +6,7 @@ package aisap
 
 import (
 	"bytes"
+	"errors"
 	"path/filepath"
 	"time"
 	"io"
@@ -20,15 +21,15 @@ import (
 )
 
 type AppImage struct {
-	Desktop  *ini.File      // INI of internal desktop entry
+	Desktop  *ini.File               // INI of internal desktop entry
 	Perms    *profiles.AppImagePerms // Permissions
-	Path      string        // Location of AppImage
-	tempDir   string        // The AppImage's `/tmp` directory
-	mountDir  string        // The location the AppImage is mounted at
-	runId     string        // Random string associated with this specific run instance
-	Name      string        // AppImage name from the desktop entry 
-	Version   string        // Version of the AppImage
-	Offset    int           // Offset of SquashFS image
+	Path      string                 // Location of AppImage
+	tempDir   string                 // The AppImage's `/tmp` directory
+	mountDir  string                 // The location the AppImage is mounted at
+	runId     string                 // Random string associated with this specific run instance
+	Name      string                 // AppImage name from the desktop entry 
+	Version   string                 // Version of the AppImage
+	Offset    int                    // Offset of SquashFS image
 	imageType int
 }
 
@@ -54,9 +55,15 @@ func NewAppImage(src string) (*AppImage, error) {
 	e, err := ioutil.ReadFile(fp[0])
 	entry, _ := ini.Load(e)
 
-	ai.Desktop = entry
-	ai.Name    = entry.Section("Desktop Entry").Key("Name").Value()
-	ai.Perms, _  = getPermsFromAppImage(ai)
+	ai.Desktop  = entry
+	ai.Name     = entry.Section("Desktop Entry").Key("Name").Value()
+	ai.Version  = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
+
+	if ai.Version == "" {
+		ai.Version = "1.0"
+	}
+
+	ai.Perms, _ = getPermsFromAppImage(ai)
 
     return ai, err
 }
@@ -65,6 +72,7 @@ func NewAppImage(src string) (*AppImage, error) {
 // PNG if it's in SVG or XPM format
 func (ai AppImage) Thumbnail() (io.Reader, error) {
 	var f io.Reader
+
 	f, err = os.Open(filepath.Join(ai.mountDir, ".DirIcon"))
 	if err != nil { return nil, err }
 
@@ -170,4 +178,36 @@ func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) e
 	}
 
 	return err
+}
+
+func (ai AppImage) Icon() (io.ReadCloser, string, error) {
+	if ai.Desktop == nil {
+		return nil, "", errors.New("desktop file wasn't parsed")
+	}
+
+	iconf := ai.Desktop.Section("Desktop Entry").Key("Icon").Value()
+
+	if iconf == "" {
+		return nil, "", errors.New("desktop file doesn't specify an icon")
+	}
+
+	// If the desktop entry specifies an extension, use it
+	if strings.HasSuffix(iconf, ".png") || strings.HasSuffix(iconf, ".svg") {
+		r, err := os.Open(ai.mountDir+"/"+iconf)
+		return r, iconf, err
+	}
+
+	// If not, iterate through all AppImage specified formats
+	fp, err := filepath.Glob(ai.mountDir+"/"+iconf+"*")
+	if err != nil { return nil, "", err }
+
+	for _, v := range(fp) {
+		if strings.HasSuffix(v, ".png") || strings.HasSuffix(v, ".svg") {
+			r, err := os.Open(v)
+
+			return r, v, err
+		}
+	}
+
+	return nil, "", errors.New("unable to find icon with valid extension (.png, .svg) inside AppImage")
 }
