@@ -62,8 +62,8 @@ func Sandbox(ai *AppImage, args []string) error {
 	bwrap.Stdout = os.Stdout
 	bwrap.Stderr = os.Stderr
 	bwrap.Stdin  = os.Stdin
-	bwrap.Start()
-	err = bwrap.Wait()
+	err = bwrap.Start()
+	bwrap.Wait()
 	if err != nil { return err }
 
 	// Clean up after the app is closed
@@ -178,8 +178,10 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 	// This should be the typical level for created profiles
 	} else if perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
+			"--ro-bind",     "/sys",                    "/sys",
 			"--ro-bind-try", "/etc/fonts",              "/etc/fonts",
 			"--ro-bind-try", "/etc/ssl",                "/etc/ssl",
+			"--ro-bind-try", "/etc/ca-certificates",    "/etc/ca-certificates",
 			"--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
 			"--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
 			"--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
