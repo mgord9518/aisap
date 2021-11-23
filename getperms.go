@@ -35,8 +35,8 @@ func getPermsFromEntry(entryFile string) (*profiles.AppImagePerms, error) {
 	return &aiPerms, err
 }
 
-// Attempt to fetch permissions from the AppImage itself, fall back on internal
-// permissinos library
+// Attempt to fetch permissions from the AppImage itself, fall back on aisap
+// internal permissinos library
 func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 	var err error
 	var present bool
@@ -51,15 +51,6 @@ func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 
 	aiPerms, err = loadPerms(aiPerms, ai.Desktop)
 	if err != nil {return &aiPerms, err}
-
-	// Add `:ro` if file doesn't specify
-	for i := range(aiPerms.Files) {
-		if len(strings.Split(aiPerms.Files[i], ":")) < 2 {
-			aiPerms.Files[i] = aiPerms.Files[i]+":ro"
-		}
-	}
-
-
 
 	return &aiPerms, err
 }
@@ -107,7 +98,10 @@ func loadPerms(p profiles.AppImagePerms, f *ini.File) (profiles.AppImagePerms, e
 
 	// Add `:ro` if file doesn't specify
 	for i := range(p.Files) {
-		if len(strings.Split(p.Files[i], ":")) < 2 {
+		ex := p.Files[i][len(p.Files[i])-3:]
+
+		if len(strings.Split(p.Files[i], ":")) < 2 ||
+		ex != ":ro" && ex != ":rw" {
 			p.Files[i] = p.Files[i]+":ro"
 		}
 	}
