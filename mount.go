@@ -38,7 +38,15 @@ func MountAppImage(src string, dest string) error {
 }
 
 func UnmountAppImage(ai *AppImage) error {
-	return UnmountAppImageFile(ai.MountDir())
+	err = UnmountAppImageFile(ai.MountDir())
+	if err != nil { return err }
+
+	// Clean up
+	if rmMountDir {
+		err = os.RemoveAll(ai.TempDir())
+	}
+
+	return err
 }
 
 func UnmountAppImageFile(mntPt string) error {
