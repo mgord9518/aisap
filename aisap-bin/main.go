@@ -47,7 +47,7 @@ func main() {
 
 	ai, err = aisap.NewAppImage(flag.Args()[0])
 	if err != nil {
-		fmt.Println("Failed to load AppImage:", err)
+		fmt.Println("Failed to sandbox AppImage:", err)
 		cleanExit(1)
 	}
 
@@ -60,7 +60,7 @@ func main() {
 	ai.AddShare(addShare)
 
 	// If the `--level` flag is used, set the AppImage to that level
-	if *level > -1 && *level < 3 {
+	if *level > -1 && *level <= 3 {
 		ai.Perms.Level = *level
 	}
 
