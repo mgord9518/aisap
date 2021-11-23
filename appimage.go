@@ -44,6 +44,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	if err != nil { return nil, err }
 
 	ai.mountDir, err = helpers.MakeTemp(ai.TempDir(), ".mount_"+ai.RunId())
+	rmMountDir = true
 
 	err = MountAppImage(src, ai.mountDir)
 	if err != nil { return nil, err }
