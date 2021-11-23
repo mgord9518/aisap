@@ -106,8 +106,13 @@ func (ai AppImage) RunId() string {
 }
 
 func (ai AppImage) AddFiles(s []string) {
+	// Add `:ro` if the file doesn't specify
 	for i := range(s) {
-		if len(strings.Split(s[i], ":")) < 2 {
+		// Get the last 3 chars of the file entry
+		ex := s[i][len(s[i])-3:]
+
+		if len(strings.Split(s[i], ":")) < 2 ||
+		ex != ":ro" && ex != ":rw" {
 			s[i] = s[i]+":ro"
 		}
 	}
