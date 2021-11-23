@@ -29,9 +29,8 @@ import (
 	"os"
 	"strconv"
 
-	aisap	"github.com/mgord9518/aisap"
-	flag	 "github.com/spf13/pflag"
-	helpers  "github.com/mgord9518/aisap/helpers"
+	aisap "github.com/mgord9518/aisap"
+	flag  "github.com/spf13/pflag"
 )
 
 var (
@@ -42,8 +41,15 @@ var (
 
 // Process flags
 func main() {
+	if len(flag.Args()) < 1 {
+		flag.Usage()
+	}
+
 	ai, err = aisap.NewAppImage(flag.Args()[0])
-	helpers.ErrorCheck("Failed to load AppImage!", err, true)
+	if err != nil {
+		fmt.Println("Failed to load AppImage:", err)
+		cleanExit(1)
+	}
 
 	// Add extra permissions as passed from flags. eg: `--file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
@@ -61,6 +67,7 @@ func main() {
 	if *permFile != "" {
 		err = ai.SetPerms(*permFile)
 		if err != nil { fmt.Println(err) }
+		cleanExit(1)
 	}
 
 	if ai.Perms.Level == -1 {
@@ -122,11 +129,12 @@ func main() {
 		err = aisap.Run(ai, flag.Args()[1:])
 	}
 
-	helpers.ErrorCheck("Failed to wrap AppImage:", err, true)
+	if err != nil {
+		fmt.Println("Failed to sandbox AppImage:", err)
+		cleanExit(1)
+	}
 
-	// Unmount the AppImage, otherwise the user's temporary directory will
-	// get cluttered with mountpoints
-	aisap.UnmountAppImage(ai)
+	cleanExit(0)
 }
 
 func cleanExit(exitCode int) {
