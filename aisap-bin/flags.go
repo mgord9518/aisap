@@ -9,6 +9,13 @@ import (
 
 type arrayFlags []string
 
+const (
+	g = "\033[32m" // Green
+	y = "\033[33m" // Yellow
+	r = "\033[31m" // Red
+	z = "\033[0m"  // Reset
+)
+
 var (
     // Normal flags
     help      = flag.BoolP("help",       "h", false, "")
@@ -41,10 +48,6 @@ func init() {
     }
 
     flag.Usage = func() {
-		g := "\033[32m" // Green
-		y := "\033[33m" // Yellow
-		r := "\033[31m" // Red
-		z := "\033[0m"  // Reset
 
         fmt.Printf("Usage: %s%s%s [OPTIONS] [APPIMAGE]\n\n", g, argv0, z)
         fmt.Printf("Easily sandbox AppImages in BubbleWrap\n")
@@ -56,7 +59,7 @@ func init() {
         fmt.Printf("%sLong-only options:\n", y)
         fmt.Printf("%s  --file    %sAdd file to sandbox\n", g, z)
         fmt.Printf("%s  --socket  %sAllow access to additional sockets\n", g, z)
-	fmt.Printf("%s  --share   %sAdd share to sandbox (eg: network)\n", g, z)
+		fmt.Printf("%s  --share   %sAdd share to sandbox (eg: network)\n", g, z)
         fmt.Printf("%s  --device  %sAllow access to additional /dev files\n", g ,z)
         fmt.Printf("%s  --level   %sChange the base security level of the sandbox (min: 0, max: 3)\n", g, z)
         fmt.Printf("%s  --profile %sLook for permissions in this entry instead of the AppImage\n\n", g, z)
