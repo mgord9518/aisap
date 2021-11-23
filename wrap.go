@@ -35,12 +35,11 @@ func Run(ai *AppImage, args []string) error {
 }
 
 // Wrap is a re-implementation of the aibwrap shell script, allowing execution of AppImages through bwrap
-func Wrap(ai *AppImage, perms *profiles.AppImagePerms, args []string) error {
-	bwrapArgs := GetWrapArgs(perms)
+func Sandbox(ai *AppImage, args []string) error {
+	bwrapArgs := GetWrapArgs(ai.Perms)
 
 	if _, err := exec.LookPath("bwrap"); err != nil {
-		err := errors.New("Bubblewrap not found! It is required to use aisap.Wrap()")
-		return err
+		return errors.New("bubblewrap not found! It's required to use sandboing")
 	}
 
 	err = setupRun(ai)
