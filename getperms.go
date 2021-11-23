@@ -39,11 +39,15 @@ func getPermsFromEntry(entryFile string) (*profiles.AppImagePerms, error) {
 // permissinos library
 func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 	var err error
+	var present bool
 
 	aiPerms := profiles.AppImagePerms{}
 
 	// Use the aisap internal profile as a base if it exists
-	aiPerms = profiles.Profiles[ai.Name]
+	// If not, set its level as invalid
+	if aiPerms, present = profiles.Profiles[ai.Name]; !present {
+		aiPerms.Level = -1
+	}
 
 	aiPerms, err = loadPerms(aiPerms, ai.Desktop)
 	if err != nil {return &aiPerms, err}
@@ -55,10 +59,14 @@ func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 		}
 	}
 
+
+
 	return &aiPerms, err
 }
 
 func loadPerms(p profiles.AppImagePerms, f *ini.File) (profiles.AppImagePerms, error) {
+	err = nil
+
 	// Get permissions from entry keys
 	level       := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Level").Value()
 	filePerms   := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Files").Value()
@@ -68,12 +76,14 @@ func loadPerms(p profiles.AppImagePerms, f *ini.File) (profiles.AppImagePerms, e
 
 	// If the AppImage desktop entry has permission flags, overwrite the
 	// profile flags
-	if len(level) > 0 {
-		p.Level, err = strconv.Atoi(level)
+	if level != "" {
+		l, err := strconv.Atoi(level)
 
-		// Default to level 2 if requested level is invalid
-		if err != nil || p.Level > 3 || p.Level < 0 {
-			p.Level = 2
+		if err != nil || l < 0 || l > 3 {
+			p.Level = -1
+			err = errors.New("invalid permissions level (must be 0-3)")
+		} else {
+			p.Level = l
 		}
 	}
 	if len(filePerms) > 0 {
