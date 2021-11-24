@@ -2,6 +2,12 @@ package profiles
 
 // List of all profiles supported by aisal out of the box.
 var Profiles = map[string]AppImagePerms{
+		"deemix-gui": {
+			Level: 2,
+			Files:   []string{ "xdg-music:rw" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio" },
+			Share:   []string{ "network" },
+		},
 		"librewolf": {
 			Level: 2,
 			Files:   []string{ "xdg-download:rw" },
