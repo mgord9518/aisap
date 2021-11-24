@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"errors"
 	"encoding/binary"
+	"path"
 )
 
 // MountAppImage mounts the requested AppImage (src) to the destination
@@ -20,8 +21,10 @@ func MountAppImage(src string, dest string) error {
 	var squashfuse string
 	var err error
 
+	e, _ := os.Executable()
+
 	if squashfuse, err = exec.LookPath("squashfuse"); err != nil {
-		squashfuse, err = exec.LookPath("./squashfuse")
+		squashfuse, err = exec.LookPath(path.Dir(e)+"/squashfuse")
 		if err != nil {
 			return errors.New("Failed to find squashfuse binary! Cannot mount AppImage")
 		}
