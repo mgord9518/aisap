@@ -1,4 +1,7 @@
 # aisap
+
+<p align="center"><img src="resources/aisap.svg" width=256 height="256"/></p>
+
 AppImage SAndboxing Project: a Golang library to help sandbox AppImages with bwrap
 
 VERY EARLY DEVELOPMENT! Many parts of this are subject to change and should be expected to until it reaches a more stable form
