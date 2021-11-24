@@ -39,8 +39,9 @@ func Sandbox(ai *AppImage, args []string) error {
 
 	// Bind the fake /home and /tmp dirs
 	bwrapArgs = append([]string{
-		"--bind", dataDir, "/home/"+usern,
-		"--bind", ai.TempDir(), "/tmp",
+		"--bind",   dataDir, "/home/"+usern,
+		"--bind",   ai.TempDir(), "/tmp",
+		"--setenv", "APPDIR", "/tmp/.mount_"+ai.RunId(),
 	}, bwrapArgs...)
 
 	bwrapArgs = append(bwrapArgs, "--",
@@ -81,7 +82,7 @@ func setupRun(ai *AppImage) error {
 	// If sandboxed, these values will be overwritten
 	os.Setenv("TMPDIR", ai.TempDir())
 	os.Setenv("HOME",   dataDir)
-	os.Setenv("APPDIR", "/tmp/.mount_"+ai.RunId())
+	os.Setenv("APPDIR", ai.MountDir())
 
 	return err
 }
