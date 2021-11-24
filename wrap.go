@@ -2,9 +2,9 @@ package aisap
 
 import (
 	"errors"
-	"os/exec"
 	"strings"
 	"os"
+	"os/exec"
 	"strconv"
 
 	helpers  "github.com/mgord9518/aisap/helpers"
@@ -22,16 +22,8 @@ func Run(ai *AppImage, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin  = os.Stdin
-	cmd.Start()
-	err = cmd.Wait()
-	if err != nil { return err }
 
-	// Clean up after the app is closed
-	// Sleep is needed to wait until the AppImage is unmounted before deleting the temporary dir
-	err = UnmountAppImage(ai)
-	if err != nil {return err}
-	err = os.RemoveAll(ai.TempDir())
-	return err
+	return cmd.Run()
 }
 
 // Wrap is a re-implementation of the aibwrap shell script, allowing execution of AppImages through bwrap
@@ -62,15 +54,8 @@ func Sandbox(ai *AppImage, args []string) error {
 	bwrap.Stdout = os.Stdout
 	bwrap.Stderr = os.Stderr
 	bwrap.Stdin  = os.Stdin
-	err = bwrap.Start()
-	bwrap.Wait()
-	if err != nil { return err }
 
-	// Clean up after the app is closed
-	err = UnmountAppImage(ai)
-	if err != nil {return err}
-	err = os.RemoveAll(ai.TempDir())
-	return err
+	return bwrap.Run()
 }
 
 func setupRun(ai *AppImage) error {
