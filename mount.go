@@ -58,7 +58,11 @@ func UnmountAppImageFile(mntPt string) error {
 	}
 
 	umount := exec.Command(mntCmd, "-u", mntPt)
-	err = umount.Run()
+	out, err := umount.CombinedOutput()
+
+	if err != nil {
+		err = errors.New(string(out))
+	}
 
 	return err
 }
