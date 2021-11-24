@@ -229,6 +229,22 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 		}
 	}
 
+	// Give access to all files needed to run device
+	var devices = map[string][]string {
+		"dri": {
+			"--ro-bind", "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
+			"--dev-bind-try", "/dev/nvidiactl", "/dev/nvidiactl",
+			"--dev-bind-try", "/dev/nvidia0",   "/dev/nvidia0",
+		},
+	}
+
+	for device, _ := range(devices) {
+		_, present := helpers.Contains(perms.Devices, device)
+		if present {
+			cmdArgs = append(cmdArgs, devices[device]...)
+		}
+	}
+
 	return cmdArgs
 }
 
