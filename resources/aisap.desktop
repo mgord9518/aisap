@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=aisap
+Comment=Sandbox helper for AppImages
+Exec=aisap
+Icon=aisap
+Terminal=true
+Categories=System;Utility;
+X-AppImage-Version=0.1
+X-AppImage-Sandbox-Level=0
