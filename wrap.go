@@ -9,7 +9,7 @@ import (
 
 	helpers  "github.com/mgord9518/aisap/helpers"
 	profiles "github.com/mgord9518/aisap/profiles"
-	xdg	     "github.com/adrg/xdg"
+	xdg      "github.com/adrg/xdg"
 )
 
 // Run the AppImage with zero sandboxing
@@ -81,6 +81,7 @@ func setupRun(ai *AppImage) error {
 	// If sandboxed, these values will be overwritten
 	os.Setenv("TMPDIR", ai.TempDir())
 	os.Setenv("HOME",   dataDir)
+	os.Setenv("APPDIR", "/tmp/.mount_"+ai.RunId())
 
 	return err
 }
