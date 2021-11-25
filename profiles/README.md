@@ -5,7 +5,8 @@ Note that all items in this list are based on the name of their appropriate AppI
 ## Currently recognized applications:
 | No sandbox | Level 1 | Level 2 | Level 3 |
 |-|-|-|-|
-| Minecraft  || Deemix-GUI ||
+| Minecraft  | BadLion Client | Deemix-GUI ||
+|| Dolphin Emulator | Krita ||
 ||| Librewolf ||
 ||| The Powder Toy ||
 ||| SuperTuxKart ||
