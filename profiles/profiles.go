@@ -19,7 +19,7 @@ var Profiles = map[string]AppImagePerms{
 			Share:   []string{ "network" },
 		},
 		// Dolphin could be level 2 but sound breaks, need to find a solution to that
-		"dolphin emulator": 
+		"dolphin emulator": {
 			Level: 1,
 			Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 			Devices: []string{ "dri", "input" },
