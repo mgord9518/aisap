@@ -26,11 +26,14 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"os"
 	"strconv"
+	"strings"
 
 	aisap "github.com/mgord9518/aisap"
 	flag  "github.com/spf13/pflag"
+	xdg   "github.com/adrg/xdg"
 )
 
 var (
@@ -80,6 +83,7 @@ func main() {
 
 	// Give basic info on the permissions the AppImage requests
 	if *listPerms && ai.Perms.Level > 0 {
+		var spookyBool bool
 		fmt.Printf("%sSandbox base level: %s\n", y, strconv.Itoa(ai.Perms.Level))
 		if ai.Perms.Level == 1 {
 			fmt.Printf(" %s>%s All system files, including machine identifiable information\n", y, z)
@@ -92,7 +96,14 @@ func main() {
 		if len(ai.Perms.Files) > 0 {
 			fmt.Printf("%sFiles/directories:\n", y)
 			for _, v := range(ai.Perms.Files) {
-				fmt.Println(" \033[32m>\033[0m "+v)
+				v = makePretty(v)
+				spookyBool = spooky(v)
+				if spookyBool {
+					fmt.Printf("%s", r)
+				} else {
+					fmt.Printf("%s", g)
+				}
+				fmt.Println(" >\033[0m "+v)
 			}
 		}
 		if len(ai.Perms.Devices) > 0 {
@@ -113,10 +124,15 @@ func main() {
 				fmt.Println(" \033[32m>\033[0m "+v)
 			}
 		}
+		if spookyBool {
+			fmt.Printf("\n%sWARNING: This AppImage requests files/ directories that can potentially\n", y)
+			fmt.Printf("be used to escape the sandbox (shown with red arrow under the file list)\n")
+		}
 	} else if *listPerms && ai.Perms.Level == 0 {
 		fmt.Println("\033[33mApplication `"+ai.Name+"` requests to be used unsandboxed!\033[0m")
 		fmt.Println("Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 	}
+
 
 	if *listPerms {
 		cleanExit(0)
@@ -140,4 +156,85 @@ func main() {
 func cleanExit(exitCode int) {
 	err = aisap.UnmountAppImage(ai)
 	os.Exit(exitCode)
+}
+
+// Convert xdg and full directories into their shortened counterparts
+func makePretty(str string) string {
+    var xdgDirs = map[string]string{
+        "xdg-home":        xdg.Home,
+        "xdg-desktop":     xdg.UserDirs.Desktop,
+        "xdg-download":    xdg.UserDirs.Download,
+        "xdg-documents":   xdg.UserDirs.Documents,
+        "xdg-music":       xdg.UserDirs.Music,
+        "xdg-pictures":    xdg.UserDirs.Pictures,
+        "xdg-videos":      xdg.UserDirs.Videos,
+        "xdg-templates":   xdg.UserDirs.Templates,
+        "xdg-publicshare": xdg.UserDirs.PublicShare,
+        "xdg-config":      xdg.ConfigHome,
+        "xdg-cache":       xdg.CacheHome,
+        "xdg-data":        xdg.DataHome,
+    }
+
+	// Convert xdg-style to real paths
+	for key, val := range(xdgDirs) {
+		str = strings.Replace(str, key, val, 1)
+	}
+
+	// Clean file path, so that stuff like `xdg-desktop/..` doesn't get past
+	slice := strings.Split(str, ":")
+	s1 := strings.Join(slice[:len(slice)-1], ":")
+	s2 := ":"+strings.Split(str, ":")[len(slice)-1]
+	str = filepath.Clean(s1)+s2
+
+	// Pretty it up by replacing `/home/$USERNAME` with `~`
+	str = strings.Replace(str, xdg.Home, "~", 1)
+
+	return str
+}
+
+// Check if a file or directory is spooky (sandbox escape vector) so that the
+// user can be warned that their sandbox is insecure
+// TODO: expand this list! There are a lot of files that can be used to escape
+// the sandbox, while it's impossible to cover all bases, we should try to get
+// as close as possible
+func spooky(str string) bool {
+	// These files/ directories are specifically escape vectors on their own
+	spookyFiles := []string{
+		"~",
+		"~/Apps",
+		"~/Applications",
+		"~/AppImages",
+		"~/.profile",
+		"~/.bashrc",
+		"~/.zshrc",
+	}
+
+	// If the sandbox requests these directories at all, it is a potential threat
+	spookyDirs := []string{
+		"~/.ssh",
+		"~/.local",
+		"~/.config",
+	}
+
+	// Split the string into its actual directory and whether it's read only or
+	// read write
+	slice := strings.Split(str, ":")
+	s1 := strings.Join(slice[:len(slice)-1], ":")
+	s2 := ":"+strings.Split(str, ":")[len(slice)-1]
+
+	for _, val := range(spookyFiles) {
+		if s1 == val && s2 == ":rw" {
+			return true
+		}
+	}
+
+	for _, val := range(spookyDirs) {
+		if len(s1) >= len(val) {
+			if s1[:len(val)] == val && s2 == ":rw" {
+				return true
+			}
+		}
+	}
+
+	return false
 }
