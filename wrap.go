@@ -107,7 +107,6 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 			"--setenv",	  "LOGNAME",             usern,
 			"--setenv",	  "USER",                usern,
 			"--uid",       uid,
-			"--unshare-pid",
 			"--unshare-user-try",
 			"--die-with-parent",
 			"--new-session",
@@ -131,14 +130,24 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 
 	// Convert device perms to bwrap format
 	for _, v := range(perms.Devices) {
+		if len(v) > 5 && v[0:5] == "/dev/" {
+			v = v[5:]
+		}
+
 		cmdArgs = append(cmdArgs, "--dev-bind-try", "/dev/"+v, "/dev/"+v)
 	}
 
 	// Convert XDG standards into real paths eg: `xdg-desktop` becomes `~/Desktop`
 	stdDirs := getXdg(perms.Files, perms.Level)
+
 	// Convert directory permissions to bwrap flags
 	for i, _ := range stdDirs {
 		dir := strings.Split(i, ":")[0]
+
+		// Expand `~` directories to full path
+		if dir[0] == '~' {
+			dir  = strings.Replace(dir, "~", xdg.Home, 1)
+		}
 
 		// Convert "rw"/"ro" into bwrap command line syntax so we can call it
 		if strings.Split(i, ":")[1] == "rw" {
@@ -312,6 +321,9 @@ func getXdg(s []string, level int) map[string]string {
             }
         }
 
+		if genericDir[0] == '~' {
+			genericDir = strings.Replace(genericDir, "~", homed, 1)
+		}
         dirPerms[s[i]] = genericDir
     }
 
