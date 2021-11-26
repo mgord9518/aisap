@@ -54,6 +54,14 @@ func main() {
 		cleanExit(1)
 	}
 
+	if *permFile != "" {
+		err = ai.SetPerms(*permFile)
+		if err != nil {
+			fmt.Println(err)
+			cleanExit(1)
+		}
+	}
+
 	// Add extra permissions as passed from flags. eg: `--file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
@@ -65,12 +73,6 @@ func main() {
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
 		ai.Perms.Level = *level
-	}
-
-	if *permFile != "" {
-		err = ai.SetPerms(*permFile)
-		if err != nil { fmt.Println(err) }
-		cleanExit(1)
 	}
 
 	if ai.Perms.Level == -1 {
@@ -87,41 +89,44 @@ func main() {
 		fmt.Printf("%sSandbox base level: %s\n", y, strconv.Itoa(ai.Perms.Level))
 		if ai.Perms.Level == 1 {
 			fmt.Printf(" %s>%s All system files, including machine identifiable information\n", y, z)
+			fmt.Printf(" %s>%s For applications that refuse to run with further sandboxing\n", y, z)
 		} else if ai.Perms.Level == 2 {
-			fmt.Printf(" %s>%s Some system files such as themes\n", y, z)
+			fmt.Printf(" %s>%s Some system files such as themes\n", g, z)
+			fmt.Printf(" %s>%s Most GUI apps should use this\n", g, z)
 		} else if ai.Perms.Level == 3 {
-			fmt.Printf(" %s>%s Minimal system files\n", y, z)
+			fmt.Printf(" %s>%s Minimal system files\n", g, z)
+			fmt.Printf(" %s>%s Console apps and the few GUI apps that work\n", g, z)
 		}
 
 		if len(ai.Perms.Files) > 0 {
 			fmt.Printf("%sFiles/directories:\n", y)
 			for _, v := range(ai.Perms.Files) {
 				v = makePretty(v)
-				spookyBool = spooky(v)
-				if spookyBool {
+				if spooky(v) {
 					fmt.Printf("%s", r)
+					spookyBool = true
 				} else {
 					fmt.Printf("%s", g)
 				}
-				fmt.Println(" >\033[0m "+v)
+				fmt.Printf(" >%s %s\n", z, v)
 			}
 		}
 		if len(ai.Perms.Devices) > 0 {
 			fmt.Printf("%sDevice files:\n", y)
 			for _, v := range(ai.Perms.Devices) {
-				fmt.Println(" \033[32m>\033[0m "+v)
+				fmt.Printf(" %s>%s %s\n", g, z, v)
 			}
 		}
 		if len(ai.Perms.Sockets) > 0 {
 			fmt.Printf("%sSockets:\n", y)
 			for _, v := range(ai.Perms.Sockets) {
-				fmt.Println(" \033[32m>\033[0m "+v)
+				fmt.Printf(" %s>%s %s\n", g, z, v)
 			}
 		}
 		if len(ai.Perms.Share) > 0 {
 			fmt.Printf("%sShare:\n", y)
 			for _, v := range(ai.Perms.Share) {
-				fmt.Println(" \033[32m>\033[0m "+v)
+				fmt.Printf(" %s>%s %s\n", g, z, v)
 			}
 		}
 		if spookyBool {
@@ -129,10 +134,9 @@ func main() {
 			fmt.Printf("be used to escape the sandbox (shown with red arrow under the file list)\n")
 		}
 	} else if *listPerms && ai.Perms.Level == 0 {
-		fmt.Println("\033[33mApplication `"+ai.Name+"` requests to be used unsandboxed!\033[0m")
+		fmt.Printf("%sApplication `"+ai.Name+"` requests to be used unsandboxed!%s", y, z)
 		fmt.Println("Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 	}
-
 
 	if *listPerms {
 		cleanExit(0)
@@ -201,6 +205,7 @@ func spooky(str string) bool {
 	// These files/ directories are specifically escape vectors on their own
 	spookyFiles := []string{
 		"~",
+		"/home",
 		"~/Apps",
 		"~/Applications",
 		"~/AppImages",
@@ -230,7 +235,7 @@ func spooky(str string) bool {
 
 	for _, val := range(spookyDirs) {
 		if len(s1) >= len(val) {
-			if s1[:len(val)] == val && s2 == ":rw" {
+			if s1[:len(val)] == val {
 				return true
 			}
 		}
