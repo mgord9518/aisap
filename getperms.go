@@ -32,6 +32,10 @@ func getPermsFromEntry(entryFile string) (*profiles.AppImagePerms, error) {
 
 	aiPerms, err = loadPerms(aiPerms, entry)
 
+	if err != nil {
+		aiPerms.Level = -1
+	}
+
 	return &aiPerms, err
 }
 
@@ -43,9 +47,11 @@ func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 
 	aiPerms := profiles.AppImagePerms{}
 
-	// Use the aisap internal profile as a base if it exists
+	// Use the aisap internal profile if it exists
 	// If not, set its level as invalid
-	if aiPerms, present = profiles.Profiles[strings.ToLower(ai.Name)]; !present {
+	if aiPerms, present = profiles.Profiles[strings.ToLower(ai.Name)]; present {
+		return &aiPerms, nil
+	} else {
 		aiPerms.Level = -1
 	}
 
@@ -76,6 +82,9 @@ func loadPerms(p profiles.AppImagePerms, f *ini.File) (profiles.AppImagePerms, e
 		} else {
 			p.Level = l
 		}
+	} else {
+		p.Level = -1
+		err = errors.New("profile does not have required flag `X-AppImage-Sandbox-Level`")
 	}
 	if len(filePerms) > 0 {
 		p.Files = helpers.DesktopSlice(filePerms)
