@@ -5,25 +5,8 @@ import (
     "math/rand"
     "strings"
     "os"
-    "fmt"
 )
 
-func PrintlnVerbose(str string) {
-    var verbose *bool
-
-    if *verbose {
-        fmt.Println(str)
-    }
-}
-
-func ErrorCheck(str string, err error, fatal bool) {
-    if err != nil && !fatal {
-        fmt.Fprintln(os.Stderr, "WARNING: " + str, err)
-    } else if err != nil && fatal {
-        fmt.Fprintln(os.Stderr, "FATAL: " + str, err)
-        os.Exit(1)
-    }
-}
 
 func DesktopSlice(str string) []string {
     str = strings.ReplaceAll(str, "；", ";")
@@ -43,9 +26,7 @@ func Contains(slice []string, str string) (int, bool) {
 
 // Takes a full path and prefix, creates a temporary directory and returns its path
 func MakeTemp(path string, name string) (string, error) {
-    // Valid characters for creating the directory name
-
-    dir := filepath.Clean(path+"/"+name)
+    dir := filepath.Clean(filepath.Join(path, name))
     err := os.MkdirAll(dir, 0744)
     return dir, err
 }
