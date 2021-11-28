@@ -1,6 +1,7 @@
 package aisap
 
 import (
+	"path/filepath"
 	"errors"
 	"strings"
 	"os"
@@ -88,7 +89,6 @@ func setupRun(ai *AppImage) error {
 }
 
 func GetWrapArgs(perms *profiles.AppImagePerms) []string {
-	loadName(perms.Level)
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
 			"--setenv",	  "TMPDIR",              "/tmp",
@@ -114,46 +114,36 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 			"--proc",        "/proc",
 			"--ro-bind",	 "/opt",              "/opt",
 			"--ro-bind",	 "/bin",              "/bin",
+			"--ro-bind",	 "/sbin",             "/sbin",
 			"--ro-bind",	 "/lib",              "/lib",
 			"--ro-bind-try", "/lib32",            "/lib32",
 			"--ro-bind-try", "/lib64",            "/lib64",
 			"--ro-bind",	 "/usr/bin",          "/usr/bin",
+			"--ro-bind",	 "/usr/sbin",         "/usr/sbin",
 			"--ro-bind",	 "/usr/lib",          "/usr/lib",
 			"--ro-bind-try", "/usr/lib32",        "/usr/lib32",
 			"--ro-bind-try", "/usr/lib64",        "/usr/lib64",
-			"--ro-bind-try", "/usr/share/fonts",  "/usr/share/fonts",
-			"--ro-bind-try", "/usr/share/icons",  "/usr/share/icons",
-			"--ro-bind-try", "/usr/share/themes", "/usr/share/themes",
 	}
 
 	ruid := strconv.Itoa(os.Getuid()) // Real UID, for level 1 RUID and UID are the same value
 
 	// Convert device perms to bwrap format
 	for _, v := range(perms.Devices) {
-		if len(v) > 5 && v[0:5] == "/dev/" {
-			v = v[5:]
+		if len(v) > 5 && v[0:5] != "/dev/" {
+			v = filepath.Join("/dev", v)
 		}
 
-		cmdArgs = append(cmdArgs, "--dev-bind-try", "/dev/"+v, "/dev/"+v)
+		cmdArgs = append(cmdArgs, "--dev-bind-try", v, v)
 	}
 
-	// Convert XDG standards into real paths eg: `xdg-desktop` becomes `~/Desktop`
-	stdDirs := getXdg(perms.Files, perms.Level)
-
-	// Convert directory permissions to bwrap flags
-	for i, _ := range stdDirs {
-		dir := strings.Split(i, ":")[0]
-
-		// Expand `~` directories to full path
-		if dir[0] == '~' {
-			dir  = strings.Replace(dir, "~", xdg.Home, 1)
-		}
-
-		// Convert "rw"/"ro" into bwrap command line syntax so we can call it
-		if strings.Split(i, ":")[1] == "rw" {
-			cmdArgs = append(cmdArgs, "--bind-try", dir, stdDirs[i])
-		} else {
-			cmdArgs = append(cmdArgs, "--ro-bind-try", dir, stdDirs[i])
+	// Convert requested dirs to brap flags
+	for _, val := range(perms.Files) {
+		s   := strings.Split(val, ":")
+		ex  := s[len(s)-1]
+		if ex == "rw" {
+			cmdArgs = append(cmdArgs, "--bind-try", ExpandDir(val), ExpandGenericDir(val))
+		} else if ex == "ro" {
+			cmdArgs = append(cmdArgs, "--ro-bind-try", ExpandDir(val), ExpandGenericDir(val))
 		}
 	}
 
@@ -179,6 +169,9 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 			"--ro-bind-try", "/etc/ssl",                "/etc/ssl",
 			"--ro-bind-try", "/etc/ca-certificates",    "/etc/ca-certificates",
 			"--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
+			"--ro-bind-try", "/usr/share/fonts",        "/usr/share/fonts",
+			"--ro-bind-try", "/usr/share/icons",        "/usr/share/icons",
+			"--ro-bind-try", "/usr/share/themes",       "/usr/share/themes",
 			"--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
 			"--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
 			"--ro-bind-try", "/usr/share/libdrm",       "/usr/share/librdm",
@@ -257,75 +250,85 @@ func GetWrapArgs(perms *profiles.AppImagePerms) []string {
 	return cmdArgs
 }
 
-// Parses requested file and directories into bwrap flags
-func getXdg(s []string, level int) map[string]string {
-    var genericDir string
-    dirPerms := make(map[string]string)
-
-    // Map out the XDG directories
-    var xdgDirs = map[string]string {
-        "xdg-home":        xdg.Home,
-        "xdg-desktop":     xdg.UserDirs.Desktop,
-        "xdg-download":    xdg.UserDirs.Download,
-        "xdg-documents":   xdg.UserDirs.Documents,
-        "xdg-music":       xdg.UserDirs.Music,
-        "xdg-pictures":    xdg.UserDirs.Pictures,
-        "xdg-videos":      xdg.UserDirs.Videos,
-        "xdg-templates":   xdg.UserDirs.Templates,
-        "xdg-publicshare": xdg.UserDirs.PublicShare,
-        "xdg-config":      xdg.ConfigHome,
-        "xdg-cache":       xdg.CacheHome,
-        "xdg-data":        xdg.DataHome,
-    }
-
-    // Anonymize directories by giving them generic names in case the user has
-    // changed the location of their XDG-dirs (unlikely but happens)
-    var xdgGeneric = map[string]string {
-        "xdg-home":        homed,
-        "xdg-desktop":     homed+"/Desktop",
-        "xdg-download":    homed+"/Downloads",
-        "xdg-documents":   homed+"/Documents",
-        "xdg-music":       homed+"/Music",
-        "xdg-pictures":    homed+"/Pictures",
-        "xdg-videos":      homed+"/Videos",
-        "xdg-templates":   homed+"/Templaates",
-        "xdg-publicshare": homed+"/Share",
-        "xdg-config":      homed+"/.config",
-        "xdg-cache":       homed+"/.cache",
-        "xdg-data":        homed+"/.local/share",
-    }
-
-    for i, _ := range s {
-        str := s[i]
-
-        // Replace the xdg-* strings with the corresponding directories on the user's machine
-        for key, val := range xdgDirs {
-
-            // If length of key bigger than requested directory or not equal to it continue because there is no reason to look at it further
-            if len(key) > len(str) || key != str[:len(key)] {
-				// Replace real home directory with sandboxed one
-                genericDir = strings.Split(str, ":")[0]
-				genericDir = strings.Replace(genericDir, xdg.Home, homed, 1)
-                continue
-            }
-
-            // If the last byte of the requested path shortened to key length is a '/' or ':' we know it's the parent dir, so resolve it using the xdgDirs map
-            c := str[len(key)]  // The final byte of the key (used for splitting)
-            r := str[len(key):] // Every string after that byte
-            if c == byte('/') || c == byte(':') {
-                genericDir = xdgGeneric[key] + strings.Split(r, ":")[0]
-                s[i] = strings.Replace(str, key, val, 1)
-                break
-            } else {
-                genericDir = strings.Split(str, ":")[0]
-            }
-        }
-
-		if genericDir[0] == '~' {
-			genericDir = strings.Replace(genericDir, "~", homed, 1)
+func expandEither(str string, generic bool) string {
+	var xdgDirs = map[string]string{}
+	if generic {
+		homed = "/home/ai"
+		xdgDirs = map[string]string{
+			"xdg-home":        homed,
+			"xdg-desktop":     homed+"/Desktop",
+			"xdg-download":    homed+"/Downloads",
+			"xdg-documents":   homed+"/Documents",
+			"xdg-music":       homed+"/Music",
+			"xdg-pictures":    homed+"/Pictures",
+			"xdg-videos":      homed+"/Videos",
+			"xdg-templates":   homed+"/Templaates",
+			"xdg-publicshare": homed+"/Share",
+			"xdg-config":      homed+"/.config",
+			"xdg-cache":       homed+"/.cache",
+			"xdg-data":        homed+"/.local/share",
+			"xdg-state":       homed+"/.local/state",
 		}
-        dirPerms[s[i]] = genericDir
-    }
+	} else {
+		homed = xdg.Home
+		xdgDirs = map[string]string{
+			"xdg-home":        xdg.Home,
+			"xdg-desktop":     xdg.UserDirs.Desktop,
+			"xdg-download":    xdg.UserDirs.Download,
+			"xdg-documents":   xdg.UserDirs.Documents,
+			"xdg-music":       xdg.UserDirs.Music,
+			"xdg-pictures":    xdg.UserDirs.Pictures,
+			"xdg-videos":      xdg.UserDirs.Videos,
+			"xdg-templates":   xdg.UserDirs.Templates,
+			"xdg-publicshare": xdg.UserDirs.PublicShare,
+			"xdg-config":      xdg.ConfigHome,
+			"xdg-cache":       xdg.CacheHome,
+			"xdg-data":        xdg.DataHome,
+			"xdg-state":       xdg.StateHome,
+		}
+	}
 
-    return dirPerms
+	for key, val := range xdgDirs {
+		// If length of key bigger than requested directory or not equal to it
+		// continue because there is no reason to look at it further
+		if len(key) > len(str) || key != str[:len(key)] {
+			continue
+		}
+
+		// The final byte of the key (used for splitting)
+		c := str[len(key)]
+		if c == byte('/') || c == byte(':') {
+			str = strings.Replace(str, key, val, 1)
+			break
+		}
+	}
+
+	s   := strings.Split(str, ":")
+	dir := strings.Join(s[:len(s)-1], ":")
+
+	// Resolve `../` and clean up extra slashes if they exist
+	str = filepath.Clean(dir)
+
+	// Replace tilde with the true home directory if not generic, otherwise use
+	// a generic representation
+	if str[0] == '~' {
+		if generic {
+			str = strings.Replace(str, "~", homed, 1)
+		} else {
+			str = strings.Replace(str, "~", xdg.Home, 1)
+		}
+	}
+
+	return str
+}
+
+// Expand xdg and shorthand directories into either real directories on the
+// user's machine or some generic names to be used to protect the actual path
+// names in case the user has changed them
+func ExpandDir(str string) string {
+	return expandEither(str, false)
+}
+
+func ExpandGenericDir(str string) string {
+	return expandEither(str, true)
 }
