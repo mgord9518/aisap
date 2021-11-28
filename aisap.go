@@ -1,5 +1,5 @@
 // Copyright © 2021 Mathew Gordon <github.com/mgord9518>
-// AppImage SAndboxing Program (aisap)
+// AppImage SAndboxing Project (aisap)
 //
 // Permission  is hereby  granted,  free of charge,  to any person  obtaining a
 // copy of this software  and associated documentation files  (the “Software”),
@@ -22,7 +22,7 @@
 
 // This package can be used as a drop-in replacement for go-appimage, but it IS
 // slower, the only good use cases for doing so would be adding support for
-// shappimages (I'll publish this project soon) or adding sandboxing
+// shappimages (I'll publish this project eventually) and using sandboxing
 // ^^^ NOT YET IT CAN'T! Still missing basic features, priority is stable
 // sandboxing, and this probably won't be a viable alternative for a while
 
@@ -32,10 +32,7 @@
 package aisap
 
 import (
-	"os"
-	"os/user"
 	"os/exec"
-	"strconv"
 )
 
 var (
@@ -51,16 +48,3 @@ var (
 
 	err      error
 )
-
-func loadName(permLevel int) {
-	if permLevel == 1 {
-		usr, _ := user.Current()
-		uid   = strconv.Itoa(os.Getuid())
-		usern = usr.Username
-		homed = "/home/"+usern
-	} else {
-		uid   = "256"
-		usern = "ai"
-		homed = "/home/"+usern
-	}
-}
