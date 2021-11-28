@@ -26,7 +26,6 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
 	"os"
 	"strconv"
 	"strings"
@@ -138,6 +137,8 @@ func main() {
 		fmt.Println("Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 	}
 
+	fmt.Println(aisap.GetWrapArgs(ai.Perms))
+
 	if *listPerms {
 		cleanExit(0)
 	}
@@ -164,36 +165,14 @@ func cleanExit(exitCode int) {
 
 // Convert xdg and full directories into their shortened counterparts
 func makePretty(str string) string {
-    var xdgDirs = map[string]string{
-        "xdg-home":        xdg.Home,
-        "xdg-desktop":     xdg.UserDirs.Desktop,
-        "xdg-download":    xdg.UserDirs.Download,
-        "xdg-documents":   xdg.UserDirs.Documents,
-        "xdg-music":       xdg.UserDirs.Music,
-        "xdg-pictures":    xdg.UserDirs.Pictures,
-        "xdg-videos":      xdg.UserDirs.Videos,
-        "xdg-templates":   xdg.UserDirs.Templates,
-        "xdg-publicshare": xdg.UserDirs.PublicShare,
-        "xdg-config":      xdg.ConfigHome,
-        "xdg-cache":       xdg.CacheHome,
-        "xdg-data":        xdg.DataHome,
-    }
-
-	// Convert xdg-style to real paths
-	for key, val := range(xdgDirs) {
-		str = strings.Replace(str, key, val, 1)
-	}
-
-	// Clean file path, so that stuff like `xdg-desktop/..` doesn't get past
-	slice := strings.Split(str, ":")
-	s1 := strings.Join(slice[:len(slice)-1], ":")
-	s2 := ":"+strings.Split(str, ":")[len(slice)-1]
-	str = filepath.Clean(s1)+s2
+	s  := strings.Split(str, ":")
+	str = aisap.ExpandDir(str)
+	ex := ":" + s[len(s)-1]
 
 	// Pretty it up by replacing `/home/$USERNAME` with `~`
 	str = strings.Replace(str, xdg.Home, "~", 1)
 
-	return str
+	return str + ex
 }
 
 // Check if a file or directory is spooky (sandbox escape vector) so that the
