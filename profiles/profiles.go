@@ -26,7 +26,7 @@ var Profiles = map[string]AppImagePerms{
 			Sockets: []string{ "x11", "wayland", "pulseaudio" },
 		},
 		"gnu image manipulation program": {
-			Level: 2,
+			Level: 1,
 			Files:   []string{ "xdg-pictures:rw" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
@@ -50,7 +50,7 @@ var Profiles = map[string]AppImagePerms{
 			Level: 0,
 		},
 		"photogimp": {
-			Level: 2,
+			Level: 1,
 			Files:   []string{ "xdg-pictures:rw" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
