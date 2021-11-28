@@ -29,6 +29,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"path/filepath"
 
 	aisap "github.com/mgord9518/aisap"
 	flag  "github.com/spf13/pflag"
@@ -98,7 +99,7 @@ func main() {
 		}
 
 		if len(ai.Perms.Files) > 0 {
-			fmt.Printf("%sFiles/directories:\n", y)
+			fmt.Printf("%sFiles and directories:\n", y)
 			for _, v := range(ai.Perms.Files) {
 				v = makePretty(v)
 				if spooky(v) {
@@ -113,6 +114,7 @@ func main() {
 		if len(ai.Perms.Devices) > 0 {
 			fmt.Printf("%sDevice files:\n", y)
 			for _, v := range(ai.Perms.Devices) {
+				v = makeDevPretty(v)
 				fmt.Printf(" %s>%s %s\n", g, z, v)
 			}
 		}
@@ -136,8 +138,6 @@ func main() {
 		fmt.Printf("%sApplication `"+ai.Name+"` requests to be used unsandboxed!%s", y, z)
 		fmt.Println("Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 	}
-
-	fmt.Println(aisap.GetWrapArgs(ai.Perms))
 
 	if *listPerms {
 		cleanExit(0)
@@ -163,6 +163,16 @@ func cleanExit(exitCode int) {
 	os.Exit(exitCode)
 }
 
+func makeDevPretty(str string) string {
+	str = filepath.Clean(str)
+
+	if len(str) > 5 && str[0:5] == "/dev/" {
+		str = strings.Replace(str, "/dev/", "", 1)
+	}
+
+	return str
+}
+
 // Convert xdg and full directories into their shortened counterparts
 func makePretty(str string) string {
 	s  := strings.Split(str, ":")
@@ -171,6 +181,7 @@ func makePretty(str string) string {
 
 	// Pretty it up by replacing `/home/$USERNAME` with `~`
 	str = strings.Replace(str, xdg.Home, "~", 1)
+
 
 	return str + ex
 }
