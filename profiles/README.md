@@ -7,7 +7,7 @@ Note that all items in this list are based on the name of their appropriate AppI
 |-|-|-|-|
 | Minecraft  | BadLion Client | Deemix-GUI ||
 || Dolphin Emulator | Krita ||
-||| Librewolf ||
-||| The Powder Toy ||
+|| GIMP | Librewolf ||
+|| PhotoGIMP | The Powder Toy ||
 ||| SuperTuxKart ||
 ||| SuperTux 2 ||
