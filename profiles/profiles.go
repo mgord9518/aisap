@@ -25,6 +25,12 @@ var Profiles = map[string]AppImagePerms{
 			Devices: []string{ "dri", "input" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio" },
 		},
+		"gnu image manipulation program": {
+			Level: 2,
+			Files:   []string{ "xdg-pictures:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland" },
+		},
 		"krita": {
 			Level: 2,
 			Files:   []string{ "xdg-pictures:rw" },
@@ -42,6 +48,12 @@ var Profiles = map[string]AppImagePerms{
 		// until a fix is found Minecraft will have to be run without a sandbox
 		"minecraft": {
 			Level: 0,
+		},
+		"photogimp": {
+			Level: 2,
+			Files:   []string{ "xdg-pictures:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland" },
 		},
 		"supertuxkart": {
 			Level: 2,
