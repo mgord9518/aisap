@@ -41,7 +41,7 @@ func MountAppImage(src string, dest string) error {
 }
 
 func UnmountAppImage(ai *AppImage) error {
-	err = UnmountAppImageFile(ai.MountDir())
+	err = UnmountDir(ai.MountDir())
 	if err != nil { return err }
 
 	// Clean up
@@ -52,7 +52,7 @@ func UnmountAppImage(ai *AppImage) error {
 	return err
 }
 
-func UnmountAppImageFile(mntPt string) error {
+func UnmountDir(mntPt string) error {
 	var mntCmd string
 	var err error
 
@@ -136,7 +136,7 @@ func GetShappImageSize(src string) (int, error) {
 func GetElfSize(src string) (int, error) {
 	format, _ := GetAppImageType(src)
 	if format != "2" && format != "elf"{
-		return -1, errors.New("Invalid ELF file, cannot calculate size")
+		return -1, errors.New("invalid ELF file, cannot calculate size")
 	}
 
 	f, _ := os.Open(src)
