@@ -11,6 +11,8 @@ import (
 	"time"
 	"io"
 	"os"
+	"os/user"
+	"strconv"
 	"strings"
 	"io/ioutil"
 
@@ -24,6 +26,8 @@ type AppImage struct {
 	Desktop  *ini.File               // INI of internal desktop entry
 	Perms    *profiles.AppImagePerms // Permissions
 	Path      string                 // Location of AppImage
+	dataDir   string                 // The AppImage's `~` directory
+	rootDir   string                 // Can be used to give the AppImage fake system files
 	tempDir   string                 // The AppImage's `/tmp` directory
 	mountDir  string                 // The location the AppImage is mounted at
 	runId     string                 // Random string associated with this specific run instance
@@ -36,8 +40,8 @@ type AppImage struct {
 func NewAppImage(src string) (*AppImage, error) {
 	var err error
 
-    ai := &AppImage{}
-    ai.Path = src
+	ai := &AppImage{}
+	ai.Path = src
 
 	ai.runId = helpers.RandString(int(time.Now().UTC().UnixNano()), 8)
 	ai.tempDir, err = helpers.MakeTemp("/tmp", ".aisapTemp_"+ai.RunId())
@@ -65,6 +69,16 @@ func NewAppImage(src string) (*AppImage, error) {
 	}
 
 	ai.Perms, _ = getPermsFromAppImage(ai)
+
+	if ai.Perms.Level == 1 {
+		usr, _ := user.Current()
+		uid     = strconv.Itoa(os.Getuid())
+		usern   = usr.Username
+	} else {
+		uid   = "256"
+		usern = "ai"
+	}
+	homed = "/home/" + usern
 
     return ai, err
 }
