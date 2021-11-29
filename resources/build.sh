@@ -61,4 +61,4 @@ ln -s './usr/share/icons/hicolor/scalable/apps/aisap.svg' 'AppDir/aisap.svg'
 ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 
 # Build the AppImage
-ARCH="$ARCH" aitool -u "gh-releases-zsync|mgord9518|aisap|rolling|aisap-$ARCH.AppImage" AppDir
+ARCH="$ARCH" aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-$ARCH.AppImage.zsync" AppDir
