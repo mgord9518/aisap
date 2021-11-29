@@ -36,10 +36,12 @@ fi
 aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
 
+rm -r 'AppDir' "aisap-$ARCH.AppImage"
+
 mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/icons/hicolor/scalable/apps'
 
-# Download and compile the binary in the current directory
+# Download and compile the binary into the AppDir
 GOBIN="$PWD/AppDir/usr/bin" gocc install -ldflags '-s -w' \
 	"$aisapUrl/aisap-bin@latest"
 
@@ -59,4 +61,4 @@ ln -s './usr/share/icons/hicolor/scalable/apps/aisap.svg' 'AppDir/aisap.svg'
 ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 
 # Build the AppImage
-ARCH="$ARCH" aitool AppDir
+ARCH="$ARCH" aitool -u "gh-releases-zsync|mgord9518|aisap|rolling|aisap-$ARCH.AppImage" AppDir
