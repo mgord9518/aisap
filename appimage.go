@@ -72,12 +72,13 @@ func NewAppImage(src string) (*AppImage, error) {
 
 	if ai.Perms.Level == 1 {
 		usr, _ := user.Current()
-		uid     = strconv.Itoa(os.Getuid())
+//		uid     = strconv.Itoa(os.Getuid())
 		usern   = usr.Username
 	} else {
-		uid   = "256"
+//		uid   = "256"
 		usern = "ai"
 	}
+	uid     = strconv.Itoa(os.Getuid())
 	homed = "/home/" + usern
 
     return ai, err
