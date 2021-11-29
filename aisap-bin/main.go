@@ -27,13 +27,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
-	"strings"
-	"path/filepath"
+	"syscall"
 
 	aisap "github.com/mgord9518/aisap"
 	flag  "github.com/spf13/pflag"
-	xdg   "github.com/adrg/xdg"
 )
 
 var (
@@ -44,20 +43,21 @@ var (
 
 // Process flags
 func main() {
-	if len(flag.Args()) < 1 {
+	if len(flag.Args()) >= 1 {
+		ai, err = aisap.NewAppImage(flag.Args()[0])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to open AppImage:", err)
+			cleanExit(1)
+		}
+	} else {
 		flag.Usage()
 	}
 
-	ai, err = aisap.NewAppImage(flag.Args()[0])
-	if err != nil {
-		fmt.Println("Failed to sandbox AppImage:", err)
-		cleanExit(1)
-	}
 
-	if *permFile != "" {
-		err = ai.SetPerms(*permFile)
+	if *profile != "" {
+		err = ai.SetPerms(*profile)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, "Failed to get permissions from profile:", err)
 			cleanExit(1)
 		}
 	}
@@ -65,14 +65,16 @@ func main() {
 	// Add extra permissions as passed from flags. eg: `--file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
-	ai.AddFiles(addFile)
-	ai.AddDevices(addDev)
-	ai.AddSockets(addSoc)
-	ai.AddShare(addShare)
+	ai.AddFiles(file)
+	ai.AddDevices(device)
+	ai.AddSockets(socket)
+	ai.AddShare(share)
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
 		ai.Perms.Level = *level
+	} else if *level > 3 {
+		fmt.Fprintln(os.Stderr, "Failed to set permissions level: level must be between 0 and 3")
 	}
 
 	if ai.Perms.Level == -1 {
@@ -131,12 +133,12 @@ func main() {
 			}
 		}
 		if spookyBool {
-			fmt.Printf("\n%sWARNING: This AppImage requests files/ directories that can potentially\n", y)
-			fmt.Printf("be used to escape the sandbox (shown with red arrow under the file list)\n")
+			fmt.Fprintln(os.Stdout, "\n%sWARNING: This AppImage requests files/ directories that can potentially\n", y)
+			fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown with red arrow under the file list)\n")
 		}
 	} else if *listPerms && ai.Perms.Level == 0 {
-		fmt.Printf("%sApplication `"+ai.Name+"` requests to be used unsandboxed!%s", y, z)
-		fmt.Println("Use the command line flag `--level [1-3]` to try to sandbox it anyway")
+		fmt.Fprintf(os.Stdout, "%sApplication `"+ai.Name+"` requests to be used unsandboxed!%s\n", y, z)
+		fmt.Fprintln(os.Stdout, "Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 	}
 
 	if *listPerms {
@@ -151,7 +153,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Println("Failed to sandbox AppImage:", err)
+		fmt.Fprintln(os.Stdout, "Failed to sandbox AppImage:", err)
 		cleanExit(1)
 	}
 
@@ -163,73 +165,12 @@ func cleanExit(exitCode int) {
 	os.Exit(exitCode)
 }
 
-func makeDevPretty(str string) string {
-	str = filepath.Clean(str)
+func handleCtrlC() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	if len(str) > 5 && str[0:5] == "/dev/" {
-		str = strings.Replace(str, "/dev/", "", 1)
-	}
-
-	return str
-}
-
-// Convert xdg and full directories into their shortened counterparts
-func makePretty(str string) string {
-	s  := strings.Split(str, ":")
-	str = aisap.ExpandDir(str)
-	ex := ":" + s[len(s)-1]
-
-	// Pretty it up by replacing `/home/$USERNAME` with `~`
-	str = strings.Replace(str, xdg.Home, "~", 1)
-
-
-	return str + ex
-}
-
-// Check if a file or directory is spooky (sandbox escape vector) so that the
-// user can be warned that their sandbox is insecure
-// TODO: expand this list! There are a lot of files that can be used to escape
-// the sandbox, while it's impossible to cover all bases, we should try to get
-// as close as possible
-func spooky(str string) bool {
-	// These files/ directories are specifically escape vectors on their own
-	spookyFiles := []string{
-		"~",
-		"/home",
-		"~/Apps",
-		"~/Applications",
-		"~/AppImages",
-		"~/.profile",
-		"~/.bashrc",
-		"~/.zshrc",
-	}
-
-	// If the sandbox requests these directories at all, it is a potential threat
-	spookyDirs := []string{
-		"~/.ssh",
-		"~/.local",
-		"~/.config",
-	}
-
-	// Split the string into its actual directory and whether it's read only or
-	// read write
-	slice := strings.Split(str, ":")
-	s1 := strings.Join(slice[:len(slice)-1], ":")
-	s2 := ":"+strings.Split(str, ":")[len(slice)-1]
-
-	for _, val := range(spookyFiles) {
-		if s1 == val && s2 == ":rw" {
-			return true
-		}
-	}
-
-	for _, val := range(spookyDirs) {
-		if len(s1) >= len(val) {
-			if s1[:len(val)] == val {
-				return true
-			}
-		}
-	}
-
-	return false
+	go func() {
+		<-c
+		cleanExit(0)
+	}()
 }
