@@ -1,9 +1,13 @@
 package profiles
 
+import (
+	"github.com/mgord9518/aisap/permissions"
+)
+
 // List of all profiles supported by aisal out of the box.
 // Most of these have only been tested on my (Manjaro and Arch) systems, so they may not work correctly on yours
 // If that is the case, please report the issue and any error messages you encounter so that I can try to fix them
-var Profiles = map[string]AppImagePerms{
+var Profiles = map[string]permissions.AppImagePerms{
 		// Badlion (and others) might be able to get switched to level 2, so specify devices anyway
 		// Proprietary and unofficial AppImages should be high priority to be sandboxed to the fullest extent
 		"badlion client": {
@@ -28,6 +32,12 @@ var Profiles = map[string]AppImagePerms{
 		"gnu image manipulation program": {
 			Level: 1,
 			Files:   []string{ "xdg-pictures:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland" },
+		},
+		"inkscape": {
+			Level: 2,
+			Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
 		},
@@ -67,7 +77,7 @@ var Profiles = map[string]AppImagePerms{
 			Sockets: []string{ "x11", "wayland", "pulseaudio" },
 			Share:   []string{ "network" },
 		},
-		"the powder toy": {
+		"powder toy": {
 			Level: 2,
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
