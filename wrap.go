@@ -129,7 +129,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 
 	// Convert device perms to bwrap format
 	for _, v := range(perms.Devices) {
-		if len(v) > 5 && v[0:5] != "/dev/" {
+		if len(v) < 5 || v[0:5] != "/dev/" {
 			v = filepath.Join("/dev", v)
 		}
 
