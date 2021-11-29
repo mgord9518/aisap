@@ -8,9 +8,9 @@ import (
 	"os/exec"
 	"strconv"
 
-	helpers  "github.com/mgord9518/aisap/helpers"
-	profiles "github.com/mgord9518/aisap/profiles"
-	xdg      "github.com/adrg/xdg"
+	helpers     "github.com/mgord9518/aisap/helpers"
+	permissions "github.com/mgord9518/aisap/permissions"
+	xdg         "github.com/adrg/xdg"
 )
 
 // Run the AppImage with zero sandboxing
@@ -88,7 +88,7 @@ func setupRun(ai *AppImage) error {
 	return err
 }
 
-func GetWrapArgs(perms *profiles.AppImagePerms) []string {
+func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
 			"--setenv",	  "TMPDIR",              "/tmp",
