@@ -7,9 +7,12 @@ Note that all items in this list are based on the name of their appropriate AppI
 | No sandbox | Level 1 | Level 2 | Level 3 |
 |-|-|-|-|
 | Minecraft  | BadLion Client | Deemix-GUI ||
-|| Dolphin Emulator | Inkscape ||
-|| GIMP | Krita ||
+|| Dolphin Emulator | Firefox ||
+|| GIMP | Inkscape ||
+|| MS Edge | Krita ||
 || PhotoGIMP | Librewolf ||
 ||| Powder Toy ||
+||| Signal ||
 ||| SuperTuxKart ||
 ||| SuperTux 2 ||
+||| VS Code ||
