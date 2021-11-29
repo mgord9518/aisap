@@ -16,25 +16,25 @@ import (
 	"strings"
 	"io/ioutil"
 
-	ini      "gopkg.in/ini.v1"
-	helpers  "github.com/mgord9518/aisap/helpers"
-	profiles "github.com/mgord9518/aisap/profiles"
-	imgconv  "github.com/mgord9518/imgconv"
+	ini         "gopkg.in/ini.v1"
+	helpers     "github.com/mgord9518/aisap/helpers"
+	permissions "github.com/mgord9518/aisap/permissions"
+	imgconv     "github.com/mgord9518/imgconv"
 )
 
 type AppImage struct {
-	Desktop  *ini.File               // INI of internal desktop entry
-	Perms    *profiles.AppImagePerms // Permissions
-	Path      string                 // Location of AppImage
-	dataDir   string                 // The AppImage's `~` directory
-	rootDir   string                 // Can be used to give the AppImage fake system files
-	tempDir   string                 // The AppImage's `/tmp` directory
-	mountDir  string                 // The location the AppImage is mounted at
-	runId     string                 // Random string associated with this specific run instance
-	Name      string                 // AppImage name from the desktop entry 
-	Version   string                 // Version of the AppImage
-	Offset    int                    // Offset of SquashFS image
-	imageType int
+	Desktop     *ini.File                  // INI of internal desktop entry
+	Perms       *permissions.AppImagePerms // Permissions
+	Path         string // Location of AppImage
+	dataDir      string // The AppImage's `~` directory
+	rootDir      string // Can be used to give the AppImage fake system files
+	tempDir      string // The AppImage's `/tmp` directory
+	mountDir     string // The location the AppImage is mounted at
+	runId        string // Random string associated with this specific run instance
+	Name         string // AppImage name from the desktop entry 
+	Version      string // Version of the AppImage
+	Offset       int    // Offset of SquashFS image
+	imageType    int    // Type of AppImage (either 1 or 2)
 }
 
 func NewAppImage(src string) (*AppImage, error) {
