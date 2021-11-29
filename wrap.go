@@ -89,43 +89,45 @@ func setupRun(ai *AppImage) error {
 }
 
 func GetWrapArgs(perms *permissions.AppImagePerms) []string {
+	// Real UID, for level 1 RUID and UID are the same value
+	ruid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
-			"--setenv",	  "TMPDIR",              "/tmp",
-			"--setenv",	  "HOME",                homed,
-			"--setenv",	  "XDG_DESKTOP_DIR",     homed+"/Desktop",
-			"--setenv",	  "XDG_DOWNLOAD_DIR",    homed+"/Downloads",
-			"--setenv",	  "XDG_DOCUMENTS_DIR",   homed+"/Documents",
-			"--setenv",	  "XDG_MUSIC_DIR",       homed+"/Music",
-			"--setenv",	  "XDG_PICTURES_DIR",    homed+"/Pictures",
-			"--setenv",	  "XDG_VIDEOS_DIR",      homed+"/Videos",
-			"--setenv",	  "XDG_TEMPLATES_DIR",   homed+"/Templates",
-			"--setenv",	  "XDG_PUBLICSHARE_DIR", homed+"/Templates",
-			"--setenv",	  "XDG_DATA_HOME",       homed+"/.local/share",
-			"--setenv",	  "XDG_CONFIG_HOME",     homed+"/.config",
-			"--setenv",	  "XDG_CACHE_HOME",      homed+"/.cache",
-			"--setenv",	  "LOGNAME",             usern,
-			"--setenv",	  "USER",                usern,
-			"--uid",       uid,
+			"--setenv", "TMPDIR",              "/tmp",
+			"--setenv", "HOME",                homed,
+			"--setenv", "XDG_DESKTOP_DIR",     homed+"/Desktop",
+			"--setenv", "XDG_DOWNLOAD_DIR",    homed+"/Downloads",
+			"--setenv", "XDG_DOCUMENTS_DIR",   homed+"/Documents",
+			"--setenv", "XDG_MUSIC_DIR",       homed+"/Music",
+			"--setenv", "XDG_PICTURES_DIR",    homed+"/Pictures",
+			"--setenv", "XDG_VIDEOS_DIR",      homed+"/Videos",
+			"--setenv", "XDG_TEMPLATES_DIR",   homed+"/Templates",
+			"--setenv", "XDG_PUBLICSHARE_DIR", homed+"/Templates",
+			"--setenv", "XDG_DATA_HOME",       homed+"/.local/share",
+			"--setenv", "XDG_CONFIG_HOME",     homed+"/.config",
+			"--setenv", "XDG_CACHE_HOME",      homed+"/.cache",
+			"--setenv", "LOGNAME",             usern,
+			"--setenv", "USER",                usern,
+			"--uid",    uid,
 			"--unshare-user-try",
 			"--die-with-parent",
 			"--new-session",
-			"--dev",		 "/dev",
+			"--dir",         "/run/user/"+uid,
+			"--dev",         "/dev",
 			"--proc",        "/proc",
-			"--ro-bind",	 "/opt",              "/opt",
-			"--ro-bind",	 "/bin",              "/bin",
-			"--ro-bind",	 "/sbin",             "/sbin",
-			"--ro-bind",	 "/lib",              "/lib",
+			"--ro-bind",     "/opt",              "/opt",
+			"--ro-bind",     "/bin",              "/bin",
+			"--ro-bind",     "/sbin",             "/sbin",
+			"--ro-bind",     "/lib",              "/lib",
 			"--ro-bind-try", "/lib32",            "/lib32",
 			"--ro-bind-try", "/lib64",            "/lib64",
-			"--ro-bind",	 "/usr/bin",          "/usr/bin",
-			"--ro-bind",	 "/usr/sbin",         "/usr/sbin",
-			"--ro-bind",	 "/usr/lib",          "/usr/lib",
+			"--ro-bind",     "/usr/bin",          "/usr/bin",
+			"--ro-bind",     "/usr/sbin",         "/usr/sbin",
+			"--ro-bind",     "/usr/lib",          "/usr/lib",
 			"--ro-bind-try", "/usr/lib32",        "/usr/lib32",
 			"--ro-bind-try", "/usr/lib64",        "/usr/lib64",
 	}
 
-	ruid := strconv.Itoa(os.Getuid()) // Real UID, for level 1 RUID and UID are the same value
 
 	// Convert device perms to bwrap format
 	for _, v := range(perms.Devices) {
