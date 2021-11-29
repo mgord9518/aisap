@@ -29,6 +29,13 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri", "input" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio" },
 		},
+		"firefox": {
+			Level: 2,
+			Files:   []string{ "xdg-download:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio" },
+			Share:   []string{ "network" },
+		},
 		"gnu image manipulation program": {
 			Level: 1,
 			Files:   []string{ "xdg-pictures:rw" },
@@ -54,6 +61,15 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Sockets: []string{ "x11", "wayland", "pulseaudio" },
 			Share:   []string{ "network" },
 		},
+		// Fails to find SSL certs, need to further investigate to increase the
+		// sandbox
+		"microsoft edge": {
+			Level: 1,
+			Files:   []string{ "xdg-download:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio" },
+			Share:   []string{ "network" },
+		},
 		// Minecraft requires access to keyring in order to launch correctly,
 		// until a fix is found Minecraft will have to be run without a sandbox
 		"minecraft": {
@@ -64,6 +80,12 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Files:   []string{ "xdg-pictures:rw" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
+		},
+		// Link to device not tested
+		"signal": {
+			Level: 2,
+			Sockets: []string{ "x11", "wayland" },
+			Share:   []string{ "network" },
 		},
 		"supertuxkart": {
 			Level: 2,
@@ -80,6 +102,12 @@ var Profiles = map[string]permissions.AppImagePerms{
 		"powder toy": {
 			Level: 2,
 			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland" },
+			Share:   []string{ "network" },
+		},
+		"visual studio code": {
+			Level: 2,
+			Files:   []string{ "xdg-documents:rw" },
 			Sockets: []string{ "x11", "wayland" },
 			Share:   []string{ "network" },
 		},
