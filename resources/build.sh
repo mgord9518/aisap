@@ -36,9 +36,10 @@ fi
 aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
 
-rm -r 'AppDir' "aisap-$ARCH.AppImage"
+rm -r 'AppDir' "aisap-$ARCH.AppImage" "aisap-$ARCH.AppImage.zsync"
 
 mkdir -p 'AppDir/usr/bin' \
+         'AppDir/usr/share/metainfo' \
          'AppDir/usr/share/icons/hicolor/scalable/apps'
 
 # Download and compile the binary into the AppDir
@@ -47,17 +48,21 @@ GOBIN="$PWD/AppDir/usr/bin" gocc install -ldflags '-s -w' \
 
 # Download icon
 wget "$aisapRawUrl/resources/aisap.svg" -O \
-	'AppDir/usr/share/icons/hicolor/scalable/apps/aisap.svg'
+	'AppDir/usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg'
 
 # Download desktop entry
-wget "$aisapRawUrl/resources/aisap.desktop" -O 'AppDir/aisap.desktop'
+wget "$aisapRawUrl/resources/aisap.desktop" -O 'AppDir/io.github.mgord9518.aisap.desktop'
+
+# Download AppStream metainfo
+wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
+	'AppDir/usr/share/metainfo/io.github.mgord9518.aisap.appdata.xml'
 
 # Download squashfuse
 wget "$aisapRawUrl/resources/squashfuse" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
 
 # Link up files
-ln -s './usr/share/icons/hicolor/scalable/apps/aisap.svg' 'AppDir/aisap.svg'
+ln -s './usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg' 'AppDir/io.github.mgord9518.aisap.svg'
 ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 
 # Build the AppImage
