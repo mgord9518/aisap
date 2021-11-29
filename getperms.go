@@ -8,14 +8,15 @@ import (
 	"errors"
 
 	helpers  "github.com/mgord9518/aisap/helpers"
+	permissions "github.com/mgord9518/aisap/permissions"
 	profiles "github.com/mgord9518/aisap/profiles"
 	ini	     "gopkg.in/ini.v1"
 )
 
 // GetPerms attemps to read permissions from a provided desktop entry, if
-// fail, it will return an error and empty *profiles.AppImagePerms
-func getPermsFromEntry(entryFile string) (*profiles.AppImagePerms, error) {
-	aiPerms := profiles.AppImagePerms{}
+// fail, it will return an error and empty *permissions.AppImagePerms
+func getPermsFromEntry(entryFile string) (*permissions.AppImagePerms, error) {
+	aiPerms := permissions.AppImagePerms{}
 
 	if !helpers.FileExists(entryFile) {
 		return nil, errors.New("failed to find requested desktop entry! ("+entryFile+")")
@@ -41,11 +42,11 @@ func getPermsFromEntry(entryFile string) (*profiles.AppImagePerms, error) {
 
 // Attempt to fetch permissions from the AppImage itself, fall back on aisap
 // internal permissinos library
-func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
+func getPermsFromAppImage(ai *AppImage) (*permissions.AppImagePerms, error) {
 	var err error
 	var present bool
 
-	aiPerms := profiles.AppImagePerms{}
+	aiPerms := permissions.AppImagePerms{}
 
 	// Use the aisap internal profile if it exists
 	// If not, set its level as invalid
@@ -61,7 +62,7 @@ func getPermsFromAppImage(ai *AppImage) (*profiles.AppImagePerms, error) {
 	return &aiPerms, err
 }
 
-func loadPerms(p profiles.AppImagePerms, f *ini.File) (profiles.AppImagePerms, error) {
+func loadPerms(p permissions.AppImagePerms, f *ini.File) (permissions.AppImagePerms, error) {
 	err = nil
 
 	// Get permissions from entry keys
