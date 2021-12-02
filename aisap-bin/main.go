@@ -53,7 +53,6 @@ func main() {
 		flag.Usage()
 	}
 
-
 	if *profile != "" {
 		err = ai.SetPerms(*profile)
 		if err != nil {
@@ -72,17 +71,18 @@ func main() {
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
-		ai.Perms.Level = *level
-	} else if *level > 3 {
-		fmt.Fprintln(os.Stderr, "Failed to set permissions level: level must be between 0 and 3")
+		err = ai.SetLevel(*level)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to set permissions level:", err)
+		}
 	}
 
-	if ai.Perms.Level == -1 {
+	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
 		fmt.Println("Failed to retrieve AppImage permissions!")
 		fmt.Println("Defaulting sandbox level to 3 with no further access")
 		fmt.Println("In the case this sandbox does not work properly, use the command line")
 		fmt.Println("flags to add the necessary minimum permissions or create a custom profile")
-		ai.Perms.Level = 3
+		ai.SetLevel(3)
 	}
 
 	// Give basic info on the permissions the AppImage requests
