@@ -7,15 +7,15 @@ package aisap
 import (
 	"bytes"
 	"errors"
-	"path/filepath"
-	"time"
 	"io"
+	"io/ioutil"
+	"path/filepath"
 	"os"
 	"os/exec"
 	"os/user"
 	"strconv"
 	"strings"
-	"io/ioutil"
+	"time"
 
 	ini         "gopkg.in/ini.v1"
 	helpers     "github.com/mgord9518/aisap/helpers"
@@ -23,7 +23,6 @@ import (
 	imgconv     "github.com/mgord9518/imgconv"
 )
 
-// TODO: Move these into AppImage instead of keeping them as globals
 var (
 	usern string
 	homed string
@@ -73,7 +72,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	if err != nil { return nil, err }
 
 	// Return all `.desktop` files. A vadid AppImage should only have one
-	fp, err := filepath.Glob(ai.mountDir+"/*.desktop")
+	fp, err := filepath.Glob(ai.mountDir + "/*.desktop")
 	if err != nil { return nil, err }
 
 	e, err := ioutil.ReadFile(fp[0])
@@ -88,17 +87,8 @@ func NewAppImage(src string) (*AppImage, error) {
 	}
 
 	ai.Perms, _ = getPermsFromAppImage(ai)
+	ai.SetLevel(ai.Perms.Level)
 
-	if ai.Perms.Level == 1 {
-		usr, _ := user.Current()
-//		uid     = strconv.Itoa(os.Getuid())
-		usern   = usr.Username
-	} else {
-//		uid   = "256"
-		usern = "ai"
-	}
-	uid     = strconv.Itoa(os.Getuid())
-	homed = "/home/" + usern
 
     return ai, err
 }
@@ -186,6 +176,35 @@ func (ai AppImage) SetTempDir(d string) {
 	tempDir = d
 }
 
+func (ai AppImage) SetLevel(l int) error {
+	err = updateHome(l)
+
+	if err != nil {
+		return err
+	}
+
+	ai.Perms.Level = l
+
+	return nil
+}
+
+func updateHome(l int) error {
+	if l == 1 || l == 0 {
+		usr, _ := user.Current()
+//		uid     = strconv.Itoa(os.Getuid())
+		usern   = usr.Username
+	} else if l > 1 && l <= 3 {
+//		uid   = "256"
+		usern = "ai"
+	} else {
+		return errors.New("permissions level must be int from 0-3")
+	}
+	homed = filepath.Join("/home", usern)
+	uid   = strconv.Itoa(os.Getuid())
+
+	return nil
+}
+
 func (ai AppImage) Type() int {
 	t, _ := helpers.GetAppImageType(ai.Path)
 	return t
@@ -233,12 +252,12 @@ func (ai AppImage) Icon() (io.ReadCloser, string, error) {
 
 	// If the desktop entry specifies an extension, use it
 	if strings.HasSuffix(iconf, ".png") || strings.HasSuffix(iconf, ".svg") {
-		r, err := os.Open(ai.mountDir+"/"+iconf)
+		r, err := os.Open(filepath.Join(ai.mountDir, iconf))
 		return r, iconf, err
 	}
 
 	// If not, iterate through all AppImage specified formats
-	fp, err := filepath.Glob(ai.mountDir+"/"+iconf+"*")
+	fp, err := filepath.Glob(filepath.Join(ai.mountDir, iconf) + "*")
 	if err != nil { return nil, "", err }
 
 	for _, v := range(fp) {
