@@ -161,7 +161,7 @@ func main() {
 }
 
 func cleanExit(exitCode int) {
-	err = aisap.UnmountAppImage(ai)
+	err = aisap.Unmount(ai)
 	os.Exit(exitCode)
 }
 
