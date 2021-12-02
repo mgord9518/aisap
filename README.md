@@ -16,12 +16,12 @@ aisap is a Golang library intended to be used in other projects, but provides an
 
 ## Bare bones basics
 
-In order for aisap to sandbox an AppImage, it requires a basic profile, which is a desktop entry (INI format) containing at least one of the following flags under the `[Desktop Entry]` section:
+In order for aisap to sandbox an AppImage, it requires a basic profile, which is a desktop entry (INI format) containing at least one of the following flags under the `[Required Permissions]` section:
 ```
-X-AppImage-Sandbox-Files
-X-AppImage-Sandbox-Devices
-X-AppImage-Sandbox-Sockets
-X-AppImage-Sandbox-Share
+Files
+Devices
+Sockets
+Share
 ```
 These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
 
@@ -43,44 +43,44 @@ It also includes several command line flags:
   -v, --verbose    Be verbose (NEI)
   -l, --list-perms List permissions to be granted by the AppImage's profile
 
-  --file     Add file to sandbox
+  --example  Show usage examples
   --device   Allow sandbox to access additional device files
-  --socket   Allow sandbox to access additional sockets
+  --file     Give sandbox access to a file or directory
   --share    Add share to sandbox (eg: network)
+  --socket   Allow sandbox to access additional sockets
 
   --level    Change base level of sandbox (min: 0, max: 3)
-
   --profile  Manually specify an INI format permissions profile for the AppImage
 ```
 
 ## Sandboxing levels
-Sandboxing levels allow for a base configuration of system files to grant by default. For AppImages that lack an internal profile with aisap, the default is 1.
+Sandboxing levels allow for a base configuration of system files to grant by default. For AppImages that lack an internal profile with aisap, the default is 3 (which will likely cause the app not to work at all, so it is reccomended to launch using the command line flags to grant access to required permissions or to create a profile).
 
 `Level 0` lacks sandboxing entirely, it does the exact same thing as simply launching the AppImage directly
 
-`Level 1` is the most lenient sandbox, it gives access to many system files but still restricts home files
+`Level 1` is the most lenient sandbox, it gives access to almost all system and device files but still restricts home files
 
-`Level 2` is intended to be the target for most GUI apps when creating a profile. It gives access to common system files, restricts device files and home files
+`Level 2` is intended to be the target for most GUI apps when creating a profile. It gives access to common system files like fonts and themes, restricts device files and home files
 
-`Level 3` is the most strict. It only grants access to very basic system files (binaries, libraries and themes). It should mainly be used for console applications
+`Level 3` is the most strict. It only grants access to very basic system files (binaries and libraries). It should mainly be used for console applications
 
 ## API:
 ### Mount
 ```
 Mount(src string, dest string, offset) error
 ```
-MountAppImage mounts the requested AppImage file path (src) to the destination directory (dest). This typically shouldn't need to be used as `NewAppImage()` will automatically mount the AppImage
+Mount mounts the requested AppImage file path (src) to the destination directory (dest). This typically shouldn't need to be used as `NewAppImage()` will automatically mount the AppImage
 ### Unmount
 ```
 Unmount(ai *AppImage) error
 ```
-UnmountAppImage (shockingly) unmounts the requested AppImage. Note that this is an AppImage struct, which is created by the `NewAppImage()` function. This function needs to be used before using `os.Exit()` or /tmp will be trashed with mounted AppImages
+Unmount (shockingly) unmounts the requested AppImage. Note that this is an AppImage struct, which is created by the `NewAppImage()` function. This function needs to be used before using `os.Exit()` or /tmp will be trashed with mounted AppImages
 ### Run
 ```
 Run(ai *AppImage, args []string) error
 ```
 Run executes the AppImage without any sandboxing. However, it still automatically creates a private home directory for the AppImage
-### Wrap
+### Sandbox
 ```
 Sandbox(ai *AppImage, args []string) error
 ```
@@ -88,7 +88,7 @@ Sandbox takes an AppImage and sandboxes it using the permissions offered.
 
 ### GetWrapArgs
 ```
-GetWrapArgs(perms *permissions.AppImagePerms) []string
+GetWrapArgs(ai *AppImage) []string
 ```
 GetWrapArgs takes aisap permissions and translates them into bwrap command line flags. This can be used on its own to see what an AppImage *would* launch with, or to manually launch it
 ### (AppImage) Thumbnail
@@ -106,11 +106,6 @@ Returns the AppImage's temporary directory. By default, it will be `/tmp/.aisapT
 (ai AppImage) MountDir() string
 ```
 Returns the AppImage's mountpoint. With aisap, all AppImage structs will be mounted on creation
-### (AppImage) RunId
-```
-(ai AppImage) RunId() string
-```
-Returns the AppImage's `run ID`. This is a random string of characters used in the mount point and sandboxed temporary directory
 ### (AppImage) AddFiles
 ```
 (ai AppImage) AddFiles(s []string)
