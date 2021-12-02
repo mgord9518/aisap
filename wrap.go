@@ -128,7 +128,6 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 			"--ro-bind-try", "/usr/lib64",        "/usr/lib64",
 	}
 
-
 	// Convert device perms to bwrap format
 	for _, v := range(perms.Devices) {
 		if len(v) < 5 || v[0:5] != "/dev/" {
@@ -255,7 +254,6 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 func expandEither(str string, generic bool) string {
 	var xdgDirs = map[string]string{}
 	if generic {
-		homed = "/home/ai"
 		xdgDirs = map[string]string{
 			"xdg-home":        homed,
 			"xdg-desktop":     homed+"/Desktop",
@@ -272,7 +270,6 @@ func expandEither(str string, generic bool) string {
 			"xdg-state":       homed+"/.local/state",
 		}
 	} else {
-		homed = xdg.Home
 		xdgDirs = map[string]string{
 			"xdg-home":        xdg.Home,
 			"xdg-desktop":     xdg.UserDirs.Desktop,
@@ -319,6 +316,10 @@ func expandEither(str string, generic bool) string {
 		} else {
 			str = strings.Replace(str, "~", xdg.Home, 1)
 		}
+	}
+
+	if generic {
+		str = strings.Replace(str, xdg.Home, homed, 1)
 	}
 
 	return str
