@@ -11,6 +11,7 @@ import (
 	"time"
 	"io"
 	"os"
+	"os/exec"
 	"os/user"
 	"strconv"
 	"strings"
@@ -20,6 +21,20 @@ import (
 	helpers     "github.com/mgord9518/aisap/helpers"
 	permissions "github.com/mgord9518/aisap/permissions"
 	imgconv     "github.com/mgord9518/imgconv"
+)
+
+// TODO: Move these into AppImage instead of keeping them as globals
+var (
+	usern string
+	homed string
+	uid   string
+
+	dataDir   string
+	rootDir = "/"
+	tempDir = "/tmp"
+	mnt      *exec.Cmd
+
+	err error
 )
 
 type AppImage struct {
@@ -35,6 +50,7 @@ type AppImage struct {
 	Version      string // Version of the AppImage
 	Offset       int    // Offset of SquashFS image
 	imageType    int    // Type of AppImage (either 1 or 2)
+	rmMountDir   bool   // Type of AppImage (either 1 or 2)
 }
 
 func NewAppImage(src string) (*AppImage, error) {
@@ -48,9 +64,12 @@ func NewAppImage(src string) (*AppImage, error) {
 	if err != nil { return nil, err }
 
 	ai.mountDir, err = helpers.MakeTemp(ai.TempDir(), ".mount_"+ai.RunId())
-	rmMountDir = true
+	ai.rmMountDir = true
 
-	err = MountAppImage(src, ai.mountDir)
+	ai.Offset, err = helpers.GetOffset(src)
+	if err != nil { return nil, err }
+
+	err = Mount(src, ai.mountDir, ai.Offset)
 	if err != nil { return nil, err }
 
 	// Return all `.desktop` files. A vadid AppImage should only have one
@@ -167,9 +186,9 @@ func (ai AppImage) SetTempDir(d string) {
 	tempDir = d
 }
 
-// Currently only works with type 2 AppImages, so return 2 as placeholder
 func (ai AppImage) Type() int {
-	return 2
+	t, _ := helpers.GetAppImageType(ai.Path)
+	return t
 }
 
 // TODO: preserve file permissions
