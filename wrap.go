@@ -1,16 +1,15 @@
 package aisap
 
 import (
-	"path/filepath"
 	"errors"
-	"strings"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 
-	helpers     "github.com/mgord9518/aisap/helpers"
-	permissions "github.com/mgord9518/aisap/permissions"
-	xdg         "github.com/adrg/xdg"
+	helpers "github.com/mgord9518/aisap/helpers"
+	xdg     "github.com/adrg/xdg"
 )
 
 // Run the AppImage with zero sandboxing
@@ -18,7 +17,7 @@ func Run(ai *AppImage, args []string) error {
 	err = setupRun(ai)
 	if err != nil { return err }
 
-	cmd := exec.Command(ai.MountDir()+"/AppRun", args...)
+	cmd := exec.Command(filepath.Join(ai.mountDir, "AppRun"), args...)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -29,7 +28,7 @@ func Run(ai *AppImage, args []string) error {
 
 // Wrap is a re-implementation of the aibwrap shell script, allowing execution of AppImages through bwrap
 func Sandbox(ai *AppImage, args []string) error {
-	bwrapArgs := GetWrapArgs(ai.Perms)
+	bwrapArgs := GetWrapArgs(ai)
 
 	if _, err := exec.LookPath("bwrap"); err != nil {
 		return errors.New("bubblewrap not found! It's required to use sandboing")
@@ -40,9 +39,9 @@ func Sandbox(ai *AppImage, args []string) error {
 
 	// Bind the fake /home and /tmp dirs
 	bwrapArgs = append([]string{
-		"--bind",   dataDir, "/home/"+usern,
-		"--bind",   ai.TempDir(), "/tmp",
-		"--setenv", "APPDIR", "/tmp/.mount_"+ai.RunId(),
+		"--bind",   ai.dataDir, homed,
+		"--bind",   ai.tempDir, "/tmp",
+		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
 	}, bwrapArgs...)
 
 	bwrapArgs = append(bwrapArgs, "--",
@@ -52,7 +51,6 @@ func Sandbox(ai *AppImage, args []string) error {
 	bwrapArgs = append(bwrapArgs, args...)
 
 	bwrap := exec.Command("bwrap", bwrapArgs...)
-
 	bwrap.Stdout = os.Stdout
 	bwrap.Stderr = os.Stderr
 	bwrap.Stdin  = os.Stdin
@@ -61,75 +59,76 @@ func Sandbox(ai *AppImage, args []string) error {
 }
 
 func setupRun(ai *AppImage) error {
-	if dataDir == "" {
-		dataDir = ai.Path+".home"
+	if ai.dataDir == "" {
+		ai.dataDir = ai.Path+".home"
 	}
 
-	if !helpers.DirExists(dataDir) {
-		err := os.MkdirAll(dataDir, 0744)
+	if !helpers.DirExists(ai.dataDir) {
+		err := os.MkdirAll(ai.dataDir, 0744)
 		if err != nil { return err }
 	}
 
-	if !helpers.DirExists(dataDir+"/.local/share/appimagekit/") {
-		err := os.MkdirAll(dataDir+"/.local/share/appimagekit/", 0744)
+	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
+		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
 		if err != nil { return err }
 	}
 
 	// Tell AppImages not to ask for integration
-	noIntegrate, err := os.Create(dataDir+"/.local/share/appimagekit/no_desktopintegration")
+	noIntegrate, err := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
 	noIntegrate.Close()
 
 	// Set required vars to correctly mount our target AppImage
 	// If sandboxed, these values will be overwritten
-	os.Setenv("TMPDIR", ai.TempDir())
-	os.Setenv("HOME",   dataDir)
-	os.Setenv("APPDIR", ai.MountDir())
+	os.Setenv("TMPDIR", ai.tempDir)
+	os.Setenv("HOME",   ai.dataDir)
+	os.Setenv("APPDIR", ai.mountDir)
 
 	return err
 }
 
-func GetWrapArgs(perms *permissions.AppImagePerms) []string {
+func GetWrapArgs(ai *AppImage) []string {
 	// Real UID, for level 1 RUID and UID are the same value
 	ruid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
 			"--setenv", "TMPDIR",              "/tmp",
 			"--setenv", "HOME",                homed,
-			"--setenv", "XDG_DESKTOP_DIR",     homed+"/Desktop",
-			"--setenv", "XDG_DOWNLOAD_DIR",    homed+"/Downloads",
-			"--setenv", "XDG_DOCUMENTS_DIR",   homed+"/Documents",
-			"--setenv", "XDG_MUSIC_DIR",       homed+"/Music",
-			"--setenv", "XDG_PICTURES_DIR",    homed+"/Pictures",
-			"--setenv", "XDG_VIDEOS_DIR",      homed+"/Videos",
-			"--setenv", "XDG_TEMPLATES_DIR",   homed+"/Templates",
-			"--setenv", "XDG_PUBLICSHARE_DIR", homed+"/Templates",
-			"--setenv", "XDG_DATA_HOME",       homed+"/.local/share",
-			"--setenv", "XDG_CONFIG_HOME",     homed+"/.config",
-			"--setenv", "XDG_CACHE_HOME",      homed+"/.cache",
+			"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(homed, "Desktop"),
+			"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(homed, "Downloads"),
+			"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(homed, "Documents"),
+			"--setenv", "XDG_MUSIC_DIR",       filepath.Join(homed, "Music"),
+			"--setenv", "XDG_PICTURES_DIR",    filepath.Join(homed, "Pictures"),
+			"--setenv", "XDG_VIDEOS_DIR",      filepath.Join(homed, "Videos"),
+			"--setenv", "XDG_TEMPLATES_DIR",   filepath.Join(homed, "Templates"),
+			"--setenv", "XDG_PUBLICSHARE_DIR", filepath.Join(homed, "Share"),
+			"--setenv", "XDG_DATA_HOME",       filepath.Join(homed, ".local/share"),
+			"--setenv", "XDG_CONFIG_HOME",     filepath.Join(homed, ".config"),
+			"--setenv", "XDG_CACHE_HOME",      filepath.Join(homed, ".cache"),
+			"--setenv", "XDG_STATE_HOME",      filepath.Join(homed, ".local/state"),
 			"--setenv", "LOGNAME",             usern,
 			"--setenv", "USER",                usern,
 			"--uid",    uid,
 			"--unshare-user-try",
 			"--die-with-parent",
 			"--new-session",
-			"--dir",         "/run/user/"+uid,
+			"--dir",         filepath.Join("/run/user", uid),
 			"--dev",         "/dev",
 			"--proc",        "/proc",
-			"--ro-bind",     "/opt",              "/opt",
-			"--ro-bind",     "/bin",              "/bin",
-			"--ro-bind",     "/sbin",             "/sbin",
-			"--ro-bind",     "/lib",              "/lib",
-			"--ro-bind-try", "/lib32",            "/lib32",
-			"--ro-bind-try", "/lib64",            "/lib64",
-			"--ro-bind",     "/usr/bin",          "/usr/bin",
-			"--ro-bind",     "/usr/sbin",         "/usr/sbin",
-			"--ro-bind",     "/usr/lib",          "/usr/lib",
-			"--ro-bind-try", "/usr/lib32",        "/usr/lib32",
-			"--ro-bind-try", "/usr/lib64",        "/usr/lib64",
+			"--ro-bind",     "/opt",       "/opt",
+			"--ro-bind",     "/bin",       "/bin",
+			"--ro-bind",     "/sbin",      "/sbin",
+			"--ro-bind",     "/lib",       "/lib",
+			"--ro-bind-try", "/lib32",     "/lib32",
+			"--ro-bind-try", "/lib64",     "/lib64",
+			"--ro-bind",     "/usr/bin",   "/usr/bin",
+			"--ro-bind",     "/usr/sbin",  "/usr/sbin",
+			"--ro-bind",     "/usr/lib",   "/usr/lib",
+			"--ro-bind-try", "/usr/lib32", "/usr/lib32",
+			"--ro-bind-try", "/usr/lib64", "/usr/lib64",
 	}
 
 	// Convert device perms to bwrap format
-	for _, v := range(perms.Devices) {
+	for _, v := range(ai.Perms.Devices) {
 		if len(v) < 5 || v[0:5] != "/dev/" {
 			v = filepath.Join("/dev", v)
 		}
@@ -138,7 +137,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	}
 
 	// Convert requested dirs to brap flags
-	for _, val := range(perms.Files) {
+	for _, val := range(ai.Perms.Files) {
 		s   := strings.Split(val, ":")
 		ex  := s[len(s)-1]
 		if ex == "rw" {
@@ -149,7 +148,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	}
 
 	// Level 1 is minimal sandboxing, grants access to most system files, all devices and only really attempts to isolate home files
-	if perms.Level == 1 {
+	if ai.Perms.Level == 1 {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
 			"--ro-bind",	 "/sys", "/sys",
@@ -163,7 +162,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	// Level 2 grants access to fewer system files, and all themes
 	// Likely to add more files here for compatability.
 	// This should be the typical level for created profiles
-	} else if perms.Level == 2 {
+	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
 			"--ro-bind",     "/sys",                    "/sys",
 			"--ro-bind-try", "/etc/fonts",              "/etc/fonts",
@@ -194,7 +193,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 		// ...but sometimes it does
 		"x11": {
 			"--ro-bind",	 xAuthority,                      homed+"/.Xauthority",
-			"--ro-bind",	 tempDir+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
+			"--ro-bind",	 sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
 			"--ro-bind-try", "/usr/share/X11",                "/usr/share/X11",
 			"--setenv",      "XAUTHORITY",                    homed+"/.Xauthority",
 			"--setenv",      "DISPLAY",                       ":"+xDisplay,
@@ -205,7 +204,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	}
 
 	for socket, _ := range(sockets) {
-		_, present := helpers.Contains(perms.Sockets, socket)
+		_, present := helpers.Contains(ai.Perms.Sockets, socket)
 		if present {
 			cmdArgs = append(cmdArgs, sockets[socket]...)
 		}
@@ -221,7 +220,7 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	}
 
 	for s, _ := range unshares {
-		_, present := helpers.Contains(perms.Share, s)
+		_, present := helpers.Contains(ai.Perms.Share, s)
 		if present {
 			// Single exception, network share requires `/etc/resolv.conf`
 			if s == "network" {
@@ -235,14 +234,14 @@ func GetWrapArgs(perms *permissions.AppImagePerms) []string {
 	// Give access to all files needed to run device
 	var devices = map[string][]string {
 		"dri": {
-			"--ro-bind", "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
-			"--dev-bind-try", "/dev/nvidiactl", "/dev/nvidiactl",
-			"--dev-bind-try", "/dev/nvidia0",   "/dev/nvidia0",
+			"--ro-bind",      "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
+			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
+			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
 		},
 	}
 
 	for device, _ := range(devices) {
-		_, present := helpers.Contains(perms.Devices, device)
+		_, present := helpers.Contains(ai.Perms.Devices, device)
 		if present {
 			cmdArgs = append(cmdArgs, devices[device]...)
 		}
@@ -256,18 +255,18 @@ func expandEither(str string, generic bool) string {
 	if generic {
 		xdgDirs = map[string]string{
 			"xdg-home":        homed,
-			"xdg-desktop":     homed+"/Desktop",
-			"xdg-download":    homed+"/Downloads",
-			"xdg-documents":   homed+"/Documents",
-			"xdg-music":       homed+"/Music",
-			"xdg-pictures":    homed+"/Pictures",
-			"xdg-videos":      homed+"/Videos",
-			"xdg-templates":   homed+"/Templaates",
-			"xdg-publicshare": homed+"/Share",
-			"xdg-config":      homed+"/.config",
-			"xdg-cache":       homed+"/.cache",
-			"xdg-data":        homed+"/.local/share",
-			"xdg-state":       homed+"/.local/state",
+			"xdg-desktop":     filepath.Join(homed, "Desktop"),
+			"xdg-download":    filepath.Join(homed, "Downloads"),
+			"xdg-documents":   filepath.Join(homed, "Documents"),
+			"xdg-music":       filepath.Join(homed, "Music"),
+			"xdg-pictures":    filepath.Join(homed, "Pictures"),
+			"xdg-videos":      filepath.Join(homed, "Videos"),
+			"xdg-templates":   filepath.Join(homed, "Templates"),
+			"xdg-publicshare": filepath.Join(homed, "Share"),
+			"xdg-config":      filepath.Join(homed, ".config"),
+			"xdg-cache":       filepath.Join(homed, ".cache"),
+			"xdg-data":        filepath.Join(homed, ".local/share"),
+			"xdg-state":       filepath.Join(homed, ".local/state"),
 		}
 	} else {
 		xdgDirs = map[string]string{
