@@ -7,5 +7,5 @@ Exec=aisap
 Icon=io.github.mgord9518.aisap
 Terminal=true
 Categories=System;Security;
-X-AppImage-Version=0.1
+X-AppImage-Version=
 X-AppImage-Sandbox-Level=0
