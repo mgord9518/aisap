@@ -66,11 +66,11 @@ func loadPerms(p permissions.AppImagePerms, f *ini.File) (permissions.AppImagePe
 	err = nil
 
 	// Get permissions from entry keys
-	level       := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Level").Value()
-	filePerms   := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Files").Value()
-	devicePerms := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Devices").Value()
-	socketPerms := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Sockets").Value()
-	sharePerms  := f.Section("Desktop Entry").Key("X-AppImage-Sandbox-Share").Value()
+	level       := f.Section("Required Permissions").Key("Level").Value()
+	filePerms   := f.Section("Required Permissions").Key("Files").Value()
+	devicePerms := f.Section("Required Permissions").Key("Devices").Value()
+	socketPerms := f.Section("Required Permissions").Key("Sockets").Value()
+	sharePerms  := f.Section("Required Permissions").Key("Share").Value()
 
 	// If the AppImage desktop entry has permission flags, overwrite the
 	// profile flags
@@ -85,7 +85,7 @@ func loadPerms(p permissions.AppImagePerms, f *ini.File) (permissions.AppImagePe
 		}
 	} else {
 		p.Level = -1
-		err = errors.New("profile does not have required flag `X-AppImage-Sandbox-Level`")
+		err = errors.New("profile does not have required flag `Level` under section [Required Permissions]")
 	}
 	if len(filePerms) > 0 {
 		p.Files = helpers.DesktopSlice(filePerms)
