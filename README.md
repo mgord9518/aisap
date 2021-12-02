@@ -23,7 +23,7 @@ X-AppImage-Sandbox-Devices
 X-AppImage-Sandbox-Sockets
 X-AppImage-Sandbox-Share
 ```
-These flags can be included in the AppImage's internal desktop file [(a simple example)](example/profile.desktop), another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
+These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
 
 The ultimate goal is to have as many popular AppImages in [aisap's internal library](profiles/README.md) as possible, while smaller, less known ones may request their own permssions per the developer. Running programs sandboxed should mostly be seamless and feel native with the system
 
@@ -67,45 +67,35 @@ Sandboxing levels allow for a base configuration of system files to grant by def
 ## API:
 ### Mount
 ```
-MountAppImage(src string, dest string) error
+Mount(src string, dest string, offset) error
 ```
 MountAppImage mounts the requested AppImage file path (src) to the destination directory (dest). This typically shouldn't need to be used as `NewAppImage()` will automatically mount the AppImage
 ### Unmount
 ```
-UnmountAppImage(ai *AppImage) error
+Unmount(ai *AppImage) error
 ```
 UnmountAppImage (shockingly) unmounts the requested AppImage. Note that this is an AppImage struct, which is created by the `NewAppImage()` function. This function needs to be used before using `os.Exit()` or /tmp will be trashed with mounted AppImages
-### GetElfSize
-```
-GetElfSize(src string) (int, error)
-```
-GetElfSize calculates the byte size of an ELF executable, returning its size. Returns error if not successful
-### GetAppImageType
-```
-GetAppImageType(src string) (string, error)
-```
-GetAppImageType finds what type of AppImage a file is (if any), returning either `1` for ISO disk image AppImage, or `2` for type 2 SquashFS AppImage. Returns error if unsuccessful
 ### Run
 ```
 Run(ai *AppImage, args []string) error
 ```
-Run executes the AppImage without any sandboxing. However, it still automatically creates a private home directory for the AppImage.
+Run executes the AppImage without any sandboxing. However, it still automatically creates a private home directory for the AppImage
 ### Wrap
 ```
-Wrap(ai *AppImage, perms *profiles.AppImagePerms, args []string) error
+Sandbox(ai *AppImage, args []string) error
 ```
-Wrap takes an AppImage and sandboxes it using the permissions offered. Returns error if not successful
+Sandbox takes an AppImage and sandboxes it using the permissions offered.
 
 ### GetWrapArgs
 ```
-GetWrapArgs(perms *profiles.AppImagePerms) []string
+GetWrapArgs(perms *permissions.AppImagePerms) []string
 ```
-GetWrapArgs takes aisap permissions and translates them into bwrap command line flags
+GetWrapArgs takes aisap permissions and translates them into bwrap command line flags. This can be used on its own to see what an AppImage *would* launch with, or to manually launch it
 ### (AppImage) Thumbnail
 ```
 (ai AppImage) Thumbnail() (io.Reader, error)
 ```
-AppImage.Thumbnail() attempts to extract a thumbnail from the AppImage if available. If provided in a format other than PNG (eg: SVG, XPM) it attempts to convert it to PNG before serving
+Attempts to extract a thumbnail from the AppImage if available. If provided in a format other than PNG (eg: SVG, XPM) it attempts to convert it to PNG before serving
 ### (AppImage) TempDir
 ```
 (ai AppImage) TempDir() string
@@ -120,7 +110,7 @@ Returns the AppImage's mountpoint. With aisap, all AppImage structs will be moun
 ```
 (ai AppImage) RunId() string
 ```
-Returns the AppImage's run ID. This is a random string of characters used in the mount point and sandboxed temporary directory
+Returns the AppImage's `run ID`. This is a random string of characters used in the mount point and sandboxed temporary directory
 ### (AppImage) AddFiles
 ```
 (ai AppImage) AddFiles(s []string)
@@ -130,7 +120,7 @@ Give the sandbox access to specified files and directories. Every file must eith
 ```
 (ai AppImage) AddDevices(s []string)
 ```
-Allow the sandbox to access more device files
+Allow the sandbox to access more device files (eg: dri, input)
 ### (AppImage) AddSockets
 ```
 (ai AppImage) AddSockets(s []string)
@@ -145,6 +135,7 @@ Share other parts of your system with the sandbox (eg: network)
 ```
 (ai AppImage) SetPerms(entryFile string) error
 ```
+Set permissions for an AppImage using a desktop entry containing permissions flags
 ### (AppImage) SetRootDir
 ```
 (ai AppImage) SetRootDir(d string)
@@ -164,7 +155,7 @@ Change the temporary directory of the AppImage sandbox. This is the sandbox's `/
 ```
 (ai AppImage) Type() int
 ```
-Return the type of AppImage
+Return the type of AppImage. Only supports type 2 currently
 ### (AppImage) ExtractFile
 ```
 (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
