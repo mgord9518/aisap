@@ -28,12 +28,11 @@ var (
 	homed string
 	uid   string
 
-	dataDir   string
-	rootDir = "/"
-	tempDir = "/tmp"
+	sysTemp   string
 	mnt      *exec.Cmd
 
-	err error
+	err     error
+	present bool
 )
 
 type AppImage struct {
@@ -52,6 +51,13 @@ type AppImage struct {
 	rmMountDir   bool   // Type of AppImage (either 1 or 2)
 }
 
+func init() {
+	sysTemp, present = os.LookupEnv("TMPDIR")
+	if !present {
+		sysTemp = "/tmp"
+	}
+}
+
 func NewAppImage(src string) (*AppImage, error) {
 	var err error
 
@@ -59,10 +65,10 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Path = src
 
 	ai.runId = helpers.RandString(int(time.Now().UTC().UnixNano()), 8)
-	ai.tempDir, err = helpers.MakeTemp("/tmp", ".aisapTemp_"+ai.RunId())
+	ai.tempDir, err = helpers.MakeTemp(sysTemp, ".aisapTemp_"+ai.runId)
 	if err != nil { return nil, err }
 
-	ai.mountDir, err = helpers.MakeTemp(ai.TempDir(), ".mount_"+ai.RunId())
+	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_"+ai.runId)
 	ai.rmMountDir = true
 
 	ai.Offset, err = helpers.GetOffset(src)
@@ -74,13 +80,12 @@ func NewAppImage(src string) (*AppImage, error) {
 	// Return all `.desktop` files. A vadid AppImage should only have one
 	fp, err := filepath.Glob(ai.mountDir + "/*.desktop")
 	if err != nil { return nil, err }
-
 	e, err := ioutil.ReadFile(fp[0])
 	entry, _ := ini.Load(e)
 
-	ai.Desktop  = entry
-	ai.Name     = entry.Section("Desktop Entry").Key("Name").Value()
-	ai.Version  = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
+	ai.Desktop = entry
+	ai.Name    = entry.Section("Desktop Entry").Key("Name").Value()
+	ai.Version = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
 
 	if ai.Version == "" {
 		ai.Version = "1.0"
@@ -89,8 +94,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Perms, _ = getPermsFromAppImage(ai)
 	ai.SetLevel(ai.Perms.Level)
 
-
-    return ai, err
+	return ai, err
 }
 
 // Return a reader for the `.DirIcon` file of the AppImage, converting it to
@@ -160,20 +164,21 @@ func (ai AppImage) AddShare(s []string) {
 func (ai AppImage) SetPerms(entryFile string) error {
 	nPerms, err := getPermsFromEntry(entryFile)
 	*ai.Perms = *nPerms
+	updateHome(ai.Perms.Level)
 
 	return err
 }
 
 func (ai AppImage) SetRootDir(d string) {
-	rootDir = d
+	ai.rootDir = d
 }
 
 func (ai AppImage) SetDataDir(d string) {
-	dataDir = d
+	ai.dataDir = d
 }
 
 func (ai AppImage) SetTempDir(d string) {
-	tempDir = d
+	ai.tempDir = d
 }
 
 func (ai AppImage) SetLevel(l int) error {
@@ -212,7 +217,7 @@ func (ai AppImage) Type() int {
 
 // TODO: preserve file permissions
 func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
-	path = filepath.Join(ai.MountDir(), path)
+	path = filepath.Join(ai.mountDir, path)
 
 	// Remove file if it already exists
 	os.Remove(filepath.Join(dest))
