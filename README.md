@@ -16,7 +16,7 @@ aisap is a Golang library intended to be used in other projects, but provides an
 
 ## Bare bones basics
 
-In order for aisap to sandbox an AppImage, it requires a basic profile, which is a desktop entry (INI format) containing at least one of the following flags under the `[Required Permissions]` section:
+In order for aisap to sandbox an AppImage, it requires a basic profile, which is a desktop entry (INI format) containing at least one of the following flags under the `[X-AppImage-Required-Permissions]` section:
 ```
 Files
 Devices
