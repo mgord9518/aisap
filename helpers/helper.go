@@ -7,13 +7,13 @@ import (
     "os"
 )
 
-
-func DesktopSlice(str string) []string {
+// Converts a multi-item INI value into a slice
+// eg: `foo;bar;` becomes []string{ "foo", "bar" }
+func SplitKey(str string) []string {
     str = strings.ReplaceAll(str, "；", ";")
     f := func(c rune) bool { return c == ';' }
 
-    permissionSlice := strings.FieldsFunc(str, f)
-    return permissionSlice
+    return strings.FieldsFunc(str, f)
 }
 
 func Contains(slice []string, str string) (int, bool) {
