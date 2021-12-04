@@ -21,7 +21,6 @@ In order for aisap to sandbox an AppImage, it requires a basic profile, which is
 Files
 Devices
 Sockets
-Share
 ```
 These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
 
@@ -46,7 +45,6 @@ It also includes several command line flags:
   --example  Show usage examples
   --device   Allow sandbox to access additional device files
   --file     Give sandbox access to a file or directory
-  --share    Add share to sandbox (eg: network)
   --socket   Allow sandbox to access additional sockets
 
   --level    Change base level of sandbox (min: 0, max: 3)
@@ -121,11 +119,6 @@ Allow the sandbox to access more device files (eg: dri, input)
 (ai AppImage) AddSockets(s []string)
 ```
 Share sockets with the sandbox (eg: x11, pulseaudio)
-### (AppImage) AddShare
-```
-(ai AppImage) AddShare(s []string)
-```
-Share other parts of your system with the sandbox (eg: network)
 ### (AppImage) SetPerms
 ```
 (ai AppImage) SetPerms(entryFile string) error
