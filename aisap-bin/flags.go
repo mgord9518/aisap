@@ -15,7 +15,7 @@ var (
 	r = "\033[31m" // Red
 	z = "\033[0m"  // Reset
 
-	ver = "000005"
+	ver = "000009"
 )
 
 var (
@@ -35,7 +35,6 @@ var (
 	file   arrayFlags
 	device arrayFlags
 	socket arrayFlags
-	share  arrayFlags
 )
 
 // Initialization of global variables and help menu
@@ -46,7 +45,6 @@ func init() {
     flag.Var(&file,   "file",   "")
     flag.Var(&device, "device", "")
     flag.Var(&socket, "socket", "")
-    flag.Var(&share,  "share",  "")
 
 	// Prefer AppImage-provided variable `ARGV0` if present
     if argv0, present = os.LookupEnv("ARGV0"); !present {
@@ -75,7 +73,6 @@ func init() {
 		fmt.Printf("%s  --example  %sShow usage examples\n", g, z)
         fmt.Printf("%s  --file     %sAdd file to sandbox\n", g, z)
         fmt.Printf("%s  --socket   %sAllow access to additional sockets\n", g, z)
-		fmt.Printf("%s  --share    %sAdd share to sandbox (eg: network)\n", g, z)
         fmt.Printf("%s  --device   %sAllow access to additional /dev files\n", g ,z)
         fmt.Printf("%s  --level    %sChange the base security level of the sandbox (min: 0, max: 3)\n", g, z)
         fmt.Printf("%s  --profile  %sLook for permissions in this entry instead of the AppImage\n", g, z)
