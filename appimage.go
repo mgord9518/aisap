@@ -157,10 +157,6 @@ func (ai AppImage) AddSockets(s []string) {
 	ai.Perms.Sockets = append(ai.Perms.Sockets, s...)
 }
 
-func (ai AppImage) AddShare(s []string) {
-	ai.Perms.Share = append(ai.Perms.Share, s...)
-}
-
 func (ai AppImage) SetPerms(entryFile string) error {
 	nPerms, err := getPermsFromEntry(entryFile)
 	*ai.Perms = *nPerms
