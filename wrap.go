@@ -108,7 +108,6 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--setenv", "LOGNAME",             usern,
 			"--setenv", "USER",                usern,
 			"--uid",    uid,
-			"--unshare-user-try",
 			"--die-with-parent",
 			"--new-session",
 			"--dir",         filepath.Join("/run/user", uid),
@@ -166,8 +165,6 @@ func GetWrapArgs(ai *AppImage) []string {
 		cmdArgs = append(cmdArgs, []string{
 			"--ro-bind",     "/sys",                    "/sys",
 			"--ro-bind-try", "/etc/fonts",              "/etc/fonts",
-			"--ro-bind-try", "/etc/ssl",                "/etc/ssl",
-			"--ro-bind-try", "/etc/ca-certificates",    "/etc/ca-certificates",
 			"--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
 			"--ro-bind-try", "/usr/share/fonts",        "/usr/share/fonts",
 			"--ro-bind-try", "/usr/share/icons",        "/usr/share/icons",
@@ -187,8 +184,17 @@ func GetWrapArgs(ai *AppImage) []string {
 	xAuthority := os.Getenv("XAUTHORITY")
 	xDisplay := strings.ReplaceAll(os.Getenv("DISPLAY"), ":", "")
 
-	// Used if this socket is enabled
+	// Args if socket is enabled
 	var sockets = map[string][]string {
+		"network": {
+				"--share-net",
+				"--ro-bind-try", "/etc/ca-certificates", "/etc/ca-certificates",
+				"--ro-bind",     "/etc/resolv.conf",     "/etc/resolv.conf",
+				"--ro-bind-try", "/etc/ssl",             "/etc/ssl",
+		},
+		"pulseaudio": {
+			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+		},
 		// For some reason sometimes it doesn't work when binding X0 to another socket
 		// ...but sometimes it does
 		"x11": {
@@ -198,19 +204,10 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--setenv",      "XAUTHORITY",                    homed+"/.Xauthority",
 			"--setenv",      "DISPLAY",                       ":"+xDisplay,
 		},
-		"pulseaudio": {
-			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
-		},
 	}
 
-	for socket, _ := range(sockets) {
-		_, present := helpers.Contains(ai.Perms.Sockets, socket)
-		if present {
-			cmdArgs = append(cmdArgs, sockets[socket]...)
-		}
-	}
-
-	var unshares = map[string]string {
+	// Args to disable sockets
+	var unsocks = map[string]string {
 		"user":    "--unshare-user-try",
 		"ipc":     "--unshare-ipc",
 		"pid":     "--unshare-pid",
@@ -219,15 +216,12 @@ func GetWrapArgs(ai *AppImage) []string {
 		"cgroup":  "--unshare-cgroup-try",
 	}
 
-	for s, _ := range unshares {
-		_, present := helpers.Contains(ai.Perms.Share, s)
+	for s, _ := range unsocks {
+		_, present := helpers.Contains(ai.Perms.Sockets, s)
 		if present {
-			// Single exception, network share requires `/etc/resolv.conf`
-			if s == "network" {
-				cmdArgs = append(cmdArgs, "--share-net", "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf")
-			}
+			cmdArgs = append(cmdArgs, sockets[s]...)
 		} else {
-			cmdArgs = append(cmdArgs, unshares[s])
+			cmdArgs = append(cmdArgs, unsocks[s])
 		}
 	}
 
