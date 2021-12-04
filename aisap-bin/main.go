@@ -67,7 +67,6 @@ func main() {
 	ai.AddFiles(file)
 	ai.AddDevices(device)
 	ai.AddSockets(socket)
-	ai.AddShare(share)
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
@@ -123,12 +122,6 @@ func main() {
 		if len(ai.Perms.Sockets) > 0 {
 			fmt.Printf("%sSockets:\n", y)
 			for _, v := range(ai.Perms.Sockets) {
-				fmt.Printf(" %s>%s %s\n", g, z, v)
-			}
-		}
-		if len(ai.Perms.Share) > 0 {
-			fmt.Printf("%sShare:\n", y)
-			for _, v := range(ai.Perms.Share) {
 				fmt.Printf(" %s>%s %s\n", g, z, v)
 			}
 		}
