@@ -61,6 +61,10 @@ func init() {
 func NewAppImage(src string) (*AppImage, error) {
 	var err error
 
+	if !helpers.FileExists(src) {
+		return nil, errors.New("file not found!")
+	}
+
 	ai := &AppImage{}
 	ai.Path = src
 
