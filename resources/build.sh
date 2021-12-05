@@ -3,32 +3,32 @@
 
 [ -z "$ARCH" ] && ARCH=$(uname -m)
 
-if command -v 'appimagetool.AppImage'; then
+if command -v 'mkappimage.AppImage'; then
 	aitool() {
-		appimagetool.AppImage "$@"
+		'mkappimage.AppImage' "$@"
 	}
-elif command -v "appimagetool-$ARCH.AppImage"; then
+elif command -v "mkappimage-$ARCH.AppImage"; then
 	aitool() {
-		"appimagetool-$ARCH.AppImage" "$@"
+		"mkappimage-$ARCH.AppImage" "$@"
 	}
-elif command -v "appimagetool"; then
+elif command -v "mkappimage-649-$ARCH.AppImage"; then
 	aitool() {
-		"appimagetool" "$@"
+		"mkappimage-649-$ARCH.AppImage" "$@"
+	}
+elif command -v 'mkappimage'; then
+	aitool() {
+		'mkappimage' "$@"
+	}
+elif command -v 'appimagetool'; then
+	aitool() {
+		'appimagetool' "$@"
 	}
 else
 	echo 'Failed to locate appimagetool in $PATH! Unable to build'
 	exit 1
 fi
 
-if command -v 'go'; then
-	gocc() {
-		go "$@"
-	}
-elif command -v 'gccgo'; then
-	gocc() {
-		go "$@"
-	}
-else
+if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
 	exit 1
 fi
@@ -43,8 +43,13 @@ mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/icons/hicolor/scalable/apps'
 
 # Download and compile the binary into the AppDir
-GOBIN="$PWD/AppDir/usr/bin" gocc install -ldflags '-s -w' \
+GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
 	"$aisapUrl/aisap-bin@latest"
+
+if [ $? -ne 0 ]; then
+	echo "Failed to build!"
+	exit 1
+fi
 
 # Download icon
 wget "$aisapRawUrl/resources/aisap.svg" -O \
@@ -57,7 +62,7 @@ wget "$aisapRawUrl/resources/aisap.desktop" -O 'AppDir/io.github.mgord9518.aisap
 wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 	'AppDir/usr/share/metainfo/io.github.mgord9518.aisap.appdata.xml'
 
-# Download squashfuse
+# Download squashfuse binary
 wget "$aisapRawUrl/resources/squashfuse" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
 
@@ -66,4 +71,7 @@ ln -s './usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg' 'A
 ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 
 # Build the AppImage
-ARCH="$ARCH" aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-$ARCH.AppImage.zsync" AppDir
+ARCH="$ARCH" VERSION=$('AppDir/usr/bin/aisap-bin' --version) \
+	aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-$ARCH.AppImage.zsync" AppDir
+mv 'aisap-'*'.AppImage' "aisap-$ARCH.AppImage"
+mv 'aisap-'*'.AppImage.zsync' "aisap-$ARCH.AppImage.zsync"
