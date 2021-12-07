@@ -71,6 +71,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.runId = helpers.RandString(int(time.Now().UTC().UnixNano()), 8)
 	ai.tempDir, err = helpers.MakeTemp(sysTemp, ".aisapTemp_"+ai.runId)
 	if err != nil { return nil, err }
+	ai.rootDir = "/"
 
 	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_"+ai.runId)
 	ai.rmMountDir = true
@@ -90,6 +91,8 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Desktop = entry
 	ai.Name    = entry.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
+
+	// Set default directory paths
 
 	if ai.Version == "" {
 		ai.Version = "1.0"
@@ -144,8 +147,7 @@ func (ai AppImage) AddFiles(s []string) {
 		// Get the last 3 chars of the file entry
 		ex := s[i][len(s[i])-3:]
 
-		if len(strings.Split(s[i], ":")) < 2 ||
-		ex != ":ro" && ex != ":rw" {
+		if len(strings.Split(s[i], ":")) < 2 || ex != ":ro" && ex != ":rw" {
 			s[i] = s[i]+":ro"
 		}
 	}
@@ -155,6 +157,12 @@ func (ai AppImage) AddFiles(s []string) {
 
 func (ai AppImage) AddDevices(s []string) {
 	ai.Perms.Devices = append(ai.Perms.Devices, s...)
+
+	for i := range(s) {
+		if len(s[i]) > 5 && s[i][0:5] == "/dev/" {
+			s[i] = strings.Replace(s[i], "/dev/", "", 1)
+		}
+	}
 }
 
 func (ai AppImage) AddSockets(s []string) {
@@ -193,6 +201,7 @@ func (ai AppImage) SetLevel(l int) error {
 	return nil
 }
 
+// Change the home directory based on what sandboxing level is used
 func updateHome(l int) error {
 	if l == 1 || l == 0 {
 		usr, _ := user.Current()
@@ -215,7 +224,6 @@ func (ai AppImage) Type() int {
 	return t
 }
 
-// TODO: preserve file permissions
 func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
 	path = filepath.Join(ai.mountDir, path)
 
@@ -233,8 +241,14 @@ func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) e
 		defer inF.Close()
 		if err != nil { return err }
 
+		info, err := os.Stat(path)
+		perms := info.Mode().Perm()
+
 		outF, err := os.Create(dest)
 		defer outF.Close()
+		if err != nil { return err }
+
+		err = os.Chmod(dest, perms)
 		if err != nil { return err }
 
 		_, err = io.Copy(outF, inF)
