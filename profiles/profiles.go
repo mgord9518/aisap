@@ -13,14 +13,12 @@ var Profiles = map[string]permissions.AppImagePerms{
 		"badlion client": {
 			Level: 1,
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		"deemix-gui": {
 			Level: 2,
 			Files:   []string{ "xdg-music:rw" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		// Dolphin could be level 2 but sound breaks, need to find a solution to that
 		"dolphin emulator": {
@@ -33,8 +31,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Level: 2,
 			Files:   []string{ "xdg-download:rw" },
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		"gnu image manipulation program": {
 			Level: 1,
@@ -54,12 +51,16 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
 		},
+		"texstudio": {
+			Level: 2,
+			Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
+			Sockets: []string{ "x11", "wayland", },
+		},
 		"librewolf": {
 			Level: 2,
 			Files:   []string{ "xdg-download:rw" },
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		// Fails to find SSL certs, need to further investigate to increase the
 		// sandbox
@@ -67,8 +68,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Level: 1,
 			Files:   []string{ "xdg-download:rw" },
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		// Minecraft requires access to keyring in order to launch correctly,
 		// until a fix is found Minecraft will have to be run without a sandbox
@@ -84,31 +84,33 @@ var Profiles = map[string]permissions.AppImagePerms{
 		// Link to device not tested
 		"signal": {
 			Level: 2,
+			Sockets: []string{ "x11", "wayland", "network" },
+		},
+		// Untested with real equipment but launches
+		// TODO: Properly test Subsurface
+		"subsurface": {
+			Level: 1,
+			Files:   []string{ "xdg-documents:ro" },
 			Sockets: []string{ "x11", "wayland" },
-			Share:   []string{ "network" },
 		},
 		"supertuxkart": {
 			Level: 2,
 			Devices: []string{ "dri", "input" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		"supertux 2": {
 			Level: 2,
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland", "pulseaudio" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
 		"powder toy": {
 			Level: 2,
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "network" },
 		},
 		"visual studio code": {
 			Level: 2,
 			Files:   []string{ "xdg-documents:rw" },
-			Sockets: []string{ "x11", "wayland" },
-			Share:   []string{ "network" },
+			Sockets: []string{ "x11", "wayland", "network" },
 		},
 	}
