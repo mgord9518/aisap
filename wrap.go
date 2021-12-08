@@ -26,7 +26,7 @@ func Run(ai *AppImage, args []string) error {
 	return cmd.Run()
 }
 
-// Wrap is a re-implementation of the aibwrap shell script, allowing execution of AppImages through bwrap
+// Wrap allows execution of AppImages through bwrap
 func Sandbox(ai *AppImage, args []string) error {
 	bwrapArgs := GetWrapArgs(ai)
 
@@ -37,7 +37,7 @@ func Sandbox(ai *AppImage, args []string) error {
 	err = setupRun(ai)
 	if err != nil { return err }
 
-	// Bind the fake /home and /tmp dirs
+	// Bind the fake `~` and `/tmp` dirs
 	bwrapArgs = append([]string{
 		"--bind",   ai.dataDir, homed,
 		"--bind",   ai.tempDir, "/tmp",
@@ -113,17 +113,17 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--dir",         filepath.Join("/run/user", uid),
 			"--dev",         "/dev",
 			"--proc",        "/proc",
-			"--ro-bind",     "/opt",       "/opt",
-			"--ro-bind",     "/bin",       "/bin",
-			"--ro-bind",     "/sbin",      "/sbin",
-			"--ro-bind",     "/lib",       "/lib",
-			"--ro-bind-try", "/lib32",     "/lib32",
-			"--ro-bind-try", "/lib64",     "/lib64",
-			"--ro-bind",     "/usr/bin",   "/usr/bin",
-			"--ro-bind",     "/usr/sbin",  "/usr/sbin",
-			"--ro-bind",     "/usr/lib",   "/usr/lib",
-			"--ro-bind-try", "/usr/lib32", "/usr/lib32",
-			"--ro-bind-try", "/usr/lib64", "/usr/lib64",
+			"--ro-bind",     filepath.Join(ai.rootDir, "opt"),       "/opt",
+			"--ro-bind",     filepath.Join(ai.rootDir, "bin"),       "/bin",
+			"--ro-bind",     filepath.Join(ai.rootDir, "sbin"),      "/sbin",
+			"--ro-bind",     filepath.Join(ai.rootDir, "lib"),       "/lib",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "lib32"),     "/lib32",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "lib64"),     "/lib64",
+			"--ro-bind",     filepath.Join(ai.rootDir, "usr/bin"),   "/usr/bin",
+			"--ro-bind",     filepath.Join(ai.rootDir, "usr/sbin"),  "/usr/sbin",
+			"--ro-bind",     filepath.Join(ai.rootDir, "usr/lib"),   "/usr/lib",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/lib32"), "/usr/lib32",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/lib64"), "/usr/lib64",
 	}
 
 	// Convert device perms to bwrap format
@@ -135,7 +135,7 @@ func GetWrapArgs(ai *AppImage) []string {
 		cmdArgs = append(cmdArgs, "--dev-bind-try", v, v)
 	}
 
-	// Convert requested dirs to brap flags
+	// Convert requested files/ dirs to brap flags
 	for _, val := range(ai.Perms.Files) {
 		s   := strings.Split(val, ":")
 		ex  := s[len(s)-1]
@@ -150,9 +150,9 @@ func GetWrapArgs(ai *AppImage) []string {
 	if ai.Perms.Level == 1 {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
-			"--ro-bind",	 "/sys", "/sys",
-			"--ro-bind",	 filepath.Join(ai.rootDir, "usr"),       "/usr",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "etc"),       "/etc",
+			"--ro-bind",     "/sys", "/sys",
+			"--ro-bind",     filepath.Join(ai.rootDir, "usr"), "/usr",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "etc"), "/etc",
 			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"),         filepath.Join(homed, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
@@ -201,17 +201,13 @@ func GetWrapArgs(ai *AppImage) []string {
 		"uts": {},
 		// TODO: test if Wayland works
 		"wayland": {
-			"--ro-bind",	 xAuthority,                      homed+"/.Xauthority",
-			"--ro-bind",	 sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
-			"--ro-bind-try", "/usr/share/X11",                "/usr/share/X11",
-			"--setenv",      "XAUTHORITY",                    homed+"/.Xauthority",
-			"--setenv",      "DISPLAY",                       ":"+xDisplay,
+			"--ro-bind-try", "/run/user/"+ruid+"/wayland-0", "/run/user/"+ruid+"/wayland-0",
 		},
 		// For some reason sometimes it doesn't work when binding X0 to another socket
 		// ...but sometimes it does
 		"x11": {
-			"--ro-bind",	 xAuthority,                      homed+"/.Xauthority",
-			"--ro-bind",	 sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
+			"--ro-bind-try", xAuthority,                      homed+"/.Xauthority",
+			"--ro-bind-try", sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
 			"--ro-bind-try", "/usr/share/X11",                "/usr/share/X11",
 			"--setenv",      "XAUTHORITY",                    homed+"/.Xauthority",
 			"--setenv",      "DISPLAY",                       ":"+xDisplay,
@@ -259,42 +255,8 @@ func GetWrapArgs(ai *AppImage) []string {
 	return cmdArgs
 }
 
-func expandEither(str string, generic bool) string {
-	var xdgDirs = map[string]string{}
-	if generic {
-		xdgDirs = map[string]string{
-			"xdg-home":        homed,
-			"xdg-desktop":     filepath.Join(homed, "Desktop"),
-			"xdg-download":    filepath.Join(homed, "Downloads"),
-			"xdg-documents":   filepath.Join(homed, "Documents"),
-			"xdg-music":       filepath.Join(homed, "Music"),
-			"xdg-pictures":    filepath.Join(homed, "Pictures"),
-			"xdg-videos":      filepath.Join(homed, "Videos"),
-			"xdg-templates":   filepath.Join(homed, "Templates"),
-			"xdg-publicshare": filepath.Join(homed, "Share"),
-			"xdg-config":      filepath.Join(homed, ".config"),
-			"xdg-cache":       filepath.Join(homed, ".cache"),
-			"xdg-data":        filepath.Join(homed, ".local/share"),
-			"xdg-state":       filepath.Join(homed, ".local/state"),
-		}
-	} else {
-		xdgDirs = map[string]string{
-			"xdg-home":        xdg.Home,
-			"xdg-desktop":     xdg.UserDirs.Desktop,
-			"xdg-download":    xdg.UserDirs.Download,
-			"xdg-documents":   xdg.UserDirs.Documents,
-			"xdg-music":       xdg.UserDirs.Music,
-			"xdg-pictures":    xdg.UserDirs.Pictures,
-			"xdg-videos":      xdg.UserDirs.Videos,
-			"xdg-templates":   xdg.UserDirs.Templates,
-			"xdg-publicshare": xdg.UserDirs.PublicShare,
-			"xdg-config":      xdg.ConfigHome,
-			"xdg-cache":       xdg.CacheHome,
-			"xdg-data":        xdg.DataHome,
-			"xdg-state":       xdg.StateHome,
-		}
-	}
-
+// Expands XDG formatted directories into full paths depending on the input map
+func expandEither(str string, xdgDirs map[string]string) string {
 	for key, val := range xdgDirs {
 		// If length of key bigger than requested directory or not equal to it
 		// continue because there is no reason to look at it further
@@ -316,19 +278,14 @@ func expandEither(str string, generic bool) string {
 	// Resolve `../` and clean up extra slashes if they exist
 	str = filepath.Clean(dir)
 
-	// Replace tilde with the true home directory if not generic, otherwise use
+	// Expand tilde with the true home directory if not generic, otherwise use
 	// a generic representation
 	if str[0] == '~' {
-		if generic {
-			str = strings.Replace(str, "~", homed, 1)
-		} else {
-			str = strings.Replace(str, "~", xdg.Home, 1)
-		}
+		str = strings.Replace(str, "~", xdgDirs["xdg-home"], 1)
 	}
 
-	if generic {
-		str = strings.Replace(str, xdg.Home, homed, 1)
-	}
+	// If generic, will fake the home dir. Otherwise does nothing
+	str = strings.Replace(str, xdg.Home, xdgDirs["xdg-home"], 1)
 
 	return str
 }
@@ -337,9 +294,41 @@ func expandEither(str string, generic bool) string {
 // user's machine or some generic names to be used to protect the actual path
 // names in case the user has changed them
 func ExpandDir(str string) string {
-	return expandEither(str, false)
+	xdgDirs := map[string]string{
+		"xdg-home":        xdg.Home,
+		"xdg-desktop":     xdg.UserDirs.Desktop,
+		"xdg-download":    xdg.UserDirs.Download,
+		"xdg-documents":   xdg.UserDirs.Documents,
+		"xdg-music":       xdg.UserDirs.Music,
+		"xdg-pictures":    xdg.UserDirs.Pictures,
+		"xdg-videos":      xdg.UserDirs.Videos,
+		"xdg-templates":   xdg.UserDirs.Templates,
+		"xdg-publicshare": xdg.UserDirs.PublicShare,
+		"xdg-config":      xdg.ConfigHome,
+		"xdg-cache":       xdg.CacheHome,
+		"xdg-data":        xdg.DataHome,
+		"xdg-state":       xdg.StateHome,
+	}
+
+	return expandEither(str, xdgDirs)
 }
 
 func ExpandGenericDir(str string) string {
-	return expandEither(str, true)
+	xdgDirs := map[string]string{
+		"xdg-home":        homed,
+		"xdg-desktop":     filepath.Join(homed, "Desktop"),
+		"xdg-download":    filepath.Join(homed, "Downloads"),
+		"xdg-documents":   filepath.Join(homed, "Documents"),
+		"xdg-music":       filepath.Join(homed, "Music"),
+		"xdg-pictures":    filepath.Join(homed, "Pictures"),
+		"xdg-videos":      filepath.Join(homed, "Videos"),
+		"xdg-templates":   filepath.Join(homed, "Templates"),
+		"xdg-publicshare": filepath.Join(homed, "Share"),
+		"xdg-config":      filepath.Join(homed, ".config"),
+		"xdg-cache":       filepath.Join(homed, ".cache"),
+		"xdg-data":        filepath.Join(homed, ".local/share"),
+		"xdg-state":       filepath.Join(homed, ".local/state"),
+	}
+
+	return expandEither(str, xdgDirs)
 }
