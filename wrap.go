@@ -45,7 +45,7 @@ func Sandbox(ai *AppImage, args []string) error {
 	}, bwrapArgs...)
 
 	bwrapArgs = append(bwrapArgs, "--",
-		"/tmp/.mount_"+ai.RunId()+"/AppRun",
+		"/tmp/.mount_"+ai.runId+"/AppRun",
 	)
 
 	bwrapArgs = append(bwrapArgs, args...)
@@ -151,32 +151,31 @@ func GetWrapArgs(ai *AppImage) []string {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
 			"--ro-bind",	 "/sys", "/sys",
-			"--ro-bind",	 "/usr", "/usr",
-			"--ro-bind-try", "/etc", "/etc",
-			"--ro-bind-try", xdg.Home+"/.fonts",                     homed+"/.fonts",
-			"--ro-bind-try", xdg.ConfigHome+"/fontconfig",           homed+"/.config/fontconfig",
-			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0/gtk.css",      homed+"/.config/gtk-3.0/gtk.css",
-			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0/settings.ini", homed+"/.config/gtk-3.0/settings.ini",
+			"--ro-bind",	 filepath.Join(ai.rootDir, "usr"),       "/usr",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "etc"),       "/etc",
+			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"),         filepath.Join(homed, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
 		}...)
 	// Level 2 grants access to fewer system files, and all themes
 	// Likely to add more files here for compatability.
 	// This should be the typical level for created profiles
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
-			"--ro-bind",     "/sys",                    "/sys",
-			"--ro-bind-try", "/etc/fonts",              "/etc/fonts",
-			"--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
-			"--ro-bind-try", "/usr/share/fonts",        "/usr/share/fonts",
-			"--ro-bind-try", "/usr/share/icons",        "/usr/share/icons",
-			"--ro-bind-try", "/usr/share/themes",       "/usr/share/themes",
-			"--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
-			"--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
-			"--ro-bind-try", "/usr/share/libdrm",       "/usr/share/librdm",
-			"--ro-bind-try", "/usr/share/glvnd",        "/usr/share/glvnd",
-			"--ro-bind-try", "/usr/share/glib-2.0",     "/usr/share/glib-2.0",
-			"--ro-bind-try", xdg.Home+"/.fonts",           homed+"/.fonts",
-			"--ro-bind-try", xdg.ConfigHome+"/fontconfig", homed+"/.config/fontconfig",
-			"--ro-bind-try", xdg.ConfigHome+"/gtk-3.0",    homed+"/.config/gtk-3.0",
+			"--ro-bind",     "/sys", "/sys",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "etc/fonts"),              "/etc/fonts",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/fontconfig"),   "/usr/share/fontconfig",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/fonts"),        "/usr/share/fonts",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/icons"),        "/usr/share/icons",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/themes"),       "/usr/share/themes",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/applications"), "/usr/share/applications",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/mime"),         "/usr/share/mime",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/libdrm"),       "/usr/share/librdm",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/glvnd"),        "/usr/share/glvnd",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/glib-2.0"),     "/usr/share/glib-2.0",
+			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"),         filepath.Join(homed, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
 		}...)
 	}
 
@@ -186,14 +185,27 @@ func GetWrapArgs(ai *AppImage) []string {
 
 	// Args if socket is enabled
 	var sockets = map[string][]string {
+		"cgroup": {},
+		"ipc": {},
 		"network": {
 				"--share-net",
 				"--ro-bind-try", "/etc/ca-certificates", "/etc/ca-certificates",
 				"--ro-bind",     "/etc/resolv.conf",     "/etc/resolv.conf",
 				"--ro-bind-try", "/etc/ssl",             "/etc/ssl",
 		},
+		"pid": {},
 		"pulseaudio": {
 			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+		},
+		"user": {},
+		"uts": {},
+		// TODO: test if Wayland works
+		"wayland": {
+			"--ro-bind",	 xAuthority,                      homed+"/.Xauthority",
+			"--ro-bind",	 sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
+			"--ro-bind-try", "/usr/share/X11",                "/usr/share/X11",
+			"--setenv",      "XAUTHORITY",                    homed+"/.Xauthority",
+			"--setenv",      "DISPLAY",                       ":"+xDisplay,
 		},
 		// For some reason sometimes it doesn't work when binding X0 to another socket
 		// ...but sometimes it does
@@ -207,21 +219,24 @@ func GetWrapArgs(ai *AppImage) []string {
 	}
 
 	// Args to disable sockets
-	var unsocks = map[string]string {
-		"user":    "--unshare-user-try",
-		"ipc":     "--unshare-ipc",
-		"pid":     "--unshare-pid",
-		"network": "--unshare-net",
-		"uts":     "--unshare-uts",
-		"cgroup":  "--unshare-cgroup-try",
+	var unsocks = map[string][]string {
+		"cgroup":  { "--unshare-cgroup-try" },
+		"ipc":     { "--unshare-ipc" },
+		"network": { "--unshare-net" },
+		"pid":     { "--unshare-pid" },
+		"pulseaudio": {},
+		"user":    { "--unshare-user-try" },
+		"uts":     { "--unshare-uts" },
+		"wayland": {},
+		"x11": {},
 	}
 
-	for s, _ := range unsocks {
+	for s, _ := range sockets {
 		_, present := helpers.Contains(ai.Perms.Sockets, s)
 		if present {
 			cmdArgs = append(cmdArgs, sockets[s]...)
 		} else {
-			cmdArgs = append(cmdArgs, unsocks[s])
+			cmdArgs = append(cmdArgs, unsocks[s]...)
 		}
 	}
 
