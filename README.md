@@ -10,7 +10,7 @@ VERY EARLY DEVELOPMENT! Many parts of this are subject to change and should be e
 
 aisap intends to be a simple way to implement Android/Flatpak style sandboxing with AppImages. It does have a partial profile system, but it intends to keep it as basic as possible, thus easier to understand what a program actually requires to run. This is NOT a sandboxing implementation in and of itself, it just helps take simple rules and feeds them into bwrap
 
-I also plan on implementing all of the go-appimage library, so that any existing projects could add sandboxing with minimal hassle if they so desire. This is far from complete as of now
+It currently has a basic re-implementaion of the go-appimage API, so modifying existing GoLang programs to include sandboxing should be fairly painless
 
 aisap is a Golang library intended to be used in other projects, but provides an executable as a basic implementation and example
 
@@ -21,6 +21,7 @@ In order for aisap to sandbox an AppImage, it requires a basic profile, which is
 Files
 Devices
 Sockets
+Share
 ```
 These flags can be included in the AppImage's internal desktop file, another desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's internal profile library, which is simply an arrary of permissions based on known AppImage's names (the `Name` desktop entry flag)
 
@@ -45,6 +46,7 @@ It also includes several command line flags:
   --example  Show usage examples
   --device   Allow sandbox to access additional device files
   --file     Give sandbox access to a file or directory
+  --share    Add share to sandbox (eg: network)
   --socket   Allow sandbox to access additional sockets
 
   --level    Change base level of sandbox (min: 0, max: 3)
@@ -63,6 +65,11 @@ Sandboxing levels allow for a base configuration of system files to grant by def
 `Level 3` is the most strict. It only grants access to very basic system files (binaries and libraries). It should mainly be used for console applications
 
 ## API:
+### NewAppImage
+```
+NewAppImage(src string) (*AppImage, error)
+```
+Re-implementation from go-appimage. The main differences being that this mounts the AppImage instead of extracting its files (because it needs to be mounted in order to sandbox anyway)
 ### Mount
 ```
 Mount(src string, dest string, offset) error
@@ -83,17 +90,26 @@ Run executes the AppImage without any sandboxing. However, it still automaticall
 Sandbox(ai *AppImage, args []string) error
 ```
 Sandbox takes an AppImage and sandboxes it using the permissions offered.
-
 ### GetWrapArgs
 ```
 GetWrapArgs(ai *AppImage) []string
 ```
 GetWrapArgs takes aisap permissions and translates them into bwrap command line flags. This can be used on its own to see what an AppImage *would* launch with, or to manually launch it
+### (AppImage) ExtractFile
+```
+(ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
+```
+Extract a file from the AppImage to `dest`. If `resolveSymlinks` is set to false, the raw symlink will be extracted instead of its target
 ### (AppImage) Thumbnail
 ```
 (ai AppImage) Thumbnail() (io.Reader, error)
 ```
 Attempts to extract a thumbnail from the AppImage if available. If provided in a format other than PNG (eg: SVG, XPM) it attempts to convert it to PNG before serving
+### (AppImage) Type
+```
+(ai AppImage) Type() int
+```
+Return the type of AppImage. Only supports type 2 currently
 ### (AppImage) TempDir
 ```
 (ai AppImage) TempDir() string
@@ -133,19 +149,9 @@ Change the directoy that the sandbox grabs system files from. This is useful if 
 ```
 (ai AppImage) SetDataDir(d string)
 ```
-Change the `HOME` directory of the AppImage. By default, this is `[APPIMAGE NAME].home`
-### (AppImage) SetTempDir
+Change the `HOME` directory of the AppImage. By default, this is `[APPIMAGE NAME].home` in the same directory
+### (AppImage) SetLevel
 ```
-(ai AppImage) SetTempDir(d string)
+(ai AppImage) SetLevel(l int)
 ```
-Change the temporary directory of the AppImage sandbox. This is the sandbox's `/tmp`
-### (AppImage) Type
-```
-(ai AppImage) Type() int
-```
-Return the type of AppImage. Only supports type 2 currently
-### (AppImage) ExtractFile
-```
-(ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
-```
-Extract a file from the AppImage to `dest`. If `resolveSymlinks` is set to false, the raw symlink will be extracted instead of its target
+Change the sandbox's base level
