@@ -2,10 +2,12 @@
 Version=1.0
 Type=Application
 Name=aisap
-Comment=Sandbox helper for AppImages
+Comment=(EXPERIMENTAL) Sandbox helper for AppImages
 Exec=aisap
 Icon=io.github.mgord9518.aisap
 Terminal=true
 Categories=System;Security;
 X-AppImage-Version=
-X-AppImage-Sandbox-Level=0
+
+[X-AppImage-Required-Permissions]
+Level=0
