@@ -63,7 +63,7 @@ wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 	'AppDir/usr/share/metainfo/io.github.mgord9518.aisap.appdata.xml'
 
 # Download squashfuse binary
-wget "$aisapRawUrl/resources/squashfuse" -O 'AppDir/usr/bin/squashfuse'
+wget "$aisapRawUrl/resources/squashfuse.$ARCH" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
 
 # Link up files
