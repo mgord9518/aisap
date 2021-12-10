@@ -43,7 +43,7 @@ mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/icons/hicolor/scalable/apps'
 
 # Download and compile the binary into the AppDir
-GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
+CGO_ENABLED=0 GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
 	"$aisapUrl/aisap-bin@latest"
 
 if [ $? -ne 0 ]; then
