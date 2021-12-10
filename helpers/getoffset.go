@@ -1,11 +1,14 @@
 package helpers
 
 import (
+	"bufio"
+	"encoding/binary"
+	"errors"
+	"debug/elf"
 	"io"
 	"os"
-	"debug/elf"
-	"errors"
-	"encoding/binary"
+	"strings"
+	"strconv"
 )
 
 // GetOffset takes an AppImage (either ELF or shappimage), returning the offset
@@ -31,7 +34,7 @@ func GetOffset(src string) (int, error) {
 // undocumented. Probably will be a minute until I do too because I'm pretty
 // caught up in aisap
 func getShappImageSize(src string) (int, error) {
-	var magic [17]byte
+	var offset int
 
 	f, err := os.Open(src)
 	defer f.Close()
@@ -40,10 +43,22 @@ func getShappImageSize(src string) (int, error) {
 	_, err = f.Stat()
 	if err != nil { return -1, err }
 
-	_, err = io.ReadFull(f, magic[:])
-	if err != nil { return -1, err }
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if len(scanner.Text()) > 10 && scanner.Text()[0:10] == "sfsOffset=" &&
+		   len(strings.Split(scanner.Text(), "=")) == 2 {
 
-	offset := binary.BigEndian.Uint16([]byte{ magic[15], magic[16] })
+			offHex := strings.Split(scanner.Text(), "=")[1]
+			o, err := strconv.ParseInt(offHex, 16, 32)
+			offset = int(o)
+			if err != nil {
+				return -1, errors.New("failed to parse offset")
+			}
+		} else {
+			continue
+			return -1, errors.New("unable to find shappimage offset from `sfsOffset` variable")
+		}
+	}
 
 	return int(offset), nil
 }
