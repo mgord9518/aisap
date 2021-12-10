@@ -196,6 +196,7 @@ func GetWrapArgs(ai *AppImage) []string {
 		"pid": {},
 		"pulseaudio": {
 			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
 		},
 		"user": {},
 		"uts": {},
