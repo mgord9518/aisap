@@ -15,7 +15,7 @@ var (
 	r = "\033[31m" // Red
 	z = "\033[0m"  // Reset
 
-	ver = "00000B"
+	ver = "00000C"
 )
 
 var (
