@@ -36,7 +36,8 @@ fi
 aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
 
-rm -r 'AppDir' "aisap-$ARCH.AppImage" "aisap-$ARCH.AppImage.zsync"
+# Clean up from previous builds
+rm -r 'AppDir' "aisap-$ARCH.AppImage" "aisap-$ARCH.AppImage.zsync" excludelist
 
 mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/metainfo' \
@@ -66,12 +67,14 @@ wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 wget "$aisapRawUrl/resources/squashfuse.$ARCH" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
 
+# Download excludelist
+wget 'https://raw.githubusercontent.com/AppImage/pkg2appimage/master/excludelist' -O \
+	'excludelist'
+
 # Link up files
 ln -s './usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg' 'AppDir/io.github.mgord9518.aisap.svg'
 ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 
 # Build the AppImage
 ARCH="$ARCH" VERSION=$('AppDir/usr/bin/aisap-bin' --version) \
-	aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-$ARCH.AppImage.zsync" AppDir
-mv 'aisap-'*'.AppImage' "aisap-$ARCH.AppImage"
-mv 'aisap-'*'.AppImage.zsync' "aisap-$ARCH.AppImage.zsync"
+	aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
