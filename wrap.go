@@ -151,9 +151,9 @@ func GetWrapArgs(ai *AppImage) []string {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
 			"--ro-bind",     "/sys", "/sys",
-			"--ro-bind",     filepath.Join(ai.rootDir, "usr"), "/usr",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "etc"), "/etc",
-			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"),         filepath.Join(homed, ".fonts"),
+			"--ro-bind",     filepath.Join(ai.rootDir, "usr"),    "/usr",
+			"--ro-bind-try", filepath.Join(ai.rootDir, "etc"),    "/etc",
+			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"), filepath.Join(homed, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
 		}...)
@@ -162,7 +162,9 @@ func GetWrapArgs(ai *AppImage) []string {
 	// This should be the typical level for created profiles
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
-			"--ro-bind",     "/sys", "/sys",
+			// Testing removal of `/sys` from level 2, it ideally shouldn't be
+			// here
+//			"--ro-bind",     "/sys", "/sys",
 			"--ro-bind-try", filepath.Join(ai.rootDir, "etc/fonts"),              "/etc/fonts",
 			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/fontconfig"),   "/usr/share/fontconfig",
 			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/fonts"),        "/usr/share/fonts",
@@ -186,7 +188,7 @@ func GetWrapArgs(ai *AppImage) []string {
 	// Args if socket is enabled
 	var sockets = map[string][]string {
 		"cgroup": {},
-		"ipc": {},
+		"ipc":    {},
 		"network": {
 				"--share-net",
 				"--ro-bind-try", "/etc/ca-certificates", "/etc/ca-certificates",
@@ -199,13 +201,15 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
 		},
 		"user": {},
-		"uts": {},
-		// TODO: test if Wayland works
+		"uts":  {},
 		"wayland": {
 			"--ro-bind-try", "/run/user/"+ruid+"/wayland-0", "/run/user/"+ruid+"/wayland-0",
+			"--ro-bind-try", "/usr/share/X11",               "/usr/share/X11",
 		},
-		// For some reason sometimes it doesn't work when binding X0 to another socket
-		// ...but sometimes it does
+		// For some reason sometimes it doesn't work when binding X0 to another
+		// socket ...but sometimes it does. X11 should be avoided if looking
+		// for security anyway, as it easilly allows control of the keyboard
+		// and mouse
 		"x11": {
 			"--ro-bind-try", xAuthority,                      homed+"/.Xauthority",
 			"--ro-bind-try", sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
@@ -217,15 +221,15 @@ func GetWrapArgs(ai *AppImage) []string {
 
 	// Args to disable sockets
 	var unsocks = map[string][]string {
-		"cgroup":  { "--unshare-cgroup-try" },
-		"ipc":     { "--unshare-ipc" },
-		"network": { "--unshare-net" },
-		"pid":     { "--unshare-pid" },
+		"cgroup":     { "--unshare-cgroup-try" },
+		"ipc":        { "--unshare-ipc" },
+		"network":    { "--unshare-net" },
+		"pid":        { "--unshare-pid" },
 		"pulseaudio": {},
-		"user":    { "--unshare-user-try" },
-		"uts":     { "--unshare-uts" },
-		"wayland": {},
-		"x11": {},
+		"user":       { "--unshare-user-try" },
+		"uts":        { "--unshare-uts" },
+		"wayland":    {},
+		"x11":        {},
 	}
 
 	for s, _ := range sockets {
@@ -240,6 +244,7 @@ func GetWrapArgs(ai *AppImage) []string {
 	// Give access to all files needed to run device
 	var devices = map[string][]string {
 		"dri": {
+			"--ro-bind",      "/sys/dev/char",           "/sys/dev/char",
 			"--ro-bind",      "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
 			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
 			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
