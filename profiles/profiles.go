@@ -15,8 +15,15 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
+		"blender": {
+			Level: 2,
+			Devices: []string{ "dri" },
+			Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
+			Sockets: []string{ "x11", "wayland" },
+		},
 		"deemix-gui": {
 			Level: 2,
+			Devices: []string{ "dri" },
 			Files:   []string{ "xdg-music:rw" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
@@ -45,16 +52,18 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
 		},
+		// Network for 
+		"joplin": {
+			Level: 2,
+			Files:   []string{ "xdg-documents:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "network" },
+		},
 		"krita": {
 			Level: 2,
 			Files:   []string{ "xdg-pictures:rw" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
-		},
-		"texstudio": {
-			Level: 2,
-			Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
-			Sockets: []string{ "x11", "wayland", },
 		},
 		"librewolf": {
 			Level: 2,
@@ -81,16 +90,47 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
 		},
+		"powder toy": {
+			Level: 2,
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "network" },
+		},
+		"ppsspp": {
+			Level: 2,
+			Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		},
+		// Only partially tested (I don't have an RS acct) but title screen
+		// works as intended
+		"runelite": {
+			Level: 1,
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		},
 		// Link to device not tested
 		"signal": {
 			Level: 2,
+			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland", "network" },
+		},
+		// I think it's an interesting idea to have a confined terminal
+		// enviornment although it could also greatly hinder its usefullness
+		// so I'd like to hear feedback
+		// TODO: add more files but keep it isolated from the host system
+		"station": {
+			Level: 1,
+			Devices: []string{ "dri" },
+			Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
+			                   "~/.bashrc:ro",      "~/.zshrc:ro" },
+			Sockets: []string{ "x11", "wayland" },
 		},
 		// Untested with real equipment but launches
 		// TODO: Properly test Subsurface
 		"subsurface": {
 			Level: 1,
 			Files:   []string{ "xdg-documents:ro" },
+			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
 		},
 		"supertuxkart": {
@@ -100,16 +140,18 @@ var Profiles = map[string]permissions.AppImagePerms{
 		},
 		"supertux 2": {
 			Level: 2,
-			Devices: []string{ "dri" },
+			Devices: []string{ "dri", "input" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
-		"powder toy": {
+		"texstudio": {
 			Level: 2,
 			Devices: []string{ "dri" },
-			Sockets: []string{ "x11", "wayland", "network" },
+			Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
+			Sockets: []string{ "x11", "wayland", },
 		},
 		"visual studio code": {
 			Level: 2,
+			Devices: []string{ "dri" },
 			Files:   []string{ "xdg-documents:rw" },
 			Sockets: []string{ "x11", "wayland", "network" },
 		},
