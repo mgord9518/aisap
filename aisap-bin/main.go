@@ -126,7 +126,7 @@ func main() {
 			}
 		}
 		if spookyBool {
-			fmt.Fprintln(os.Stdout, "\n%sWARNING: This AppImage requests files/ directories that can potentially\n", y)
+			fmt.Fprintf(os.Stdout, "\n%sWARNING: This AppImage requests files/ directories that can potentially\n", y)
 			fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown with red arrow under the file list)\n")
 		}
 	} else if *listPerms && ai.Perms.Level == 0 {
