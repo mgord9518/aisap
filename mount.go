@@ -6,28 +6,28 @@ import (
 	"strconv"
 	"errors"
 	"path"
+	"path/filepath"
 )
 
-// Mount mounts the requested AppImage (src) to the destination
+// mount mounts the requested AppImage (src) to the destination
 // directory (dest)
 // Quick, hacky implementation, ideally this should be redone using the
 // squashfuse library
-func Mount(src string, dest string, offset int) error {
+func mount(src string, dest string, offset int) error {
 	var squashfuse string
-	var err error
 
 	e, _ := os.Executable()
 
 	if squashfuse, err = exec.LookPath("squashfuse"); err != nil {
-		squashfuse, err = exec.LookPath(path.Dir(e)+"/squashfuse")
+		squashfuse, err = exec.LookPath(filepath.Join(path.Dir(e), "squashfuse"))
 		if err != nil {
-			return errors.New("Failed to find squashfuse binary! Cannot mount AppImage")
+			return errors.New("failed to find squashfuse binary! Cannot mount AppImage")
 		}
 	}
 
 	n := strconv.Itoa(offset)
 
-	mnt = exec.Command(squashfuse, "-o", "offset="+n, src, dest)
+	mnt = exec.Command(squashfuse, "-o", "offset=" + n, src, dest)
 	err = mnt.Run()
 
 	return err
@@ -45,23 +45,21 @@ func Unmount(ai *AppImage) error {
 	if err != nil { return err }
 
 	// Clean up
-	if ai.rmMountDir {
-		err = os.RemoveAll(ai.TempDir())
-	}
+	err = os.RemoveAll(ai.TempDir())
 
 	return err
 }
 
-// Unmounts a directory
+// Unmounts a directory (lazily in case the process is finishing up)
 func unmountDir(mntPt string) error {
-	var mntCmd string
-	var err error
+	var umount *exec.Cmd
 
-	if mntCmd, err = exec.LookPath("fusermount"); err != nil {
-		mntCmd, err = exec.LookPath("mount")
+	if _, err := exec.LookPath("fusermount"); err == nil {
+		umount = exec.Command("fusermount", "-uz", mntPt)
+	} else {
+		umount = exec.Command("umount", "-l", mntPt)
 	}
 
-	umount := exec.Command(mntCmd, "-u", mntPt)
 	out, err := umount.CombinedOutput()
 
 	if err != nil {
