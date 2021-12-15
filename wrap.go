@@ -113,6 +113,7 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--dir",         filepath.Join("/run/user", uid),
 			"--dev",         "/dev",
 			"--proc",        "/proc",
+			"--tmpfs",       filepath.Join(homed, ".cache"),
 			"--ro-bind",     filepath.Join(ai.rootDir, "opt"),       "/opt",
 			"--ro-bind",     filepath.Join(ai.rootDir, "bin"),       "/bin",
 			"--ro-bind",     filepath.Join(ai.rootDir, "sbin"),      "/sbin",
@@ -248,6 +249,9 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind",      "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
 			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
 			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
+		},
+		"input": {
+			"--ro-bind",      "/sys/class/input",           "/sys/class/input",
 		},
 	}
 
