@@ -5,10 +5,10 @@
 package aisap
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"path/filepath"
 	"os"
 	"os/exec"
@@ -48,7 +48,6 @@ type AppImage struct {
 	Version      string // Version of the AppImage
 	Offset       int    // Offset of SquashFS image
 	imageType    int    // Type of AppImage (either 1 or 2)
-	rmMountDir   bool   // Type of AppImage (either 1 or 2)
 }
 
 func init() {
@@ -56,10 +55,16 @@ func init() {
 	if !present {
 		sysTemp = "/tmp"
 	}
+
+	usr, _ := user.Current()
+	usern   = usr.Username
+	homed   = filepath.Join("/home", usern)
+	uid     = strconv.Itoa(os.Getuid())
 }
 
+// Create a new AppImage object from a path
 func NewAppImage(src string) (*AppImage, error) {
-	var err error
+	var e string
 
 	if !helpers.FileExists(src) {
 		return nil, errors.New("file not found!")
@@ -69,30 +74,35 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Path = src
 
 	ai.runId = helpers.RandString(int(time.Now().UTC().UnixNano()), 8)
-	ai.tempDir, err = helpers.MakeTemp(sysTemp, ".aisapTemp_"+ai.runId)
+	ai.tempDir, err = helpers.MakeTemp(filepath.Join(sysTemp, ".aisap"), ai.runId)
 	if err != nil { return nil, err }
 	ai.rootDir = "/"
 
 	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_"+ai.runId)
-	ai.rmMountDir = true
 
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
 
-	err = Mount(src, ai.mountDir, ai.Offset)
+	err = mount(src, ai.mountDir, ai.Offset)
 	if err != nil { return nil, err }
 
 	// Return all `.desktop` files. A vadid AppImage should only have one
 	fp, err := filepath.Glob(ai.mountDir + "/*.desktop")
 	if err != nil { return nil, err }
-	e, err := ioutil.ReadFile(fp[0])
-	entry, _ := ini.Load(e)
+	f, err := os.Open(fp[0])
+	defer f.Close()
+
+	// Replace normal semicolons with fullwidth semicolons so that it doen't
+	// interfere with the INI parsing
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		e = e + strings.ReplaceAll(scanner.Text(), ";", "；") + "\n"
+	}
+	entry, _ := ini.Load([]byte(e))
 
 	ai.Desktop = entry
 	ai.Name    = entry.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
-
-	// Set default directory paths
 
 	if ai.Version == "" {
 		ai.Version = "1.0"
@@ -142,11 +152,11 @@ func (ai AppImage) RunId() string {
 }
 
 func (ai AppImage) AddFiles(s []string) {
-	// Add `:ro` if the file doesn't specify
 	for i := range(s) {
 		// Get the last 3 chars of the file entry
 		ex := s[i][len(s[i])-3:]
 
+		// Add `:ro` if the file doesn't specify
 		if len(strings.Split(s[i], ":")) < 2 || ex != ":ro" && ex != ":rw" {
 			s[i] = s[i]+":ro"
 		}
@@ -158,6 +168,7 @@ func (ai AppImage) AddFiles(s []string) {
 func (ai AppImage) AddDevices(s []string) {
 	ai.Perms.Devices = append(ai.Perms.Devices, s...)
 
+	// Convert devices to shorthand
 	for i := range(s) {
 		if len(s[i]) > 5 && s[i][0:5] == "/dev/" {
 			s[i] = strings.Replace(s[i], "/dev/", "", 1)
@@ -172,49 +183,31 @@ func (ai AppImage) AddSockets(s []string) {
 func (ai AppImage) SetPerms(entryFile string) error {
 	nPerms, err := getPermsFromEntry(entryFile)
 	*ai.Perms = *nPerms
-	updateHome(ai.Perms.Level)
 
 	return err
 }
 
+// Set the directory the sandbox pulls system files from
 func (ai AppImage) SetRootDir(d string) {
 	ai.rootDir = d
 }
 
+// Set the directory for the sandboxed AppImage's `HOME`
 func (ai AppImage) SetDataDir(d string) {
 	ai.dataDir = d
 }
 
+// Set the directory for the sandboxed AppImage's `TMPDIR`
 func (ai AppImage) SetTempDir(d string) {
 	ai.tempDir = d
 }
 
 func (ai AppImage) SetLevel(l int) error {
-	err = updateHome(l)
-
-	if err != nil {
-		return err
+	if l < 0 || l > 3 {
+		return errors.New("permissions level must be int from 0-3")
 	}
 
 	ai.Perms.Level = l
-
-	return nil
-}
-
-// Change the home directory based on what sandboxing level is used
-func updateHome(l int) error {
-	if l == 1 || l == 0 {
-		usr, _ := user.Current()
-//		uid     = strconv.Itoa(os.Getuid())
-		usern   = usr.Username
-	} else if l > 1 && l <= 3 {
-//		uid   = "256"
-		usern = "ai"
-	} else {
-		return errors.New("permissions level must be int from 0-3")
-	}
-	homed = filepath.Join("/home", usern)
-	uid   = strconv.Itoa(os.Getuid())
 
 	return nil
 }
@@ -258,13 +251,21 @@ func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) e
 	return err
 }
 
+func (ai AppImage) ExtractFileReader(path string) (io.ReadCloser, error) {
+	path = filepath.Join(ai.mountDir, path)
+	f, err := os.Open(path)
+
+	return f, err
+}
+
+// Returns the icon reader of the AppImage, valid formats are SVG and PNG
 func (ai AppImage) Icon() (io.ReadCloser, string, error) {
 	if ai.Desktop == nil {
 		return nil, "", errors.New("desktop file wasn't parsed")
 	}
 
+	// Return error if desktop file has no icon
 	iconf := ai.Desktop.Section("Desktop Entry").Key("Icon").Value()
-
 	if iconf == "" {
 		return nil, "", errors.New("desktop file doesn't specify an icon")
 	}
