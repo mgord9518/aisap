@@ -1,4 +1,4 @@
-\package aisap
+package aisap
 
 import (
 	"errors"
