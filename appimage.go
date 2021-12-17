@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"path"
 	"path/filepath"
 	"os"
 	"os/exec"
@@ -73,12 +74,14 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai := &AppImage{}
 	ai.Path = src
 
-	ai.runId = helpers.RandString(int(time.Now().UTC().UnixNano()), 8)
+	// Set the runId, tempDir and rootDir of the AppImage
+	pfx := path.Base(ai.Path)[0:6]
+	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
 	ai.tempDir, err = helpers.MakeTemp(filepath.Join(sysTemp, ".aisap"), ai.runId)
 	if err != nil { return nil, err }
 	ai.rootDir = "/"
 
-	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_"+ai.runId)
+	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_" + ai.runId)
 
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
@@ -202,6 +205,7 @@ func (ai AppImage) SetTempDir(d string) {
 	ai.tempDir = d
 }
 
+// Set sandbox base permission level
 func (ai AppImage) SetLevel(l int) error {
 	if l < 0 || l > 3 {
 		return errors.New("permissions level must be int from 0-3")
@@ -212,11 +216,14 @@ func (ai AppImage) SetLevel(l int) error {
 	return nil
 }
 
+// Return type of AppImage
 func (ai AppImage) Type() int {
 	t, _ := helpers.GetAppImageType(ai.Path)
+
 	return t
 }
 
+// Extract a file from the AppImage's interal SquashFS image
 func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
 	path = filepath.Join(ai.mountDir, path)
 
@@ -251,11 +258,11 @@ func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) e
 	return err
 }
 
+// Like `ExtractFile()` but gives access to the reader instead of extracting
 func (ai AppImage) ExtractFileReader(path string) (io.ReadCloser, error) {
 	path = filepath.Join(ai.mountDir, path)
-	f, err := os.Open(path)
 
-	return f, err
+	return os.Open(path)
 }
 
 // Returns the icon reader of the AppImage, valid formats are SVG and PNG
@@ -284,7 +291,7 @@ func (ai AppImage) Icon() (io.ReadCloser, string, error) {
 		if strings.HasSuffix(v, ".png") || strings.HasSuffix(v, ".svg") {
 			r, err := os.Open(v)
 
-			return r, v, err
+			return r, path.Base(v), err
 		}
 	}
 
