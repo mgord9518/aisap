@@ -40,6 +40,18 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
+		"firefox beta": {
+			Level: 2,
+			Files:   []string{ "xdg-download:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		},
+		"firefox nightly": {
+			Level: 2,
+			Files:   []string{ "xdg-download:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		},
 		"gnu image manipulation program": {
 			Level: 1,
 			Files:   []string{ "xdg-pictures:rw" },
@@ -71,6 +83,12 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
 		},
+		"liteide": {
+			Level: 2,
+			Files:   []string{ "xdg-documents:rw", "~/go:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland" },
+		},
 		// Fails to find SSL certs, need to further investigate to increase the
 		// sandbox
 		"microsoft edge": {
@@ -84,8 +102,31 @@ var Profiles = map[string]permissions.AppImagePerms{
 		"minecraft": {
 			Level: 0,
 		},
+		// Write access given to because save files are stored in the same
+		// directory as the rom
+		"mgba": {
+			Level: 2,
+			Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
+			Devices: []string{ "dri", "input" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		},
+		// Network needed for cloud service, and can run in level 2 if given
+		// `/etc/passwd`
+		// TODO: Provide a fake `/etc/passwd` when running in level 2 or 3
+		"onlyoffice desktop editors": {
+			Level: 1,
+			Files:   []string{ "xdg-documents:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		},
 		"photogimp": {
 			Level: 1,
+			Files:   []string{ "xdg-pictures:rw" },
+			Devices: []string{ "dri" },
+			Sockets: []string{ "x11", "wayland" },
+		},
+		"pixsrt": {
+			Level: 2,
 			Files:   []string{ "xdg-pictures:rw" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland" },
@@ -100,6 +141,11 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 			Devices: []string{ "dri" },
 			Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		},
+		// Python given no extra permissions, but can easily be customized for
+		// scripts that require more
+		"python3.10.1": {
+			Level: 3,
 		},
 		// Only partially tested (I don't have an RS acct) but title screen
 		// works as intended
@@ -122,7 +168,8 @@ var Profiles = map[string]permissions.AppImagePerms{
 			Level: 1,
 			Devices: []string{ "dri" },
 			Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
-			                   "~/.bashrc:ro",      "~/.zshrc:ro" },
+			                   "~/.bashrc:ro",      "~/.zshrc:ro",
+							   "~/.viminfo:ro"},
 			Sockets: []string{ "x11", "wayland" },
 		},
 		// Untested with real equipment but launches
