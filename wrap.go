@@ -1,4 +1,4 @@
-package aisap
+\package aisap
 
 import (
 	"errors"
@@ -156,9 +156,10 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind",     "/sys", "/sys",
 			"--ro-bind",     aiRoot(ai, "usr"),    "/usr",
 			"--ro-bind-try", aiRoot(ai, "etc"),    "/etc",
-			"--ro-bind-try", aiRoot(ai, ".fonts"),     filepath.Join(homed, ".fonts"),
-			"--ro-bind-try", aiRoot(ai, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
-			"--ro-bind-try", aiRoot(ai, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(homed, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(homed, ".config/kdeglobals"),
 		}...)
 	// Level 2 grants access to fewer system files, and all themes
 	// Likely to add more files here for compatability.
@@ -181,6 +182,7 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(homed, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(homed, ".config/kdeglobals"),
 		}...)
 	}
 
