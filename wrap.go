@@ -44,10 +44,12 @@ func Sandbox(ai *AppImage, args []string) error {
 		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
 	}, bwrapArgs...)
 
+	// Run the AppImage's AppRun through bwrap
 	bwrapArgs = append(bwrapArgs, "--",
 		"/tmp/.mount_"+ai.runId+"/AppRun",
 	)
 
+	// Append console arguments provided by the user
 	bwrapArgs = append(bwrapArgs, args...)
 
 	bwrap := exec.Command("bwrap", bwrapArgs...)
@@ -60,7 +62,7 @@ func Sandbox(ai *AppImage, args []string) error {
 
 func setupRun(ai *AppImage) error {
 	if ai.dataDir == "" {
-		ai.dataDir = ai.Path+".home"
+		ai.dataDir = ai.Path + ".home"
 	}
 
 	if !helpers.DirExists(ai.dataDir) {
@@ -114,17 +116,17 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--dev",         "/dev",
 			"--proc",        "/proc",
 			"--tmpfs",       filepath.Join(homed, ".cache"),
-			"--ro-bind",     filepath.Join(ai.rootDir, "opt"),       "/opt",
-			"--ro-bind",     filepath.Join(ai.rootDir, "bin"),       "/bin",
-			"--ro-bind",     filepath.Join(ai.rootDir, "sbin"),      "/sbin",
-			"--ro-bind",     filepath.Join(ai.rootDir, "lib"),       "/lib",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "lib32"),     "/lib32",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "lib64"),     "/lib64",
-			"--ro-bind",     filepath.Join(ai.rootDir, "usr/bin"),   "/usr/bin",
-			"--ro-bind",     filepath.Join(ai.rootDir, "usr/sbin"),  "/usr/sbin",
-			"--ro-bind",     filepath.Join(ai.rootDir, "usr/lib"),   "/usr/lib",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/lib32"), "/usr/lib32",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/lib64"), "/usr/lib64",
+			"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
+			"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
+			"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
+			"--ro-bind",     aiRoot(ai, "lib"),       "/lib",
+			"--ro-bind-try", aiRoot(ai, "lib32"),     "/lib32",
+			"--ro-bind-try", aiRoot(ai, "lib64"),     "/lib64",
+			"--ro-bind",     aiRoot(ai, "usr/bin"),   "/usr/bin",
+			"--ro-bind",     aiRoot(ai, "usr/sbin"),  "/usr/sbin",
+			"--ro-bind",     aiRoot(ai, "usr/lib"),   "/usr/lib",
+			"--ro-bind-try", aiRoot(ai, "usr/lib32"), "/usr/lib32",
+			"--ro-bind-try", aiRoot(ai, "usr/lib64"), "/usr/lib64",
 	}
 
 	// Convert device perms to bwrap format
@@ -152,31 +154,31 @@ func GetWrapArgs(ai *AppImage) []string {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
 			"--ro-bind",     "/sys", "/sys",
-			"--ro-bind",     filepath.Join(ai.rootDir, "usr"),    "/usr",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "etc"),    "/etc",
-			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"), filepath.Join(homed, ".fonts"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
+			"--ro-bind",     aiRoot(ai, "usr"),    "/usr",
+			"--ro-bind-try", aiRoot(ai, "etc"),    "/etc",
+			"--ro-bind-try", aiRoot(ai, ".fonts"),     filepath.Join(homed, ".fonts"),
+			"--ro-bind-try", aiRoot(ai, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
+			"--ro-bind-try", aiRoot(ai, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
 		}...)
 	// Level 2 grants access to fewer system files, and all themes
 	// Likely to add more files here for compatability.
-	// This should be the typical level for created profiles
+	// This should be the standard level for GUI profiles
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
 			// Testing removal of `/sys` from level 2, it ideally shouldn't be
 			// here
 //			"--ro-bind",     "/sys", "/sys",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "etc/fonts"),              "/etc/fonts",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/fontconfig"),   "/usr/share/fontconfig",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/fonts"),        "/usr/share/fonts",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/icons"),        "/usr/share/icons",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/themes"),       "/usr/share/themes",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/applications"), "/usr/share/applications",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/mime"),         "/usr/share/mime",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/libdrm"),       "/usr/share/librdm",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/glvnd"),        "/usr/share/glvnd",
-			"--ro-bind-try", filepath.Join(ai.rootDir, "usr/share/glib-2.0"),     "/usr/share/glib-2.0",
-			"--ro-bind-try", filepath.Join(xdg.Home,   ".fonts"),         filepath.Join(homed, ".fonts"),
+			"--ro-bind-try", aiRoot(ai, "etc/fonts"),              "/etc/fonts",
+			"--ro-bind-try", aiRoot(ai, "usr/share/fontconfig"),   "/usr/share/fontconfig",
+			"--ro-bind-try", aiRoot(ai, "usr/share/fonts"),        "/usr/share/fonts",
+			"--ro-bind-try", aiRoot(ai, "usr/share/icons"),        "/usr/share/icons",
+			"--ro-bind-try", aiRoot(ai, "usr/share/themes"),       "/usr/share/themes",
+			"--ro-bind-try", aiRoot(ai, "usr/share/applications"), "/usr/share/applications",
+			"--ro-bind-try", aiRoot(ai, "usr/share/mime"),         "/usr/share/mime",
+			"--ro-bind-try", aiRoot(ai, "usr/share/libdrm"),       "/usr/share/librdm",
+			"--ro-bind-try", aiRoot(ai, "usr/share/glvnd"),        "/usr/share/glvnd",
+			"--ro-bind-try", aiRoot(ai, "usr/share/glib-2.0"),     "/usr/share/glib-2.0",
+			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(homed, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
 		}...)
@@ -220,7 +222,7 @@ func GetWrapArgs(ai *AppImage) []string {
 		},
 	}
 
-	// Args to disable sockets
+	// Args to disable sockets if not requested
 	var unsocks = map[string][]string {
 		"cgroup":     { "--unshare-cgroup-try" },
 		"ipc":        { "--unshare-ipc" },
@@ -341,4 +343,13 @@ func ExpandGenericDir(str string) string {
 	}
 
 	return expandEither(str, xdgDirs)
+}
+
+// Returns the location of the requested directory on the host filesystem with
+// symlinks resolved. This should solve systems like GoboLinux, where
+// traditionally named directories are symlinks to something unconventional.
+func aiRoot(ai *AppImage, src string) string {
+	s, _ := filepath.EvalSymlinks(filepath.Join(ai.rootDir, src))
+
+	return s
 }
