@@ -31,7 +31,7 @@ func Sandbox(ai *AppImage, args []string) error {
 	bwrapArgs := GetWrapArgs(ai)
 
 	if _, err := exec.LookPath("bwrap"); err != nil {
-		return errors.New("bubblewrap not found! It's required to use sandboing")
+		return errors.New("bubblewrap not found! It's required to use sandboxing")
 	}
 
 	err = setupRun(ai)
@@ -201,9 +201,12 @@ func GetWrapArgs(ai *AppImage) []string {
 				"--ro-bind-try", "/etc/ssl",             "/etc/ssl",
 		},
 		"pid": {},
+		// Currently encompasses both ALSA and Pulse, may split it up eventually
 		"pulseaudio": {
 			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
 			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
+			"--ro-bind-try", "/etc/group",               "/etc/group",
+			"--dev-bind",    "/dev/snd",                 "/dev/snd",
 		},
 		"user": {},
 		"uts":  {},
