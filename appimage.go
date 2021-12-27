@@ -129,13 +129,14 @@ func (ai AppImage) Thumbnail() (io.Reader, error) {
 	id := make([]byte, 4)
 	io.ReadAtLeast(f, id, 4)
 
+	// Recombine the file's magic number with the rest of the reader
+	f = io.MultiReader(bytes.NewReader(id), f)
+
 	// Convert `.DirIcon` to PNG format if it isn't already
 	// Note: the only other officially supported formats for AppImage are XPM
 	// and SVG
 	if id[0] != 0x89 || id[1] != 'P' ||
 	   id[2] != 'N'  || id[3] != 'G' {
-		// Recombine the file's magic number with the rest of the reader
-		f = io.MultiReader(bytes.NewReader(id), f)
 		f, err = imgconv.ConvertWithAspect(f, 256, "png")
 	}
 
