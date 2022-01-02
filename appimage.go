@@ -156,28 +156,42 @@ func (ai AppImage) RunId() string {
 }
 
 func (ai AppImage) AddFiles(s []string) {
+	ai.Perms.Files = append(ai.Perms.Files, cleanFiles(s)...)
+}
+
+func cleanFiles(s []string) []string {
+	var ex string
+
 	for i := range(s) {
 		// Get the last 3 chars of the file entry
-		ex := s[i][len(s[i])-3:]
+		if len(s[i]) >= 3 {
+			ex = s[i][len(s[i])-3:]
+		} else {
+			ex = ":ro"
+		}
 
-		// Add `:ro` if the file doesn't specify
-		if len(strings.Split(s[i], ":")) < 2 || ex != ":ro" && ex != ":rw" {
+		// Add `:ro` if the file name doesn't specify
+		if ex != ":ro" && ex != ":rw" {
 			s[i] = s[i]+":ro"
 		}
 	}
 
-	ai.Perms.Files = append(ai.Perms.Files, s...)
+	return s
 }
 
 func (ai AppImage) AddDevices(s []string) {
-	ai.Perms.Devices = append(ai.Perms.Devices, s...)
+	ai.Perms.Devices = append(ai.Perms.Devices, cleanDevices(s)...)
+}
 
-	// Convert devices to shorthand
+// Convert devies to shorthand
+func cleanDevices(s []string) []string {
 	for i := range(s) {
 		if len(s[i]) > 5 && s[i][0:5] == "/dev/" {
 			s[i] = strings.Replace(s[i], "/dev/", "", 1)
 		}
 	}
+
+	return s
 }
 
 func (ai AppImage) AddSockets(s []string) {
@@ -185,7 +199,10 @@ func (ai AppImage) AddSockets(s []string) {
 }
 
 func (ai AppImage) SetPerms(entryFile string) error {
-	nPerms, err := getPermsFromEntry(entryFile)
+	e, err := os.Open(entryFile)
+	if err != nil { return err }
+
+	nPerms, err := getPermsFromEntry(e)
 	*ai.Perms = *nPerms
 
 	return err
