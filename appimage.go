@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"io/ioutil"
 	"path"
 	"path/filepath"
 	"os"
@@ -20,6 +21,7 @@ import (
 
 	ini         "gopkg.in/ini.v1"
 	helpers     "github.com/mgord9518/aisap/helpers"
+	profiles     "github.com/mgord9518/aisap/profiles"
 	permissions "github.com/mgord9518/aisap/permissions"
 	imgconv     "github.com/mgord9518/imgconv"
 )
@@ -65,8 +67,6 @@ func init() {
 
 // Create a new AppImage object from a path
 func NewAppImage(src string) (*AppImage, error) {
-	var e string
-
 	if !helpers.FileExists(src) {
 		return nil, errors.New("file not found!")
 	}
@@ -97,6 +97,7 @@ func NewAppImage(src string) (*AppImage, error) {
 
 	// Replace normal semicolons with fullwidth semicolons so that it doen't
 	// interfere with the INI parsing
+	var e string
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		e = e + strings.ReplaceAll(scanner.Text(), ";", "；") + "\n"
@@ -111,8 +112,13 @@ func NewAppImage(src string) (*AppImage, error) {
 		ai.Version = "1.0"
 	}
 
-	ai.Perms, _ = getPermsFromAppImage(ai)
-	ai.SetLevel(ai.Perms.Level)
+	// Prefer level from aisap internal library, if none exist, attempt to
+	// retrieve profile from the desktop entry itself. If neither exists,
+	// `ai.Perms.Level` will be set to -1 and should be regarded as invalid
+	ai.Perms = profiles.FromName(ai.Name)
+	if ai.Perms.Level == -1 {
+		*ai.Perms = *permissions.FromIni(ai.Desktop)
+	}
 
 	return ai, err
 }
@@ -156,42 +162,11 @@ func (ai AppImage) RunId() string {
 }
 
 func (ai AppImage) AddFiles(s []string) {
-	ai.Perms.Files = append(ai.Perms.Files, cleanFiles(s)...)
-}
-
-func cleanFiles(s []string) []string {
-	var ex string
-
-	for i := range(s) {
-		// Get the last 3 chars of the file entry
-		if len(s[i]) >= 3 {
-			ex = s[i][len(s[i])-3:]
-		} else {
-			ex = ":ro"
-		}
-
-		// Add `:ro` if the file name doesn't specify
-		if ex != ":ro" && ex != ":rw" {
-			s[i] = s[i]+":ro"
-		}
-	}
-
-	return s
+	ai.Perms.Files = append(ai.Perms.Files, helpers.CleanFiles(s)...)
 }
 
 func (ai AppImage) AddDevices(s []string) {
-	ai.Perms.Devices = append(ai.Perms.Devices, cleanDevices(s)...)
-}
-
-// Convert devies to shorthand
-func cleanDevices(s []string) []string {
-	for i := range(s) {
-		if len(s[i]) > 5 && s[i][0:5] == "/dev/" {
-			s[i] = strings.Replace(s[i], "/dev/", "", 1)
-		}
-	}
-
-	return s
+	ai.Perms.Devices = append(ai.Perms.Devices, helpers.CleanDevices(s)...)
 }
 
 func (ai AppImage) AddSockets(s []string) {
@@ -199,11 +174,18 @@ func (ai AppImage) AddSockets(s []string) {
 }
 
 func (ai AppImage) SetPerms(entryFile string) error {
-	e, err := os.Open(entryFile)
+	r, err := os.Open(entryFile)
 	if err != nil { return err }
 
-	nPerms, err := getPermsFromEntry(e)
-	*ai.Perms = *nPerms
+	e, err := ioutil.ReadAll(r)
+	if err != nil { return err }
+
+	e = bytes.ReplaceAll(e, []byte(";"), []byte("；"))
+
+	entry, err := ini.Load(e)
+	if err != nil { return err }
+
+	*ai.Perms = *permissions.FromIni(entry)
 
 	return err
 }
