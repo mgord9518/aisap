@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -81,9 +82,9 @@ func setupRun(ai *AppImage) error {
 
 	// Set required vars to correctly mount our target AppImage
 	// If sandboxed, these values will be overwritten
-	os.Setenv("TMPDIR", ai.tempDir)
-	os.Setenv("HOME",   ai.dataDir)
-	os.Setenv("APPDIR", ai.mountDir)
+	os.Setenv("TMPDIR",   ai.tempDir)
+	os.Setenv("HOME",     ai.dataDir)
+	os.Setenv("APPDIR",   ai.mountDir)
 
 	return err
 }
@@ -92,9 +93,12 @@ func GetWrapArgs(ai *AppImage) []string {
 	// Real UID, for level 1 RUID and UID are the same value
 	ruid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
+			print(ai.Path)
 	cmdArgs := []string{
 			"--setenv", "TMPDIR",              "/tmp",
 			"--setenv", "HOME",                homed,
+			"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
+			"--setenv", "ARGV0",               filepath.Join("/app", path.Base(ai.Path)),
 			"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(homed, "Desktop"),
 			"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(homed, "Downloads"),
 			"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(homed, "Documents"),
@@ -127,6 +131,8 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind",     aiRoot(ai, "usr/lib"),   "/usr/lib",
 			"--ro-bind-try", aiRoot(ai, "usr/lib32"), "/usr/lib32",
 			"--ro-bind-try", aiRoot(ai, "usr/lib64"), "/usr/lib64",
+			"--dir",         "/app",
+			"--bind",        ai.Path,                 filepath.Join("/app", path.Base(ai.Path)),
 	}
 
 	// Convert device perms to bwrap format
