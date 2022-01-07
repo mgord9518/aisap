@@ -61,3 +61,32 @@ func FileExists(path string) bool {
 
     return true
 }
+
+func CleanFiles(s []string) []string {
+	var ex string
+
+	for i := range(s) {
+		// Get the last 3 chars of the file entry
+		if len(s[i]) >= 3 {
+			ex = s[i][len(s[i])-3:]
+		} else {
+			ex = ":ro"
+		}
+
+		if ex != ":ro" && ex != ":rw" {
+			s[i] = s[i]+":ro"
+		}
+	}
+
+	return s
+}
+
+func CleanDevices(s []string) []string {
+	for i := range(s) {
+		if len(s[i]) > 5 && s[i][0:5] == "/dev/" {
+			s[i] = strings.Replace(s[i], "/dev/", "", 1)
+		}
+	}
+
+	return s
+}
