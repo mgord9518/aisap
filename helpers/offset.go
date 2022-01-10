@@ -34,8 +34,6 @@ func GetOffset(src string) (int, error) {
 // undocumented. Probably will be a minute until I do too because I'm pretty
 // caught up in aisap
 func getShappImageSize(src string) (int, error) {
-	var offset int
-
 	f, err := os.Open(src)
 	defer f.Close()
 	if err != nil { return -1, err }
@@ -46,21 +44,17 @@ func getShappImageSize(src string) (int, error) {
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		if len(scanner.Text()) > 10 && scanner.Text()[0:10] == "sfsOffset=" &&
-		   len(strings.Split(scanner.Text(), "=")) == 2 {
+		len(strings.Split(scanner.Text(), "=")) == 2 {
 
 			offHex := strings.Split(scanner.Text(), "=")[1]
 			o, err := strconv.ParseInt(offHex, 16, 32)
-			offset = int(o)
-			if err != nil {
-				return -1, errors.New("failed to parse offset")
-			}
+			return int(o), err
 		} else {
 			continue
-			return -1, errors.New("unable to find shappimage offset from `sfsOffset` variable")
 		}
 	}
 
-	return int(offset), nil
+	return -1, errors.New("unable to find shappimage offset from `sfsOffset` variable")
 }
 
 // Function from <github.com/probonopd/go-appimage/internal/helpers/elfsize.go>
@@ -85,6 +79,7 @@ func getElfSize(src string) (int, error) {
 	switch e.Class.String() {
 	case "ELFCLASS64":
 		hdr := new(elf.Header64)
+
 		_, err = sr.Seek(0, 0)
 		if err != nil { return -1, err }
 		err = binary.Read(sr, e.ByteOrder, hdr)
@@ -95,21 +90,20 @@ func getElfSize(src string) (int, error) {
 		shentsize = int(hdr.Shentsize)
 	case "ELFCLASS32":
 		hdr := new(elf.Header32)
+
 		_, err = sr.Seek(0, 0)
 		if err != nil { return -1, err }
 		err := binary.Read(sr, e.ByteOrder, hdr)
 		if err != nil { return -1, err }
 
-		shoff	 = int(hdr.Shoff)
-		shnum	 = int(hdr.Shnum)
+		shoff     = int(hdr.Shoff)
+		shnum     = int(hdr.Shnum)
 		shentsize = int(hdr.Shentsize)
 	default:
 		return 0, nil
 	}
 
-	elfsize := shoff + (shentsize * shnum)
-
-	return elfsize, nil
+	return shoff + (shentsize * shnum), nil
 }
 
 // Find the type of AppImage
