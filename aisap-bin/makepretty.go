@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"path/filepath"
 
 	aisap "github.com/mgord9518/aisap"
+	check "github.com/mgord9518/aisap/spooky"
 	xdg   "github.com/adrg/xdg"
 )
 
@@ -31,50 +33,48 @@ func makePretty(str string) string {
 	return str + ex
 }
 
-// Check if a file or directory is spooky (sandbox escape vector) so that the
-// user can be warned that their sandbox is insecure
-// TODO: expand this list! There are a lot of files that can be used to escape
-// the sandbox, while it's impossible to cover all bases, we should try to get
-// as close as possible
-func spooky(str string) bool {
-	// These files/ directories are specifically escape vectors on their own
-	spookyFiles := []string{
-		"~",
-		"/home",
-		"~/Apps",
-		"~/Applications",
-		"~/AppImages",
-		"~/.profile",
-		"~/.bashrc",
-		"~/.zshrc",
+func prettyList(str string, s []string) {
+	if len(s) == 0 {
+		return
 	}
 
-	// If the sandbox requests these directories at all, it is a potential threat
-	spookyDirs := []string{
-		"~/.ssh",
-		"~/.local",
-		"~/.config",
-	}
+	fmt.Printf("%s - %s%s%s", g, z, str, c)
 
-	// Split the string into its actual directory and whether it's read only or
-	// read write
-	slice := strings.Split(str, ":")
-	s1 := strings.Join(slice[:len(slice)-1], ":")
-	s2 := ":"+strings.Split(str, ":")[len(slice)-1]
-
-	for _, val := range(spookyFiles) {
-		if s1 == val && s2 == ":rw" {
-			return true
+	for i := range(s) {
+		if i > 0 {
+			fmt.Printf(", ")
 		}
+
+		fmt.Printf(s[i])
 	}
 
-	for _, val := range(spookyDirs) {
-		if len(s1) >= len(val) {
-			if s1[:len(val)] == val {
-				return true
-			}
+	fmt.Println()
+}
+
+// Like `prettyList` but highlights spooky files in orange
+func prettyListFiles(str string, s []string) {
+	if len(s) == 0 {
+		return
+	}
+
+	fmt.Printf("%s - %s%s", g, z, str)
+
+	for i := range(s) {
+//		s[i] = makePretty(s[i])
+
+		if i > 0 {
+			fmt.Printf(", ")
 		}
+
+		if check.IsSpooky(s[i]) {
+			fmt.Printf(y)
+		} else {
+			fmt.Printf(c)
+		}
+
+		fmt.Printf(s[i])
+
 	}
 
-	return false
+	fmt.Println()
 }
