@@ -10,12 +10,13 @@ import (
 type arrayFlags []string
 
 var (
-	g = "\033[32m" // Green
-	y = "\033[33m" // Yellow
-	r = "\033[31m" // Red
-	z = "\033[0m"  // Reset
+	g = "\033[0;32m" // Green
+	y = "\033[0;33m" // Yellow
+	r = "\033[0;31m" // Red
+	c = "\033[0;36m" // Cyan
+	z = "\033[0;0m"  // Reset
 
-	ver = "0.1.27"
+	ver = "0.1.29"
 )
 
 var (
