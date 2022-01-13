@@ -10,6 +10,26 @@ import (
 // Most of these have only been tested on my (Manjaro and Arch) systems, so they may not work correctly on yours
 // If that is the case, please report the issue and any error messages you encounter so that I can try to fix them
 var Profiles = map[string]permissions.AppImagePerms{
+	"aranym jit": {
+		Level: 3,
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
+		Devices: []string{ "dri", "input" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
+	},
+	"aranym mmu": {
+		Level: 3,
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
+		Devices: []string{ "dri", "input" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
+	},
+	// Untested with Android device, left level 1 assuming it needs access to all
+	// of `/dev`
+	"apk editor studio": {
+		Level: 1,
+		Files:   []string{ "xdg-templates:rw", "xdg-download:rw" },
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "wayland" },
+	},
 	// Any apps that require superuser can't be sandboxed in this way
 	"balenaetcher": {
 		Level: 0,
@@ -17,9 +37,9 @@ var Profiles = map[string]permissions.AppImagePerms{
 	// Badlion (and others) might be able to get switched to level 2, so specify devices anyway
 	// Proprietary and unofficial AppImages should be high priority to be sandboxed to the fullest extent
 	"badlion client": {
-		Level: 1,
+		Level: 2,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	"blender": {
 		Level: 2,
@@ -31,13 +51,13 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-music:rw" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	"dolphin emulator": {
 		Level: 2,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		Sockets: []string{ "x11", "wayland", "alsa" },
 	},
 	"dust3d": {
 		Level: 2,
@@ -49,7 +69,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		Sockets: []string{ "x11", "wayland", "alsa" },
 	},
 	"firefox": {
 		Level: 2,
@@ -136,10 +156,8 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "wayland" },
 	},
-	// Fails to find SSL certs, need to further investigate to increase the
-	// sandbox
 	"microsoft edge": {
-		Level: 1,
+		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
@@ -155,7 +173,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"minetest": {
 		Level: 3,
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	"mypaint": {
 		Level: 2,
@@ -169,7 +187,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		Sockets: []string{ "x11", "wayland", "audio" },
 	},
 	// Network needed for cloud service, and can run in level 2 if given
 	// `/etc/passwd`
@@ -178,7 +196,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 1,
 		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	"photogimp": {
 		Level: 1,
@@ -201,7 +219,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio" },
+		Sockets: []string{ "x11", "wayland", "audio" },
 	},
 	// Python given no extra permissions, but can easily be customized for
 	// scripts that require more
@@ -213,13 +231,13 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"runelite": {
 		Level: 1,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	// Audio for notification sounds
 	"sengi": {
 		Level: 1,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	// Link to device not tested
 	"signal": {
@@ -256,12 +274,12 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"supertuxkart": {
 		Level: 2,
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	"supertux 2": {
 		Level: 2,
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "wayland", "audio", "network" },
 	},
 	"texstudio": {
 		Level: 2,
