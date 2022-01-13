@@ -268,6 +268,7 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind",      "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
 			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
 			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
+			"--dev-bind-try", "/dev/nvidia-modeset",     "/dev/nvidia-modeset",
 		},
 		"input": {
 			"--ro-bind",      "/sys/class/input",           "/sys/class/input",
