@@ -21,7 +21,7 @@ import (
 
 	ini         "gopkg.in/ini.v1"
 	helpers     "github.com/mgord9518/aisap/helpers"
-	profiles     "github.com/mgord9518/aisap/profiles"
+	profiles    "github.com/mgord9518/aisap/profiles"
 	permissions "github.com/mgord9518/aisap/permissions"
 	imgconv     "github.com/mgord9518/imgconv"
 )
@@ -49,6 +49,7 @@ type AppImage struct {
 	runId        string // Random string associated with this specific run instance
 	Name         string // AppImage name from the desktop entry 
 	Version      string // Version of the AppImage
+	UpdateInfo   string // Update information
 	Offset       int    // Offset of SquashFS image
 	imageType    int    // Type of AppImage (either 1 or 2)
 }
@@ -107,6 +108,8 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Desktop = entry
 	ai.Name    = entry.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
+
+	ai.UpdateInfo, _ = helpers.ReadUpdateInfo(ai.Path)
 
 	if ai.Version == "" {
 		ai.Version = "1.0"
