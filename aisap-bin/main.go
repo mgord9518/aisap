@@ -28,10 +28,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"syscall"
 
 	aisap "github.com/mgord9518/aisap"
+	check "github.com/mgord9518/aisap/spooky"
 	flag  "github.com/spf13/pflag"
 )
 
@@ -46,7 +46,7 @@ func main() {
 	if len(flag.Args()) >= 1 {
 		ai, err = aisap.NewAppImage(flag.Args()[0])
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Failed to open AppImage:", err)
+			fmt.Fprintln(os.Stderr, "failed to open AppImage:", err)
 			cleanExit(1)
 		}
 	} else {
@@ -56,7 +56,7 @@ func main() {
 	if *profile != "" {
 		err = ai.SetPerms(*profile)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Failed to get permissions from profile:", err)
+			fmt.Fprintln(os.Stderr, "failed to get permissions from file:", err)
 			cleanExit(1)
 		}
 	}
@@ -72,81 +72,54 @@ func main() {
 	if *level > -1 && *level <= 3 {
 		err = ai.SetLevel(*level)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Failed to set permissions level:", err)
+			fmt.Fprintln(os.Stderr, "failed to set permissions level:", err)
 		}
 	}
 
 	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
-		fmt.Println("Failed to retrieve AppImage permissions!")
-		fmt.Println("Defaulting sandbox level to 3 with no further access")
-		fmt.Println("In the case this sandbox does not work properly, use the command line")
+		fmt.Println("failed to retrieve AppImage permissions!")
+		fmt.Println("defaulting sandbox level to 3 with no further access")
+		fmt.Println("in the case this sandbox does not work properly, use the command line")
 		fmt.Println("flags to add the necessary minimum permissions or create a custom profile")
 		ai.SetLevel(3)
 	}
 
-	// Give basic info on the permissions the AppImage requests
-	if *listPerms && ai.Perms.Level > 0 {
-		var spookyBool bool
-		fmt.Printf("%sSandbox base level: %s\n", y, strconv.Itoa(ai.Perms.Level))
-		if ai.Perms.Level == 1 {
-			fmt.Printf(" %s>%s All system files, including machine identifiable information\n", y, z)
-			fmt.Printf(" %s>%s For applications that refuse to run with further sandboxing\n", y, z)
-		} else if ai.Perms.Level == 2 {
-			fmt.Printf(" %s>%s Some system files such as themes\n", g, z)
-			fmt.Printf(" %s>%s Most GUI apps should use this\n", g, z)
-		} else if ai.Perms.Level == 3 {
-			fmt.Printf(" %s>%s Minimal system files\n", g, z)
-			fmt.Printf(" %s>%s Console apps and the few GUI apps that work\n", g, z)
-		}
-
-		if len(ai.Perms.Files) > 0 {
-			fmt.Printf("%sFiles and directories:\n", y)
-			for _, v := range(ai.Perms.Files) {
-				v = makePretty(v)
-				if spooky(v) {
-					fmt.Printf("%s", r)
-					spookyBool = true
-				} else {
-					fmt.Printf("%s", g)
-				}
-				fmt.Printf(" >%s %s\n", z, v)
-			}
-		}
-		if len(ai.Perms.Devices) > 0 {
-			fmt.Printf("%sDevice files:\n", y)
-			for _, v := range(ai.Perms.Devices) {
-				v = makeDevPretty(v)
-				fmt.Printf(" %s>%s %s\n", g, z, v)
-			}
-		}
-		if len(ai.Perms.Sockets) > 0 {
-			fmt.Printf("%sSockets:\n", y)
-			for _, v := range(ai.Perms.Sockets) {
-				fmt.Printf(" %s>%s %s\n", g, z, v)
-			}
-		}
-		if spookyBool {
-			fmt.Fprintf(os.Stdout, "\n%sWARNING: This AppImage requests files/ directories that can potentially\n", y)
-			fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown with red arrow under the file list)\n")
-		}
-	} else if *listPerms && ai.Perms.Level == 0 {
-		fmt.Fprintf(os.Stdout, "%sApplication `"+ai.Name+"` requests to be used unsandboxed!%s\n", y, z)
+	if *listPerms && ai.Perms.Level == 0 {
+		fmt.Fprintf(os.Stdout, "%sapplication `%s` requests to be used unsandboxed!%s\n", y, ai.Name, z)
 		fmt.Fprintln(os.Stdout, "Use the command line flag `--level [1-3]` to try to sandbox it anyway")
-	}
-
-	if *listPerms {
 		cleanExit(0)
 	}
 
-	// Sandbox if level is above 0
+	// Give basic info on the permissions the AppImage requests
+	if *listPerms {
+		fmt.Printf("%spermissions: \n", y)
+
+		fmt.Printf("%s - %slevel:      %s%d\n", g, z, c, ai.Perms.Level)
+		prettyListFiles("filesystem: ", ai.Perms.Files)
+		prettyList("devices:    ", ai.Perms.Devices)
+		prettyList("sockets:    ", ai.Perms.Sockets)
+
+		// Warns if the AppImage contains potential escape vectors or suspicious files
+		for _, v := range(ai.Perms.Files) {
+			if check.IsSpooky(v) {
+				fmt.Fprintf(os.Stdout, "\n%sWARNING: this AppImage requests files/ directories that can potentially\n", y)
+				fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown with red arrow under the file list)")
+				break
+			}
+		}
+
+		cleanExit(0)
+	}
+
+	// Sandbox only if level is above 0
 	if ai.Perms.Level > 0 {
 		err = aisap.Sandbox(ai, flag.Args()[1:])
-	} else if ai.Perms.Level == 0 {
+	} else {
 		err = aisap.Run(ai, flag.Args()[1:])
 	}
 
 	if err != nil {
-		fmt.Fprintln(os.Stdout, "Failed to sandbox AppImage:", err)
+		fmt.Fprintln(os.Stdout, "exited non-zero status:", err)
 		cleanExit(1)
 	}
 
