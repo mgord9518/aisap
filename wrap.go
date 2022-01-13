@@ -93,7 +93,6 @@ func GetWrapArgs(ai *AppImage) []string {
 	// Real UID, for level 1 RUID and UID are the same value
 	ruid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
-			print(ai.Path)
 	cmdArgs := []string{
 			"--setenv", "TMPDIR",              "/tmp",
 			"--setenv", "HOME",                homed,
@@ -172,9 +171,6 @@ func GetWrapArgs(ai *AppImage) []string {
 	// This should be the standard level for GUI profiles
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
-			// Testing removal of `/sys` from level 2, it ideally shouldn't be
-			// here
-//			"--ro-bind",     "/sys", "/sys",
 			"--ro-bind-try", aiRoot(ai, "etc/fonts"),              "/etc/fonts",
 			"--ro-bind-try", aiRoot(ai, "usr/share/fontconfig"),   "/usr/share/fontconfig",
 			"--ro-bind-try", aiRoot(ai, "usr/share/fonts"),        "/usr/share/fonts",
@@ -202,14 +198,24 @@ func GetWrapArgs(ai *AppImage) []string {
 		"ipc":    {},
 		"network": {
 				"--share-net",
-				"--ro-bind-try", "/etc/ca-certificates", "/etc/ca-certificates",
-				"--ro-bind",     "/etc/resolv.conf",     "/etc/resolv.conf",
-				"--ro-bind-try", "/etc/ssl",             "/etc/ssl",
+				"--ro-bind-try", "/etc/ca-certificates",       "/etc/ca-certificates",
+				"--ro-bind",     "/etc/resolv.conf",           "/etc/resolv.conf",
+				"--ro-bind-try", "/etc/ssl",                   "/etc/ssl",
+				"--ro-bind-try", "/usr/share/ca-certificates", "/usr/share/ca-certificates",
 		},
 		"pid": {},
-		// Currently encompasses both ALSA and Pulse, may split it up eventually
+		// Encompasses ALSA, Pulse and pipewire. Easiest for convience, but for
+		// more security, specify the specific audio system
+		"audio": {
+			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
+			"--ro-bind-try", "/etc/group",               "/etc/group",
+			"--dev-bind",    "/dev/snd",                 "/dev/snd",
+		},
 		"pulseaudio": {
 			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+		},
+		"alsa": {
 			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
 			"--ro-bind-try", "/etc/group",               "/etc/group",
 			"--dev-bind",    "/dev/snd",                 "/dev/snd",
