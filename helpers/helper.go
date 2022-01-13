@@ -66,6 +66,8 @@ func CleanFiles(s []string) []string {
 	var ex string
 
 	for i := range(s) {
+		s[i] = filepath.Clean(s[i])
+
 		// Get the last 3 chars of the file entry
 		if len(s[i]) >= 3 {
 			ex = s[i][len(s[i])-3:]
