@@ -78,7 +78,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	// Set the runId, tempDir and rootDir of the AppImage
 	pfx := path.Base(ai.Path)[0:6]
 	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
-	ai.tempDir, err = helpers.MakeTemp(filepath.Join(sysTemp, ".aisap"), ai.runId)
+	ai.tempDir, err = helpers.MakeTemp(filepath.Join(sysTemp, "aisap"), ai.runId)
 	if err != nil { return nil, err }
 	ai.rootDir = "/"
 
@@ -164,16 +164,72 @@ func (ai AppImage) RunId() string {
 	return ai.runId
 }
 
-func (ai AppImage) AddFiles(s []string) {
+func (ai AppImage) AddFile(str string) {
+	// Clear out previous file if it already exists
+	ai.RemoveFile(str)
+
+	// TODO: Add clean functions for strings instead of slices to helpers, use
+	// them here instead
+	s := []string{str}
 	ai.Perms.Files = append(ai.Perms.Files, helpers.CleanFiles(s)...)
 }
 
+func (ai AppImage) AddFiles(s []string) {
+	// Remove previous files of the same name if they exist
+	ai.RemoveFiles(s)
+
+	ai.Perms.Files = append(ai.Perms.Files, helpers.CleanFiles(s)...)
+}
+
+// TODO: Create AddDevice and AddSocke tfor indiviual strings
 func (ai AppImage) AddDevices(s []string) {
 	ai.Perms.Devices = append(ai.Perms.Devices, helpers.CleanDevices(s)...)
 }
 
 func (ai AppImage) AddSockets(s []string) {
 	ai.Perms.Sockets = append(ai.Perms.Sockets, s...)
+}
+
+func (ai AppImage) RemoveFile(str string) {
+	// Done this way to ensure there is an `extension` eg: `:ro` on the string,
+	// it will then be used to detect if that file already exists
+	str = helpers.CleanFiles([]string{str})[0]
+	s  := strings.Split(str, ":")
+	str = strings.Join(s[:len(s)-1], ":")
+
+	if i, present := helpers.ContainsAny(ai.Perms.Files, []string{ str + ":ro", str + ":rw" }); present {
+		ai.Perms.Files = append(ai.Perms.Files[:i], ai.Perms.Files[i+1:]...)
+	}
+}
+
+func (ai AppImage) RemoveFiles(s []string) {
+	for i := range(s) {
+		ai.RemoveFile(s[i])
+	}
+}
+
+func (ai AppImage) RemoveDevice(str string) {
+	if i, present := helpers.Contains(ai.Perms.Devices, str); present {
+		ai.Perms.Devices = append(ai.Perms.Devices[:i], ai.Perms.Devices[i+1:]...)
+	}
+}
+
+func (ai AppImage) RemoveDevices(s []string) {
+	for i := range(s) {
+		ai.RemoveDevice(s[i])
+	}
+}
+
+func (ai AppImage) RemoveSocket(str string) {
+	if i, present := helpers.Contains(ai.Perms.Sockets, str); present {
+		ai.Perms.Sockets = append(ai.Perms.Sockets[:i], ai.Perms.Sockets[i+1:]...)
+	}
+}
+
+func (ai AppImage) RemoveSockets(s []string) {
+	for i := range(s) {
+		ai.RemoveSocket(s[i])
+	}
 }
 
 func (ai AppImage) SetPerms(entryFile string) error {
