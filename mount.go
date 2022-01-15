@@ -18,6 +18,7 @@ func mount(src string, dest string, offset int) error {
 
 	e, _ := os.Executable()
 
+	// Make sure squashfuse exists
 	if squashfuse, err = exec.LookPath("squashfuse"); err != nil {
 		squashfuse, err = exec.LookPath(filepath.Join(path.Dir(e), "squashfuse"))
 		if err != nil {
@@ -25,12 +26,11 @@ func mount(src string, dest string, offset int) error {
 		}
 	}
 
-	n := strconv.Itoa(offset)
+	// Convert the offset to a string and mount using squashfuse
+	o := strconv.Itoa(offset)
+	mnt = exec.Command(squashfuse, "-o", "offset=" + o, src, dest)
 
-	mnt = exec.Command(squashfuse, "-o", "offset=" + n, src, dest)
-	err = mnt.Run()
-
-	return err
+	return mnt.Run()
 }
 
 // Unmounts an AppImage
@@ -60,8 +60,8 @@ func unmountDir(mntPt string) error {
 		umount = exec.Command("umount", "-l", mntPt)
 	}
 
+	// Run unmount command, returning the stdout if failed
 	out, err := umount.CombinedOutput()
-
 	if err != nil {
 		err = errors.New(string(out))
 	}
