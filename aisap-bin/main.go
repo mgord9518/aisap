@@ -61,9 +61,12 @@ func main() {
 		}
 	}
 
-	// Add extra permissions as passed from flags. eg: `--file`
+	// Add (and remove) permissions as passed from flags. eg: `--file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
+	ai.RemoveFiles(rmfile)
+	ai.RemoveDevices(rmdevice)
+	ai.RemoveSockets(rmsocket)
 	ai.AddFiles(file)
 	ai.AddDevices(device)
 	ai.AddSockets(socket)
