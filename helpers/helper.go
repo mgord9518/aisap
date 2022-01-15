@@ -19,8 +19,8 @@ func SplitKey(str string) []string {
 	return strings.FieldsFunc(str, f)
 }
 
-func Contains(slice []string, str string) (int, bool) {
-	for i, val := range slice {
+func Contains(s []string, str string) (int, bool) {
+	for i, val := range(s) {
 		if val == str { return i, true }
 	}
 
@@ -29,8 +29,9 @@ func Contains(slice []string, str string) (int, bool) {
 
 // Checks if an array contains any of the elements from another array
 func ContainsAny(s []string, s2 []string) (int, bool) {
-	for i := range(s) {
-		return Contains(s, s2[i])
+	for i := range(s2) {
+		n, present := Contains(s, s2[i])
+		if present { return n, true }
 	}
 
 	return -1, false
@@ -44,8 +45,7 @@ func MakeTemp(path string, name string) (string, error) {
 }
 
 func RandString(seed int, length int) string {
-	// Filename friendly base64
-	chars := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.")
+	chars := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 	rand.Seed(int64(seed))
 
