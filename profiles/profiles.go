@@ -3,7 +3,8 @@ package profiles
 import (
 	"strings"
 
-	"github.com/mgord9518/aisap/permissions"
+	helpers     "github.com/mgord9518/aisap/helpers"
+	permissions "github.com/mgord9518/aisap/permissions"
 )
 
 // List of all profiles supported by aisal out of the box.
@@ -299,6 +300,7 @@ func FromName(name string) *permissions.AppImagePerms {
 	name = strings.ToLower(name)
 
 	if p, present := Profiles[name]; present {
+		p.Files = helpers.CleanFiles(p.Files)
 		return &p
 	} else {
 		p.Level = -1
