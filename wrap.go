@@ -147,10 +147,12 @@ func GetWrapArgs(ai *AppImage) []string {
 	for _, val := range(ai.Perms.Files) {
 		s   := strings.Split(val, ":")
 		ex  := s[len(s)-1]
+		dir := strings.Join(s[:len(s)-1], ":")
+
 		if ex == "rw" {
-			cmdArgs = append(cmdArgs, "--bind-try", ExpandDir(val), ExpandGenericDir(val))
+			cmdArgs = append(cmdArgs, "--bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))
 		} else if ex == "ro" {
-			cmdArgs = append(cmdArgs, "--ro-bind-try", ExpandDir(val), ExpandGenericDir(val))
+			cmdArgs = append(cmdArgs, "--ro-bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))
 		}
 	}
 
@@ -283,84 +285,6 @@ func GetWrapArgs(ai *AppImage) []string {
 	}
 
 	return cmdArgs
-}
-
-// Expands XDG formatted directories into full paths depending on the input map
-func expandEither(str string, xdgDirs map[string]string) string {
-	for key, val := range xdgDirs {
-		// If length of key bigger than requested directory or not equal to it
-		// continue because there is no reason to look at it further
-		if len(key) > len(str) || key != str[:len(key)] {
-			continue
-		}
-
-		// The final byte of the key (used for splitting)
-		c := str[len(key)]
-		if c == byte('/') || c == byte(':') {
-			str = strings.Replace(str, key, val, 1)
-			break
-		}
-	}
-
-	s   := strings.Split(str, ":")
-	dir := strings.Join(s[:len(s)-1], ":")
-
-	// Resolve `../` and clean up extra slashes if they exist
-	str = filepath.Clean(dir)
-
-	// Expand tilde with the true home directory if not generic, otherwise use
-	// a generic representation
-	if str[0] == '~' {
-		str = strings.Replace(str, "~", xdgDirs["xdg-home"], 1)
-	}
-
-	// If generic, will fake the home dir. Otherwise does nothing
-	str = strings.Replace(str, xdg.Home, xdgDirs["xdg-home"], 1)
-
-	return str
-}
-
-// Expand xdg and shorthand directories into either real directories on the
-// user's machine or some generic names to be used to protect the actual path
-// names in case the user has changed them
-func ExpandDir(str string) string {
-	xdgDirs := map[string]string{
-		"xdg-home":        xdg.Home,
-		"xdg-desktop":     xdg.UserDirs.Desktop,
-		"xdg-download":    xdg.UserDirs.Download,
-		"xdg-documents":   xdg.UserDirs.Documents,
-		"xdg-music":       xdg.UserDirs.Music,
-		"xdg-pictures":    xdg.UserDirs.Pictures,
-		"xdg-videos":      xdg.UserDirs.Videos,
-		"xdg-templates":   xdg.UserDirs.Templates,
-		"xdg-publicshare": xdg.UserDirs.PublicShare,
-		"xdg-config":      xdg.ConfigHome,
-		"xdg-cache":       xdg.CacheHome,
-		"xdg-data":        xdg.DataHome,
-		"xdg-state":       xdg.StateHome,
-	}
-
-	return expandEither(str, xdgDirs)
-}
-
-func ExpandGenericDir(str string) string {
-	xdgDirs := map[string]string{
-		"xdg-home":        homed,
-		"xdg-desktop":     filepath.Join(homed, "Desktop"),
-		"xdg-download":    filepath.Join(homed, "Downloads"),
-		"xdg-documents":   filepath.Join(homed, "Documents"),
-		"xdg-music":       filepath.Join(homed, "Music"),
-		"xdg-pictures":    filepath.Join(homed, "Pictures"),
-		"xdg-videos":      filepath.Join(homed, "Videos"),
-		"xdg-templates":   filepath.Join(homed, "Templates"),
-		"xdg-publicshare": filepath.Join(homed, "Share"),
-		"xdg-config":      filepath.Join(homed, ".config"),
-		"xdg-cache":       filepath.Join(homed, ".cache"),
-		"xdg-data":        filepath.Join(homed, ".local/share"),
-		"xdg-state":       filepath.Join(homed, ".local/state"),
-	}
-
-	return expandEither(str, xdgDirs)
 }
 
 // Returns the location of the requested directory on the host filesystem with
