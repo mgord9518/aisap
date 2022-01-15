@@ -29,8 +29,8 @@ func Contains(slice []string, str string) (int, bool) {
 
 // Checks if an array contains any of the elements from another array
 func ContainsAny(s []string, s2 []string) (int, bool) {
-	for i, val := range(s) {
-		n, present := Contains(s, s2[i])
+	for i := range(s) {
+		return Contains(s, s2[i])
 	}
 
 	return -1, false
