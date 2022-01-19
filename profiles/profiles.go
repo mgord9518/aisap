@@ -15,13 +15,13 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 3,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"aranym mmu": {
 		Level: 3,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	// Untested with Android device, left level 1 assuming it needs access to all
 	// of `/dev`
@@ -29,7 +29,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 1,
 		Files:   []string{ "xdg-templates:rw", "xdg-download:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	// Any apps that require superuser can't be sandboxed in this way
 	"balenaetcher": {
@@ -40,105 +40,111 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"badlion client": {
 		Level: 2,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"blender": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"deemix-gui": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-music:rw" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"desmume": {
+		Level: 2,
+		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
+		Devices: []string{ "dri", "input" },
+		Sockets: []string{ "x11", "pulseaudio" },
 	},
 	"dolphin emulator": {
 		Level: 2,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "alsa" },
+		Sockets: []string{ "x11", "alsa" },
 	},
 	"dust3d": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"endless sky": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
-		Sockets: []string{ "x11", "wayland", "alsa" },
+		Sockets: []string{ "x11", "alsa" },
 	},
 	"firefox": {
 		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	"firefox beta": {
 		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	"firefox nightly": {
 		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	"fontforge": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw", "~/.fonts:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	// Also requires `/etc/passwd`
 	"freecad conda": {
 		Level: 1,
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"geometrize": {
 		Level: 2,
 		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"gnu image manipulation program": {
 		Level: 1,
 		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"inkscape": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	// Network for plugins and syncing
 	"joplin": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "network" },
+		Sockets: []string{ "x11", "network" },
 	},
 	"krita": {
 		Level: 2,
 		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"leocad": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"librewolf": {
 		Level: 2,
@@ -149,19 +155,19 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"linedancer": {
 		Level: 3,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"liteide": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw", "~/go:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"microsoft edge": {
 		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	// Minecraft requires access to keyring in order to launch correctly,
 	// until a fix is found Minecraft will have to be run without a sandbox
@@ -174,13 +180,13 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"minetest": {
 		Level: 3,
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"mypaint": {
 		Level: 2,
 		Files:   []string{ "xdg-pictures:rw", "xdg-templates:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	// Write access given to because save files are stored in the same
 	// directory as the rom
@@ -188,7 +194,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "audio" },
+		Sockets: []string{ "x11", "audio" },
 	},
 	// Network needed for cloud service, and can run in level 2 if given
 	// `/etc/passwd`
@@ -197,30 +203,30 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 1,
 		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"photogimp": {
 		Level: 1,
 		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"pixsrt": {
 		Level: 2,
 		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"powder toy": {
 		Level: 2,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "network" },
+		Sockets: []string{ "x11", "network" },
 	},
 	"ppsspp": {
 		Level: 2,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "audio" },
+		Sockets: []string{ "x11", "audio" },
 	},
 	// Python given no extra permissions, but can easily be customized for
 	// scripts that require more
@@ -232,25 +238,25 @@ var Profiles = map[string]permissions.AppImagePerms{
 	"runelite": {
 		Level: 1,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	// Audio for notification sounds
 	"sengi": {
 		Level: 1,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	// Link to device not tested
 	"signal": {
 		Level: 2,
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "network" },
+		Sockets: []string{ "x11", "network" },
 	},
 	"smallbasic": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	// I think it's an interesting idea to have a confined terminal
 	// enviornment although it could also greatly hinder its usefullness
@@ -262,7 +268,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
 						   "~/.bashrc:ro",      "~/.zshrc:ro",
 						   "~/.viminfo:ro"},
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	// Untested with real equipment but launches
 	// TODO: Properly test Subsurface
@@ -270,29 +276,36 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Level: 1,
 		Files:   []string{ "xdg-documents:ro" },
 		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland" },
+		Sockets: []string{ "x11" },
 	},
 	"supertuxkart": {
 		Level: 2,
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"supertux 2": {
 		Level: 2,
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "wayland", "audio", "network" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"texstudio": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
-		Sockets: []string{ "x11", "wayland", },
+		Sockets: []string{ "x11" },
 	},
 	"visual studio code": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw" },
-		Sockets: []string{ "x11", "wayland", "network" },
+		Sockets: []string{ "x11", "network" },
+	},
+	// Partially tested
+	"yuzu": {
+		Level: 2,
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
+		Devices: []string{ "dri", "input" },
+		Sockets: []string{ "x11", "audio" },
 	},
 }
 
