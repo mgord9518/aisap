@@ -16,7 +16,7 @@ var (
 	c = "\033[0;36m" // Cyan
 	z = "\033[0;0m"  // Reset
 
-	ver = "0.2.0"
+	ver = "0.2.3"
 )
 
 var (
@@ -29,8 +29,8 @@ var (
 	color   =   flag.Bool("color",   true,  "")
 	example =   flag.Bool("example", false, "")
 	version =   flag.Bool("version", false, "")
-	profile = flag.String("profile", "",    "")
-	level   =    flag.Int("level",   -1,    "")
+	profile =   flag.String("profile", "",  "")
+	level   =   flag.Int("level",   -1,     "")
 
 	// Flags that can be called multiple times
 	file     arrayFlags
