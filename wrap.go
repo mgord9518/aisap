@@ -131,7 +131,7 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind-try", aiRoot(ai, "usr/lib32"), "/usr/lib32",
 			"--ro-bind-try", aiRoot(ai, "usr/lib64"), "/usr/lib64",
 			"--dir",         "/app",
-			"--bind",        ai.Path,                 filepath.Join("/app", path.Base(ai.Path)),
+			"--bind",        ai.Path, filepath.Join("/app", path.Base(ai.Path)),
 	}
 
 	// Convert device perms to bwrap format
@@ -161,8 +161,8 @@ func GetWrapArgs(ai *AppImage) []string {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
 			"--ro-bind",     "/sys", "/sys",
-			"--ro-bind",     aiRoot(ai, "usr"),    "/usr",
-			"--ro-bind-try", aiRoot(ai, "etc"),    "/etc",
+			"--ro-bind",     aiRoot(ai, "usr"), "/usr",
+			"--ro-bind-try", aiRoot(ai, "etc"), "/etc",
 			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(homed, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
@@ -194,8 +194,25 @@ func GetWrapArgs(ai *AppImage) []string {
 	xAuthority := os.Getenv("XAUTHORITY")
 	xDisplay := strings.ReplaceAll(os.Getenv("DISPLAY"), ":", "")
 
+	// Set if Wayland is running on the host machine
+	// Using different Wayland display sessions currently not tested
+	wDisplay, waylandEnabled := os.LookupEnv("WAYLAND_DISPLAY")
+
 	// Args if socket is enabled
 	var sockets = map[string][]string {
+		// Encompasses ALSA, Pulse and pipewire. Easiest for convience, but for
+		// more security, specify the specific audio system
+		"alsa": {
+			"--ro-bind-try", "/usr/share/alsa", "/usr/share/alsa",
+			"--ro-bind-try", "/etc/group",      "/etc/group",
+			"--dev-bind",    "/dev/snd",        "/dev/snd",
+		},
+		"audio": {
+			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
+			"--ro-bind-try", "/etc/group",               "/etc/group",
+			"--dev-bind",    "/dev/snd",                 "/dev/snd",
+		},
 		"cgroup": {},
 		"ipc":    {},
 		"network": {
@@ -206,27 +223,23 @@ func GetWrapArgs(ai *AppImage) []string {
 				"--ro-bind-try", "/usr/share/ca-certificates", "/usr/share/ca-certificates",
 		},
 		"pid": {},
-		// Encompasses ALSA, Pulse and pipewire. Easiest for convience, but for
-		// more security, specify the specific audio system
-		"audio": {
-			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
-			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
-			"--ro-bind-try", "/etc/group",               "/etc/group",
-			"--dev-bind",    "/dev/snd",                 "/dev/snd",
+		"pipewire": {
+			"--ro-bind-try", "/run/user/"+ruid+"/pipewire-0", "/run/user/"+ruid+"/pipewire-0",
 		},
 		"pulseaudio": {
 			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
 		},
-		"alsa": {
-			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
-			"--ro-bind-try", "/etc/group",               "/etc/group",
-			"--dev-bind",    "/dev/snd",                 "/dev/snd",
-		},
 		"user": {},
 		"uts":  {},
 		"wayland": {
-			"--ro-bind-try", "/run/user/"+ruid+"/wayland-0", "/run/user/"+ruid+"/wayland-0",
+			"--ro-bind-try", "/run/user/"+ruid+"/"+wDisplay, "/run/user/"+ruid+"/wayland-0",
 			"--ro-bind-try", "/usr/share/X11",               "/usr/share/X11",
+			// TODO: Add more enviornment variables for app compatability
+			// maybe theres a better way to do this?
+			"--setenv", "WAYLAND_DISPLAY",             "wayland-0",
+			"--setenv", "_JAVA_AWT_WM_NONREPARENTING", "1",
+			"--setenv", "MOZ_ENABLE_WAYLAND",          "1",
+			"--setenv", "XDG_SESSION_TYPE",            "wayland",
 		},
 		// For some reason sometimes it doesn't work when binding X0 to another
 		// socket ...but sometimes it does. X11 should be avoided if looking
@@ -236,17 +249,21 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind-try", xAuthority,                      homed+"/.Xauthority",
 			"--ro-bind-try", sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
 			"--ro-bind-try", "/usr/share/X11",                "/usr/share/X11",
-			"--setenv",      "XAUTHORITY",                    homed+"/.Xauthority",
-			"--setenv",      "DISPLAY",                       ":"+xDisplay,
+			"--setenv",      "DISPLAY",         ":"+xDisplay,
+			"--setenv",      "QT_QPA_PLATFORM", "xcb",
+			"--setenv",      "XAUTHORITY",      homed+"/.Xauthority",
 		},
 	}
 
 	// Args to disable sockets if not requested
 	var unsocks = map[string][]string {
+		"alsa":       {},
+		"audio":      {},
 		"cgroup":     { "--unshare-cgroup-try" },
 		"ipc":        { "--unshare-ipc" },
 		"network":    { "--unshare-net" },
 		"pid":        { "--unshare-pid" },
+		"pipewire":   {},
 		"pulseaudio": {},
 		"user":       { "--unshare-user-try" },
 		"uts":        { "--unshare-uts" },
@@ -254,9 +271,15 @@ func GetWrapArgs(ai *AppImage) []string {
 		"x11":        {},
 	}
 
-	for s, _ := range sockets {
-		_, present := helpers.Contains(ai.Perms.Sockets, s)
-		if present {
+	for s, _ := range(sockets) {
+		if _, present := helpers.Contains(ai.Perms.Sockets, s); present {
+			// Don't give access to X11 if wayland is running on the machine
+			// and the app supports it
+			if _, waylandApp := helpers.Contains(ai.Perms.Sockets, "wayland");
+			waylandEnabled && waylandApp && s == "x11" {
+				continue
+			}
+
 			cmdArgs = append(cmdArgs, sockets[s]...)
 		} else {
 			cmdArgs = append(cmdArgs, unsocks[s]...)
@@ -273,13 +296,12 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--dev-bind-try", "/dev/nvidia-modeset",     "/dev/nvidia-modeset",
 		},
 		"input": {
-			"--ro-bind",      "/sys/class/input",           "/sys/class/input",
+			"--ro-bind", "/sys/class/input", "/sys/class/input",
 		},
 	}
 
 	for device, _ := range(devices) {
-		_, present := helpers.Contains(ai.Perms.Devices, device)
-		if present {
+		if _, present := helpers.Contains(ai.Perms.Devices, device); present {
 			cmdArgs = append(cmdArgs, devices[device]...)
 		}
 	}
