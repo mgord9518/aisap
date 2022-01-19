@@ -5,8 +5,7 @@ import (
 	"strings"
 	"path/filepath"
 
-//	aisap "github.com/mgord9518/aisap"
-	helpers "github.com/mgord9518/aisap/helpers"
+//	helpers "github.com/mgord9518/aisap/helpers"
 	check "github.com/mgord9518/aisap/spooky"
 	xdg   "github.com/adrg/xdg"
 )
@@ -19,19 +18,6 @@ func makeDevPretty(str string) string {
 	}
 
 	return str
-}
-
-// Convert xdg and full directories into their shortened counterparts
-func makePretty(str string) string {
-	s  := strings.Split(str, ":")
-	str = helpers.ExpandDir(str)
-	ex := ":" + s[len(s)-1]
-
-	// Pretty it up by replacing `/home/$USERNAME` with `~`
-	str = strings.Replace(str, xdg.Home, "~", 1)
-
-
-	return str + ex
 }
 
 func prettyList(str string, s []string) {
