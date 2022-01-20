@@ -19,13 +19,19 @@ elif command -v 'mkappimage'; then
 	aitool() {
 		'mkappimage' "$@"
 	}
-elif command -v 'appimagetool'; then
+elif command -v "$PWD/mkappimage"; then
 	aitool() {
-		'appimagetool' "$@"
+		"$PWD/mkappimage" "$@"
 	}
 else
-	echo 'Failed to locate appimagetool in $PATH! Unable to build'
-	exit 1
+	# Hacky one-liner to get the URL to download the latest mkappimage
+	mkAppImageUrl=$(curl -q https://api.github.com/repos/probonopd/go-appimage/releases | grep $(uname -m) | grep mkappimage | grep browser_download_url | cut -d'"' -f4 | head -n1)
+	echo 'Downloading `mkappimage`'
+	wget "$mkAppImageUrl" -O 'mkappimage'
+	chmod +x 'mkappimage'
+	aitool() {
+		"$PWD/mkappimage" "$@"
+	}
 fi
 
 if [ ! $(command -v 'go') ]; then
@@ -37,7 +43,7 @@ aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
 
 # Clean up from previous builds
-rm -r 'AppDir' "aisap-$ARCH.AppImage" "aisap-$ARCH.AppImage.zsync" excludelist
+rm -r 'AppDir' "aisap-"*"-$ARCH.AppImage" "aisap-"*"-$ARCH.AppImage.zsync"
 
 mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/metainfo' \
@@ -78,3 +84,4 @@ ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 # Build the AppImage
 ARCH="$ARCH" VERSION=$('AppDir/usr/bin/aisap-bin' --version) \
 	aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
+
