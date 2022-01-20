@@ -16,7 +16,7 @@ var (
 	c = "\033[0;36m" // Cyan
 	z = "\033[0;0m"  // Reset
 
-	ver = "0.2.5"
+	ver = "0.2.5-alpha"
 )
 
 var (
@@ -82,7 +82,7 @@ func init() {
 		fmt.Printf("%s  --version  %sprint the version and exit\n\n", g, z)
 		fmt.Printf("%sWARNING:%s no sandbox is impossible to escape! This is to *aid* security, not\n", r, z)
 		fmt.Printf("guarentee safety when downloading sketchy stuff online. Don't be stupid!\n\n")
-		fmt.Printf("for more information, visit <://github.com/mgord9518/aisap>\n\n")
+		fmt.Printf("for more information, visit <https://github.com/mgord9518/aisap>\n\n")
 		fmt.Printf("Plus, this is ALPHA software! Very little testing has been done;\n")
 		fmt.Printf("%sUSE AT YOUR OWN RISK!%s\n", r, z)
 		os.Exit(0)
@@ -95,8 +95,8 @@ func init() {
 		g = ""
 		y = ""
 		r = ""
+		c = ""
 	}
-
 
 	if *version {
 		fmt.Println(ver)
