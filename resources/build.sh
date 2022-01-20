@@ -34,6 +34,11 @@ else
 	}
 fi
 
+if [ "$GITHUB_ACTIONS" ]; then
+  sudo apt-get update
+  sudo apt-get install appstream
+fi
+
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
 	exit 1
