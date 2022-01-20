@@ -7,17 +7,19 @@ import (
 	permissions "github.com/mgord9518/aisap/permissions"
 )
 
-// List of all profiles supported by aisal out of the box.
-// Most of these have only been tested on my (Manjaro and Arch) systems, so they may not work correctly on yours
-// If that is the case, please report the issue and any error messages you encounter so that I can try to fix them
-var Profiles = map[string]permissions.AppImagePerms{
-	"aranym jit": {
+// List of all profiles supported by aisap out of the box.
+// Most of these have only been tested on my (Manjaro and Arch) systems, so
+// they may not work correctly on yours. If that is the case, please report the
+// issue and any error messages you encounter so that I can try to fix them
+// NOTE: Some app permissions are `aliases` of others, so care must be taken
+// that modifying the parent permission will also affect apps based on it
+var profiles = map[string]permissions.AppImagePerms{
+	"0 a.d.": {
 		Level: 3,
-		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
-		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "audio", "network" },
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa", "network" },
 	},
-	"aranym mmu": {
+	"aranym jit": {
 		Level: 3,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
@@ -31,12 +33,6 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
-	// Any apps that require superuser can't be sandboxed in this way
-	"balenaetcher": {
-		Level: 0,
-	},
-	// Badlion (and others) might be able to get switched to level 2, so specify devices anyway
-	// Proprietary and unofficial AppImages should be high priority to be sandboxed to the fullest extent
 	"badlion client": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -48,23 +44,32 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	// I think it's an interesting idea to have a confined terminal
+	// enviornment although it could also greatly hinder its usefullness
+	// so I'd like to hear feedback
+	// TODO: add more files but keep it isolated from the host system
+	// Untested with real equipment but launches
+	// TODO: Properly test Subsurface
+	"cool retro term": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
+						   "~/.bashrc:ro",      "~/.zshrc:ro",
+						   "~/.viminfo:ro"},
+		Sockets: []string{ "x11" },
+	},
 	"deemix-gui": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-music:rw" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
-	"desmume": {
-		Level: 2,
-		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
-		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "pulseaudio" },
-	},
+	// Network for netplay
 	"dolphin emulator": {
 		Level: 2,
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "alsa" },
+		Sockets: []string{ "x11", "alsa", "network" },
 	},
 	"dust3d": {
 		Level: 2,
@@ -79,18 +84,6 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Sockets: []string{ "x11", "alsa" },
 	},
 	"firefox": {
-		Level: 2,
-		Files:   []string{ "xdg-download:rw" },
-		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "pulseaudio", "network" },
-	},
-	"firefox beta": {
-		Level: 2,
-		Files:   []string{ "xdg-download:rw" },
-		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "pulseaudio", "network" },
-	},
-	"firefox nightly": {
 		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
@@ -146,12 +139,6 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
-	"librewolf": {
-		Level: 2,
-		Files:   []string{ "xdg-download:rw" },
-		Devices: []string{ "dri" },
-		Sockets: []string{ "x11", "wayland", "pulseaudio", "network" },
-	},
 	"linedancer": {
 		Level: 3,
 		Devices: []string{ "dri" },
@@ -163,7 +150,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
-	"microsoft edge": {
+	"google chrome": {
 		Level: 2,
 		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
@@ -258,20 +245,6 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
-	// I think it's an interesting idea to have a confined terminal
-	// enviornment although it could also greatly hinder its usefullness
-	// so I'd like to hear feedback
-	// TODO: add more files but keep it isolated from the host system
-	"station": {
-		Level: 1,
-		Devices: []string{ "dri" },
-		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
-						   "~/.bashrc:ro",      "~/.zshrc:ro",
-						   "~/.viminfo:ro"},
-		Sockets: []string{ "x11" },
-	},
-	// Untested with real equipment but launches
-	// TODO: Properly test Subsurface
 	"subsurface": {
 		Level: 1,
 		Files:   []string{ "xdg-documents:ro" },
@@ -279,12 +252,7 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Sockets: []string{ "x11" },
 	},
 	"supertuxkart": {
-		Level: 2,
-		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "audio", "network" },
-	},
-	"supertux 2": {
-		Level: 2,
+		Level: 3,
 		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
@@ -300,23 +268,42 @@ var Profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11", "network" },
 	},
-	// Partially tested
-	"yuzu": {
-		Level: 2,
-		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
-		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "audio" },
-	},
 }
+
 
 func FromName(name string) *permissions.AppImagePerms {
 	name = strings.ToLower(name)
 
-	if p, present := Profiles[name]; present {
+	if p, present := profiles[name]; present {
 		p.Files = helpers.CleanFiles(p.Files)
 		return &p
-	} else {
-		p.Level = -1
+	}
+
+	// Load in duplicate permissions based on their names
+	// These may not be the same (or even similar) program, but they share the
+	// same permissions, this is done to (marginally) reduce the size of this
+	// file and memory usage
+	aliases := map[string]string {
+		"aranym mmu":            "aranym jit",
+		"balenaetcher":          "minecraft",
+		"brave":                 "google chrome",
+		"chromium":              "google chrome",
+		"desmume":               "mgba",
+		"firefox beta":          "firefox",
+		"firefox nightly":       "firefox",
+		"librewolf":             "firefox",
+		"microsoft edge":        "google chrome",
+		"supertux 2":            "supertuxkart",
+		"station":               "cool retro term",
+		"yuzu":                  "dolphin emulator",
+		"armagetron advanced":   "supertuxkart",
+	}
+
+	if a, present := aliases[name]; present {
+		p := profiles[a]
 		return &p
 	}
+
+	// If both tests fail, return with a level of -1
+	return &permissions.AppImagePerms{ Level: -1 }
 }
