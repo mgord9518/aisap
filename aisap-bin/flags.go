@@ -16,7 +16,7 @@ var (
 	c = "\033[0;36m" // Cyan
 	z = "\033[0;0m"  // Reset
 
-	ver = "0.2.3"
+	ver = "0.2.5"
 )
 
 var (
@@ -65,9 +65,10 @@ func init() {
 		fmt.Printf("permissions library\n")
 		fmt.Printf("sandbox level of 0 only changes data directory, not actually sandboxed!\n\n")
 		fmt.Printf("%snormal options:\n", y)
-		fmt.Printf("%s  -h, --help     %sdisplay this help menu\n", g, z)
+		fmt.Printf("%s  -h, --help        %sdisplay this help menu\n", g, z)
+		fmt.Printf("%s  -l, --list-perms  %slist permissions to be granted to the app\n\n", g, z)
 //		fmt.Printf("%s  -v, --verbose  %sbe more verbose (NEI)\n\n", g, z)
-		fmt.Printf("%sLong-only options:\n", y)
+		fmt.Printf("%slong-only options:\n", y)
 		fmt.Printf("%s  --color    %swhether color should be shown (default: true)\n", g, z)
 		fmt.Printf("%s  --example  %sshow usage examples\n", g, z)
 		fmt.Printf("%s  --file     %sadd file to sandbox\n", g, z)
