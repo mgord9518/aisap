@@ -87,7 +87,9 @@ ln -s './usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg' 'A
 ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 
 # Build the AppImage
-ARCH="$ARCH" VERSION=$('AppDir/usr/bin/aisap-bin' --version) \
-	aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
+export ARCH="$ARCH"
+export VERSION=$('AppDir/usr/bin/aisap-bin' --version)
+
+aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
 echo "$VERSION"
