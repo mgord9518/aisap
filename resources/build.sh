@@ -90,3 +90,4 @@ ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
 ARCH="$ARCH" VERSION=$('AppDir/usr/bin/aisap-bin' --version) \
 	aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
+echo "$VERSION"
