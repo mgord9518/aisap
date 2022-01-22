@@ -17,15 +17,15 @@ func GetOffset(src string) (int, error) {
 	var offset int
 
 	format, err := GetAppImageType(src)
+	if err != nil { return -1, err }
+
 	if format == -2 {
-		offset, err = getShappImageSize(src)
+		return getShappImageSize(src)
 	} else if format == 2 || format == 0 {
-		offset, err = getElfSize(src)
-	} else {
-		return -1, errors.New("cannot find AppImage offset")
+		return getElfSize(src)
 	}
 
-	return offset, err
+	return -1, errors.New("an unknown error occured at aisap/helpers/GetOffset.go")
 }
 
 // Takes a src file as argument, returning the size of the shappimage header
@@ -134,16 +134,15 @@ func GetAppImageType(src string) (int, error) {
 // Checks the magic of a given file against the byte array provided
 // if identical, return true
 func HasMagic(r io.ReadSeeker, str string, length int) bool {
-	b := []byte(str)
-	magic := make([]byte, len(b))
+	magic := make([]byte, len(str))
 
 	r.Seek(int64(length), 0)
 
 	_, err := io.ReadFull(r, magic[:])
 	if err != nil { return false }
 
-	for i := 0; i < len(b); i++ {
-		if magic[i] != b[i] {
+	for i := 0; i < len(str); i++ {
+		if magic[i] != str[i] {
 			return false
 		}
 	}

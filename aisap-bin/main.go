@@ -1,4 +1,4 @@
-// Copyright © 2021 Mathew Gordon <github.com/mgord9518>
+// Copyright © 2021-2022 Mathew Gordon <github.com/mgord9518>
 //
 // Permission  is hereby  granted,  free of charge,  to any person  obtaining a
 // copy of this software  and associated documentation files  (the “Software”),
@@ -7,10 +7,10 @@
 // sublicense,  and/or sell copies of  the Software, and to  permit  persons to
 // whom  the   Software  is  furnished  to  do  so,  subject  to  the following
 // conditions:
-// 
+//
 // The  above  copyright notice  and this permission notice  shall be  included
 // in  all  copies  or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY  OF ANY KIND,  EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED  TO  THE WARRANTIES  OF  MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE  AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -31,6 +31,7 @@ import (
 	"syscall"
 
 	aisap "github.com/mgord9518/aisap"
+//	helpers "github.com/mgord9518/aisap/helpers"
 	check "github.com/mgord9518/aisap/spooky"
 	flag  "github.com/spf13/pflag"
 )
@@ -92,6 +93,10 @@ func main() {
 		fmt.Fprintln(os.Stdout, "Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 		cleanExit(0)
 	}
+
+	//f, _ := os.Open("/home/mgord9518/shap")
+	//fmt.Println(helpers.CheckMagic(f, "#!/bin/sh\n#.shImg.#", 0))
+	//fmt.Println(helpers.GetAppImageType("/home/mgord9518/shap"))
 
 	// Give basic info on the permissions the AppImage requests
 	if *listPerms {

@@ -49,13 +49,12 @@ var profiles = map[string]permissions.AppImagePerms{
 	// so I'd like to hear feedback
 	// TODO: add more files but keep it isolated from the host system
 	// Untested with real equipment but launches
-	// TODO: Properly test Subsurface
 	"cool retro term": {
 		Level: 1,
 		Devices: []string{ "dri" },
 		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
-						   "~/.bashrc:ro",      "~/.zshrc:ro",
-						   "~/.viminfo:ro"},
+		                   "~/.bashrc:ro",      "~/.zshrc:ro",
+		                   "~/.viminfo:ro"},
 		Sockets: []string{ "x11" },
 	},
 	"deemix-gui": {
@@ -181,7 +180,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Devices: []string{ "dri", "input" },
-		Sockets: []string{ "x11", "audio" },
+		Sockets: []string{ "x11", "alsa" },
 	},
 	// Network needed for cloud service, and can run in level 2 if given
 	// `/etc/passwd`
@@ -245,6 +244,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
+	// TODO: Properly test Subsurface
 	"subsurface": {
 		Level: 1,
 		Files:   []string{ "xdg-documents:ro" },
@@ -284,19 +284,27 @@ func FromName(name string) *permissions.AppImagePerms {
 	// same permissions, this is done to (marginally) reduce the size of this
 	// file and memory usage
 	aliases := map[string]string {
-		"aranym mmu":            "aranym jit",
-		"balenaetcher":          "minecraft",
-		"brave":                 "google chrome",
-		"chromium":              "google chrome",
-		"desmume":               "mgba",
-		"firefox beta":          "firefox",
-		"firefox nightly":       "firefox",
-		"librewolf":             "firefox",
-		"microsoft edge":        "google chrome",
-		"supertux 2":            "supertuxkart",
-		"station":               "cool retro term",
-		"yuzu":                  "dolphin emulator",
-		"armagetron advanced":   "supertuxkart",
+		"aranym mmu":          "aranym jit",
+		"armagetron advanced": "supertuxkart",
+		"balenaetcher":        "minecraft",
+		"brave":               "google chrome",
+		"chromium":            "google chrome",
+		"desmume":             "mgba",
+		"firefox beta":        "firefox",
+		"firefox nightly":     "firefox",
+		"librewolf":           "firefox",
+		"microsoft edge":      "google chrome",
+		"python2.7.18":        "python",
+		"python3":             "python",
+		"python3.5.10":        "python",
+		"python3.6.15":        "python",
+		"python3.7.12":        "python",
+		"python3.8.12":        "python",
+		"python3.9.9":         "python",
+		"python3.10.1":        "python",
+		"supertux 2":          "supertuxkart",
+		"station":             "cool retro term",
+		"yuzu":                "dolphin emulator",
 	}
 
 	if a, present := aliases[name]; present {

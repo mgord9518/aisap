@@ -15,7 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"strconv"
 	"strings"
 	"time"
 
@@ -29,7 +28,6 @@ import (
 var (
 	usern string
 	homed string
-	uid   string
 
 	sysTemp   string
 	mnt      *exec.Cmd
@@ -63,7 +61,6 @@ func init() {
 	usr, _ := user.Current()
 	usern   = usr.Username
 	homed   = filepath.Join("/home", usern)
-	uid     = strconv.Itoa(os.Getuid())
 }
 
 // Create a new AppImage object from a path
@@ -164,6 +161,7 @@ func (ai AppImage) RunId() string {
 	return ai.runId
 }
 
+// TODO: Move these functions to `ai.Perms` because it makes more sense
 func (ai AppImage) AddFile(str string) {
 	// Clear out previous file if it already exists
 	ai.RemoveFile(str)
@@ -197,7 +195,8 @@ func (ai AppImage) RemoveFile(str string) {
 	s  := strings.Split(str, ":")
 	str = strings.Join(s[:len(s)-1], ":")
 
-	if i, present := helpers.ContainsAny(ai.Perms.Files, []string{ str + ":ro", str + ":rw" }); present {
+	if i, present := helpers.ContainsAny(ai.Perms.Files,
+	[]string{ str + ":ro", str + ":rw" }); present {
 		ai.Perms.Files = append(ai.Perms.Files[:i], ai.Perms.Files[i+1:]...)
 	}
 }

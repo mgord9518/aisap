@@ -90,8 +90,7 @@ func setupRun(ai *AppImage) error {
 }
 
 func GetWrapArgs(ai *AppImage) []string {
-	// Real UID, for level 1 RUID and UID are the same value
-	ruid := strconv.Itoa(os.Getuid())
+	uid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
 			"--setenv", "TMPDIR",              "/tmp",
@@ -204,14 +203,18 @@ func GetWrapArgs(ai *AppImage) []string {
 		// more security, specify the specific audio system
 		"alsa": {
 			"--ro-bind-try", "/usr/share/alsa", "/usr/share/alsa",
+			"--ro-bind-try", "/etc/alsa",       "/etc/alsa",
 			"--ro-bind-try", "/etc/group",      "/etc/group",
 			"--dev-bind",    "/dev/snd",        "/dev/snd",
 		},
 		"audio": {
-			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
-			"--ro-bind-try", "/usr/share/alsa",          "/usr/share/alsa",
-			"--ro-bind-try", "/etc/group",               "/etc/group",
-			"--dev-bind",    "/dev/snd",                 "/dev/snd",
+			"--ro-bind-try", "/run/user/"+uid+"/pulse", "/run/user/"+uid+"/pulse",
+			"--ro-bind-try", "/usr/share/alsa",         "/usr/share/alsa",
+			"--ro-bind-try", "/usr/share/pulseaudio",   "/usr/share/pulseaudio",
+			"--ro-bind-try", "/etc/alsa",               "/etc/alsa",
+			"--ro-bind-try", "/etc/group",              "/etc/group",
+			"--ro-bind-try", "/etc/pulse",              "/etc/pulse",
+			"--dev-bind",    "/dev/snd",                "/dev/snd",
 		},
 		"cgroup": {},
 		"ipc":    {},
@@ -224,15 +227,16 @@ func GetWrapArgs(ai *AppImage) []string {
 		},
 		"pid": {},
 		"pipewire": {
-			"--ro-bind-try", "/run/user/"+ruid+"/pipewire-0", "/run/user/"+ruid+"/pipewire-0",
+			"--ro-bind-try", "/run/user/"+uid+"/pipewire-0", "/run/user/"+uid+"/pipewire-0",
 		},
 		"pulseaudio": {
-			"--ro-bind-try", "/run/user/"+ruid+"/pulse", "/run/user/"+ruid+"/pulse",
+			"--ro-bind-try", "/run/user/"+uid+"/pulse", "/run/user/"+uid+"/pulse",
+			"--ro-bind-try", "/etc/pulse",              "/etc/pulse",
 		},
 		"user": {},
 		"uts":  {},
 		"wayland": {
-			"--ro-bind-try", "/run/user/"+ruid+"/"+wDisplay, "/run/user/"+ruid+"/wayland-0",
+			"--ro-bind-try", "/run/user/"+uid+"/"+wDisplay, "/run/user/"+uid+"/wayland-0",
 			"--ro-bind-try", "/usr/share/X11",               "/usr/share/X11",
 			// TODO: Add more enviornment variables for app compatability
 			// maybe theres a better way to do this?
