@@ -36,7 +36,7 @@ fi
 
 if [ "$GITHUB_ACTIONS" ]; then
   sudo apt-get update
-  sudo apt-get install appstream zlib
+  sudo apt-get install appstream
 fi
 
 if [ ! $(command -v 'go') ]; then
