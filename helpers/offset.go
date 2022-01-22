@@ -48,9 +48,8 @@ func getShappImageSize(src string) (int, error) {
 
 			offHex := strings.Split(scanner.Text(), "=")[1]
 			o, err := strconv.ParseInt(offHex, 16, 32)
+
 			return int(o), err
-		} else {
-			continue
 		}
 	}
 
@@ -62,11 +61,6 @@ func getShappImageSize(src string) (int, error) {
 // getElfSize takes a src file as argument, returning its size as an int
 // and an error if unsuccessful
 func getElfSize(src string) (int, error) {
-	format, _ := GetAppImageType(src)
-	if format != 2 && format != 0 {
-		return -1, errors.New("invalid ELF file, cannot calculate size")
-	}
-
 	f, _ := os.Open(src)
 	defer f.Close()
 	e, err := elf.NewFile(f)
@@ -118,32 +112,41 @@ func GetAppImageType(src string) (int, error) {
 	_, err = f.Stat()
 	if err != nil { return -1, err }
 
-	// Read header of file
-	var magic [16]byte
-	_, err = io.ReadFull(f, magic[:])
-	if err != nil { return -1, err }
-
-	if magic[0] == '\x7f' &&
-	magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F' &&
-	magic[8] == 'A' && magic[9] == 'I' && magic[10] == '\x01' {
-		// AppImage type is type 1 (standard)
-		return 1, nil
-	} else if magic[0] == '\x7f' &&
-	magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F' &&
-	magic[8] == 'A' && magic[9] == 'I' && magic[10] == '\x02' {
-		// AppImage type is type 2 (standard)
-		return 2, nil
-	} else if magic[0] == '\x7f' &&
-	magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F' {
+	if HasMagic(f, "\x7fELF", 0) {
+		if HasMagic(f, "AI\x01", 8) {
+			// AppImage type is type 1 (standard)
+			return 1, nil
+		} else if HasMagic(f, "AI\x02", 8) {
+			// AppImage type is type 2 (standard)
+			return 2, nil
+		}
 		// Unknown AppImage, but valid ELF
 		return 0, nil
-	} else if magic[10] == '#' &&
-	magic[11] == 's' && magic[12] == 'h' &&
-	magic[13] == 'A' && magic[14] == 'I' {
+	} else if HasMagic(f, "#!/bin/sh\n#.shImg.#", 0) {
 		// AppImage is shappimage (shell script SquashFS implementation)
 		return -2, nil
 	}
 
 	err = errors.New("unable to get AppImage type")
 	return -1, err
+}
+
+// Checks the magic of a given file against the byte array provided
+// if identical, return true
+func HasMagic(r io.ReadSeeker, str string, length int) bool {
+	b := []byte(str)
+	magic := make([]byte, len(b))
+
+	r.Seek(int64(length), 0)
+
+	_, err := io.ReadFull(r, magic[:])
+	if err != nil { return false }
+
+	for i := 0; i < len(b); i++ {
+		if magic[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
