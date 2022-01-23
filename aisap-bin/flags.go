@@ -16,7 +16,7 @@ var (
 	c = "\033[0;36m" // Cyan
 	z = "\033[0;0m"  // Reset
 
-	ver = "0.2.7-alpha"
+	ver = "0.2.9-alpha"
 )
 
 var (

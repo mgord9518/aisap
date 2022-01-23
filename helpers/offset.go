@@ -14,8 +14,6 @@ import (
 // GetOffset takes an AppImage (either ELF or shappimage), returning the offset
 // of its SquashFS archive
 func GetOffset(src string) (int, error) {
-	var offset int
-
 	format, err := GetAppImageType(src)
 	if err != nil { return -1, err }
 
@@ -133,10 +131,8 @@ func GetAppImageType(src string) (int, error) {
 
 // Checks the magic of a given file against the byte array provided
 // if identical, return true
-func HasMagic(r io.ReadSeeker, str string, length int) bool {
+func HasMagic(r io.Reader, str string, length int) bool {
 	magic := make([]byte, len(str))
-
-	r.Seek(int64(length), 0)
 
 	_, err := io.ReadFull(r, magic[:])
 	if err != nil { return false }

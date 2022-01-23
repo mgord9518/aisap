@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"strconv"
 	"strings"
 	"time"
 
@@ -53,14 +54,15 @@ type AppImage struct {
 }
 
 func init() {
-	sysTemp, present = os.LookupEnv("TMPDIR")
-	if !present {
-		sysTemp = "/tmp"
-	}
-
 	usr, _ := user.Current()
 	usern   = usr.Username
 	homed   = filepath.Join("/home", usern)
+	uid := strconv.Itoa(os.Getuid())
+
+	sysTemp, present = os.LookupEnv("XDG_RUNTIME_DIR")
+	if !present {
+		sysTemp = filepath.Join("/run", "user", uid)
+	}
 }
 
 // Create a new AppImage object from a path
@@ -75,6 +77,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	// Set the runId, tempDir and rootDir of the AppImage
 	pfx := path.Base(ai.Path)[0:6]
 	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
+
 	ai.tempDir, err = helpers.MakeTemp(filepath.Join(sysTemp, "aisap"), ai.runId)
 	if err != nil { return nil, err }
 	ai.rootDir = "/"
@@ -126,25 +129,18 @@ func NewAppImage(src string) (*AppImage, error) {
 // Return a reader for the `.DirIcon` file of the AppImage, converting it to
 // PNG if it's in SVG or XPM format
 func (ai AppImage) Thumbnail() (io.Reader, error) {
-	var f io.Reader
-
-	f, err = os.Open(filepath.Join(ai.mountDir, ".DirIcon"))
+	f, err := os.Open(filepath.Join(ai.mountDir, ".DirIcon"))
 	if err != nil { return nil, err }
-
-	// Get the file's magic number
-	id := make([]byte, 4)
-	io.ReadAtLeast(f, id, 4)
-
-	// Recombine the file's magic number with the rest of the reader
-	f = io.MultiReader(bytes.NewReader(id), f)
 
 	// Convert `.DirIcon` to PNG format if it isn't already
 	// Note: the only other officially supported formats for AppImage are XPM
 	// and SVG
-	if id[0] != 0x89 || id[1] != 'P' ||
-	   id[2] != 'N'  || id[3] != 'G' {
-		f, err = imgconv.ConvertWithAspect(f, 256, "png")
+	if !helpers.HasMagic(f, "\x89PNG", 0) {
+		f.Seek(0, io.SeekStart)
+		return imgconv.ConvertWithAspect(f, 256, "png")
 	}
+
+	f.Seek(0, io.SeekStart)
 
 	return f, err
 }

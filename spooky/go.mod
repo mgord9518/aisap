@@ -1,3 +1,3 @@
 module github.com/mgord9518/aisap/spooky
 
-go 1.17
+go 1.16

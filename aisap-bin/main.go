@@ -31,7 +31,6 @@ import (
 	"syscall"
 
 	aisap "github.com/mgord9518/aisap"
-//	helpers "github.com/mgord9518/aisap/helpers"
 	check "github.com/mgord9518/aisap/spooky"
 	flag  "github.com/spf13/pflag"
 )
@@ -93,10 +92,6 @@ func main() {
 		fmt.Fprintln(os.Stdout, "Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 		cleanExit(0)
 	}
-
-	//f, _ := os.Open("/home/mgord9518/shap")
-	//fmt.Println(helpers.CheckMagic(f, "#!/bin/sh\n#.shImg.#", 0))
-	//fmt.Println(helpers.GetAppImageType("/home/mgord9518/shap"))
 
 	// Give basic info on the permissions the AppImage requests
 	if *listPerms {
