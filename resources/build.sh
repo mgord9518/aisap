@@ -54,9 +54,13 @@ mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/metainfo' \
          'AppDir/usr/share/icons/hicolor/scalable/apps'
 
-# Download and compile the binary into the AppDir
-CGO_ENABLED=0 GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
-	"$aisapUrl/aisap-bin@latest"
+# Compile the binary into the AppDir
+#CGO_ENABLED=0 GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
+#	"$aisapUrl/aisap-bin@latest"
+cd aisap-bin
+go mod tidy
+CGO_ENABLED=0 go build -ldflags '-s -w' -o '../AppDir/usr/bin'
+cd ..
 
 if [ $? -ne 0 ]; then
 	echo "Failed to build!"
