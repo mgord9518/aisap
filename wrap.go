@@ -298,6 +298,7 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
 			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
 			"--dev-bind-try", "/dev/nvidia-modeset",     "/dev/nvidia-modeset",
+			"--ro-bind-try",  aiRoot(ai, "usr/share/glvnd"), "/usr/share/glvnd",
 		},
 		"input": {
 			"--ro-bind", "/sys/class/input", "/sys/class/input",

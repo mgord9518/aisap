@@ -1,6 +1,7 @@
 package profiles
 
 import (
+	"errors"
 	"strings"
 
 	helpers     "github.com/mgord9518/aisap/helpers"
@@ -24,6 +25,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"appimageupdate": {
+		Level: 2,
+		Files:   []string{ "~/Applications:rw" },
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "network" },
 	},
 	// Untested with Android device, left level 1 assuming it needs access to all
 	// of `/dev`
@@ -204,7 +211,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Sockets: []string{ "x11" },
 	},
 	"powder toy": {
-		Level: 2,
+		Level: 3,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "network" },
 	},
@@ -271,12 +278,12 @@ var profiles = map[string]permissions.AppImagePerms{
 }
 
 
-func FromName(name string) *permissions.AppImagePerms {
+func FromName(name string) (*permissions.AppImagePerms, error) {
 	name = strings.ToLower(name)
 
 	if p, present := profiles[name]; present {
 		p.Files = helpers.CleanFiles(p.Files)
-		return &p
+		return &p, nil
 	}
 
 	// Load in duplicate permissions based on their names
@@ -309,9 +316,10 @@ func FromName(name string) *permissions.AppImagePerms {
 
 	if a, present := aliases[name]; present {
 		p := profiles[a]
-		return &p
+		p.Files = helpers.CleanFiles(p.Files)
+		return &p, nil
 	}
 
 	// If both tests fail, return with a level of -1
-	return &permissions.AppImagePerms{ Level: -1 }
+	return &permissions.AppImagePerms{ Level: -1 }, errors.New("cannot find permissions for app `" + name + "`")
 }

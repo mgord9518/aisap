@@ -54,7 +54,7 @@ func main() {
 	}
 
 	if *profile != "" {
-		err = ai.SetPerms(*profile)
+		err = ai.Perms.SetPerms(*profile)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "failed to get permissions from file:", err)
 			cleanExit(1)
@@ -64,16 +64,16 @@ func main() {
 	// Add (and remove) permissions as passed from flags. eg: `--file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
-	ai.RemoveFiles(rmfile)
-	ai.RemoveDevices(rmdevice)
-	ai.RemoveSockets(rmsocket)
-	ai.AddFiles(file)
-	ai.AddDevices(device)
-	ai.AddSockets(socket)
+	ai.Perms.RemoveFiles(rmfile)
+	ai.Perms.RemoveDevices(rmdevice)
+	ai.Perms.RemoveSockets(rmsocket)
+	ai.Perms.AddFiles(file)
+	ai.Perms.AddDevices(device)
+	ai.Perms.AddSockets(socket)
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
-		err = ai.SetLevel(*level)
+		err = ai.Perms.SetLevel(*level)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "failed to set permissions level:", err)
 		}
@@ -84,7 +84,7 @@ func main() {
 		fmt.Println("defaulting sandbox level to 3 with no further access")
 		fmt.Println("in the case this sandbox does not work properly, use the command line")
 		fmt.Println("flags to add the necessary minimum permissions or create a custom profile")
-		ai.SetLevel(3)
+		ai.Perms.SetLevel(3)
 	}
 
 	if *listPerms && ai.Perms.Level == 0 {
@@ -106,7 +106,7 @@ func main() {
 		for _, v := range(ai.Perms.Files) {
 			if check.IsSpooky(v) {
 				fmt.Fprintf(os.Stdout, "\n%sWARNING: this AppImage requests files/ directories that can potentially\n", y)
-				fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown with red arrow under the file list)")
+				fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown highlighted orange in the filesystem list)")
 				break
 			}
 		}

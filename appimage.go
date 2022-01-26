@@ -6,10 +6,8 @@ package aisap
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"path"
 	"path/filepath"
 	"os"
@@ -118,12 +116,12 @@ func NewAppImage(src string) (*AppImage, error) {
 	// Prefer level from aisap internal library, if none exist, attempt to
 	// retrieve profile from the desktop entry itself. If neither exists,
 	// `ai.Perms.Level` will be set to -1 and should be regarded as invalid
-	ai.Perms = profiles.FromName(ai.Name)
-	if ai.Perms.Level == -1 {
-		*ai.Perms = *permissions.FromIni(ai.Desktop)
+	ai.Perms, err = profiles.FromName(ai.Name)
+	if err != nil {
+		ai.Perms, _ = permissions.FromIni(ai.Desktop)
 	}
 
-	return ai, err
+	return ai, nil
 }
 
 // Return a reader for the `.DirIcon` file of the AppImage, converting it to
@@ -157,93 +155,6 @@ func (ai AppImage) RunId() string {
 	return ai.runId
 }
 
-// TODO: Move these functions to `ai.Perms` because it makes more sense
-func (ai AppImage) AddFile(str string) {
-	// Clear out previous file if it already exists
-	ai.RemoveFile(str)
-
-	// TODO: Add clean functions for strings instead of slices to helpers, use
-	// them here instead
-	s := []string{str}
-	ai.Perms.Files = append(ai.Perms.Files, helpers.CleanFiles(s)...)
-}
-
-func (ai AppImage) AddFiles(s []string) {
-	// Remove previous files of the same name if they exist
-	ai.RemoveFiles(s)
-
-	ai.Perms.Files = append(ai.Perms.Files, helpers.CleanFiles(s)...)
-}
-
-// TODO: Create AddDevice and AddSocke tfor indiviual strings
-func (ai AppImage) AddDevices(s []string) {
-	ai.Perms.Devices = append(ai.Perms.Devices, helpers.CleanDevices(s)...)
-}
-
-func (ai AppImage) AddSockets(s []string) {
-	ai.Perms.Sockets = append(ai.Perms.Sockets, s...)
-}
-
-func (ai AppImage) RemoveFile(str string) {
-	// Done this way to ensure there is an `extension` eg: `:ro` on the string,
-	// it will then be used to detect if that file already exists
-	str = helpers.CleanFiles([]string{str})[0]
-	s  := strings.Split(str, ":")
-	str = strings.Join(s[:len(s)-1], ":")
-
-	if i, present := helpers.ContainsAny(ai.Perms.Files,
-	[]string{ str + ":ro", str + ":rw" }); present {
-		ai.Perms.Files = append(ai.Perms.Files[:i], ai.Perms.Files[i+1:]...)
-	}
-}
-
-func (ai AppImage) RemoveFiles(s []string) {
-	for i := range(s) {
-		ai.RemoveFile(s[i])
-	}
-}
-
-func (ai AppImage) RemoveDevice(str string) {
-	if i, present := helpers.Contains(ai.Perms.Devices, str); present {
-		ai.Perms.Devices = append(ai.Perms.Devices[:i], ai.Perms.Devices[i+1:]...)
-	}
-}
-
-func (ai AppImage) RemoveDevices(s []string) {
-	for i := range(s) {
-		ai.RemoveDevice(s[i])
-	}
-}
-
-func (ai AppImage) RemoveSocket(str string) {
-	if i, present := helpers.Contains(ai.Perms.Sockets, str); present {
-		ai.Perms.Sockets = append(ai.Perms.Sockets[:i], ai.Perms.Sockets[i+1:]...)
-	}
-}
-
-func (ai AppImage) RemoveSockets(s []string) {
-	for i := range(s) {
-		ai.RemoveSocket(s[i])
-	}
-}
-
-func (ai AppImage) SetPerms(entryFile string) error {
-	r, err := os.Open(entryFile)
-	if err != nil { return err }
-
-	e, err := ioutil.ReadAll(r)
-	if err != nil { return err }
-
-	e = bytes.ReplaceAll(e, []byte(";"), []byte("；"))
-
-	entry, err := ini.Load(e)
-	if err != nil { return err }
-
-	*ai.Perms = *permissions.FromIni(entry)
-
-	return err
-}
-
 // Set the directory the sandbox pulls system files from
 func (ai AppImage) SetRootDir(d string) {
 	ai.rootDir = d
@@ -257,17 +168,6 @@ func (ai AppImage) SetDataDir(d string) {
 // Set the directory for the sandboxed AppImage's `TMPDIR`
 func (ai AppImage) SetTempDir(d string) {
 	ai.tempDir = d
-}
-
-// Set sandbox base permission level
-func (ai AppImage) SetLevel(l int) error {
-	if l < 0 || l > 3 {
-		return errors.New("permissions level must be int from 0-3")
-	}
-
-	ai.Perms.Level = l
-
-	return nil
 }
 
 // Return type of AppImage
