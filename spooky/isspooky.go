@@ -14,8 +14,6 @@ func IsSpooky(str string) bool {
 	spookyFiles := []string{
 		"~",
 		"/",
-		"/tmp",
-		"/tmp/aisap",
 		"/home",
 		"~/Apps",
 		"~/Applications",
@@ -28,11 +26,16 @@ func IsSpooky(str string) bool {
 	// Requesting these, or any file under them at all could be a potential
 	// escape route or leak personal information
 	spookyDirs := []string{
+		"~/go",
 		"~/.ssh",
+		"~/.vim",
+		"~/.gnupg",
 		"~/.firefox",
 		"~/.mozilla",
 		"~/.local",
 		"~/.config",
+		"/tmp",
+		"/run",
 	}
 
 	// Split the string into its actual directory and whether it's read only or
