@@ -58,7 +58,15 @@ mkdir -p 'AppDir/usr/bin' \
 #CGO_ENABLED=0 GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
 #	"$aisapUrl/aisap-bin@latest"
 cd aisap-bin
+
+echo 'replace github.com/mgord9518/aisap => ../
+replace github.com/mgord9518/aisap/permissions => ../permissions
+replace github.com/mgord9518/aisap/profiles => ../profiles
+replace github.com/mgord9518/aisap/spooky => ../spooky
+' >> go.mod
+
 go mod tidy
+
 CGO_ENABLED=0 go build -ldflags '-s -w' -o '../AppDir/usr/bin'
 cd ..
 
