@@ -32,6 +32,7 @@ import (
 
 	aisap "github.com/mgord9518/aisap"
 	check "github.com/mgord9518/aisap/spooky"
+	clr   "github.com/gookit/color"
 	flag  "github.com/spf13/pflag"
 )
 
@@ -88,25 +89,25 @@ func main() {
 	}
 
 	if *listPerms && ai.Perms.Level == 0 {
-		fmt.Fprintf(os.Stdout, "%sapplication `%s` requests to be used unsandboxed!%s\n", y, ai.Name, z)
+		clr.Fprintf(os.Stdout, "<yellow>application `%s` requests to be used unsandboxed!</>\n", ai.Name)
 		fmt.Fprintln(os.Stdout, "Use the command line flag `--level [1-3]` to try to sandbox it anyway")
 		cleanExit(0)
 	}
 
 	// Give basic info on the permissions the AppImage requests
 	if *listPerms {
-		fmt.Printf("%spermissions: \n", y)
+		clr.Printf("<yellow>permissions</>: \n")
 
-		fmt.Printf("%s - %slevel:      %s%d\n", g, z, c, ai.Perms.Level)
-		prettyListFiles("filesystem: ", ai.Perms.Files)
-		prettyList("devices:    ", ai.Perms.Devices)
-		prettyList("sockets:    ", ai.Perms.Sockets)
+		//clr.Printf("<green> - </>level:      <cyan>%d</>\n", ai.Perms.Level)
+		prettyList("level", ai.Perms.Level, 11)
+		prettyListFiles("filesystem", ai.Perms.Files, 11)
+		prettyList("devices", ai.Perms.Devices, 11)
+		prettyList("sockets", ai.Perms.Sockets, 11)
 
 		// Warns if the AppImage contains potential escape vectors or suspicious files
 		for _, v := range(ai.Perms.Files) {
 			if check.IsSpooky(v) {
-				fmt.Fprintf(os.Stdout, "\n%sWARNING: this AppImage requests files/ directories that can potentially\n", y)
-				fmt.Fprintln(os.Stdout, "be used to escape the sandbox (shown highlighted orange in the filesystem list)")
+				clr.Fprintf(os.Stdout, "\n<yellow>warning</>: this app requests files/ directories that can be used to escape sandboxing\n")
 				break
 			}
 		}

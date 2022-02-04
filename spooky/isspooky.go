@@ -51,10 +51,20 @@ func IsSpooky(str string) bool {
 	}
 
 	for _, val := range(spookyDirs) {
-		if len(s1) >= len(val) {
+		if len(s1) < len(val) {
+			continue
+		}
+
+		if len(s1) == len(val) {
 			if s1[:len(val)] == val {
 				return true
+			} else {
+				continue
 			}
+		}
+
+		if c := s1[len(val)]; c != '/' && c != ':' {
+			continue
 		}
 	}
 

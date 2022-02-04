@@ -104,4 +104,14 @@ export VERSION=$('AppDir/usr/bin/aisap-bin' --version)
 
 aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
-echo "$VERSION"
+# Build for ARM
+cd aisap-bin
+CGO_ENABLED=0 GOARCH=arm GOARM=5 go build -ldflags '-s -w' -o '../AppDir/usr/bin'
+cd ..
+
+# Download squashfuse binary
+wget "https://github.com/mgord9518/portable_squashfuse/releases/download/continuous/squashfuse_lz4_xz_zstd.$ARCH" -O 'AppDir/usr/bin/squashfuse'
+chmod +x 'AppDir/usr/bin/squashfuse'
+
+export ARCH="armhf"
+aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir

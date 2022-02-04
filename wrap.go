@@ -13,7 +13,8 @@ import (
 	xdg     "github.com/adrg/xdg"
 )
 
-// Run the AppImage with zero sandboxing
+// Run the AppImage with appropriate sandboxing. If `ai.Perms.Level` == 0, use
+// no sandbox. If > 0, sandbox
 func Run(ai *AppImage, args []string) error {
 	err = setupRun(ai)
 	if err != nil { return err }
@@ -27,9 +28,10 @@ func Run(ai *AppImage, args []string) error {
 	return cmd.Run()
 }
 
-// Wrap allows execution of AppImages through bwrap
+// Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 func Sandbox(ai *AppImage, args []string) error {
-	bwrapArgs := GetWrapArgs(ai)
+	bwrapArgs, err := GetWrapArgs(ai)
+	if err != nil { return err }
 
 	if _, err := exec.LookPath("bwrap"); err != nil {
 		return errors.New("bubblewrap not found! It's required to use sandboxing")
@@ -40,7 +42,7 @@ func Sandbox(ai *AppImage, args []string) error {
 
 	// Bind the fake `~` and `/tmp` dirs
 	bwrapArgs = append([]string{
-		"--bind",   ai.dataDir, homed,
+		"--bind",   ai.dataDir, xdg.Home,
 		"--bind",   ai.tempDir, "/tmp",
 		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
 	}, bwrapArgs...)
@@ -89,35 +91,32 @@ func setupRun(ai *AppImage) error {
 	return err
 }
 
-func GetWrapArgs(ai *AppImage) []string {
+func GetWrapArgs(ai *AppImage) ([]string, error) {
 	uid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
 			"--setenv", "TMPDIR",              "/tmp",
-			"--setenv", "HOME",                homed,
+			"--setenv", "HOME",                xdg.Home,
 			"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
 			"--setenv", "ARGV0",               filepath.Join("/app", path.Base(ai.Path)),
-			"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(homed, "Desktop"),
-			"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(homed, "Downloads"),
-			"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(homed, "Documents"),
-			"--setenv", "XDG_MUSIC_DIR",       filepath.Join(homed, "Music"),
-			"--setenv", "XDG_PICTURES_DIR",    filepath.Join(homed, "Pictures"),
-			"--setenv", "XDG_VIDEOS_DIR",      filepath.Join(homed, "Videos"),
-			"--setenv", "XDG_TEMPLATES_DIR",   filepath.Join(homed, "Templates"),
-			"--setenv", "XDG_PUBLICSHARE_DIR", filepath.Join(homed, "Share"),
-			"--setenv", "XDG_DATA_HOME",       filepath.Join(homed, ".local/share"),
-			"--setenv", "XDG_CONFIG_HOME",     filepath.Join(homed, ".config"),
-			"--setenv", "XDG_CACHE_HOME",      filepath.Join(homed, ".cache"),
-			"--setenv", "XDG_STATE_HOME",      filepath.Join(homed, ".local/state"),
-			"--setenv", "LOGNAME",             usern,
-			"--setenv", "USER",                usern,
-			"--uid",    uid,
+			"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(xdg.Home, "Desktop"),
+			"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(xdg.Home, "Downloads"),
+			"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(xdg.Home, "Documents"),
+			"--setenv", "XDG_MUSIC_DIR",       filepath.Join(xdg.Home, "Music"),
+			"--setenv", "XDG_PICTURES_DIR",    filepath.Join(xdg.Home, "Pictures"),
+			"--setenv", "XDG_VIDEOS_DIR",      filepath.Join(xdg.Home, "Videos"),
+			"--setenv", "XDG_TEMPLATES_DIR",   filepath.Join(xdg.Home, "Templates"),
+			"--setenv", "XDG_PUBLICSHARE_DIR", filepath.Join(xdg.Home, "Share"),
+			"--setenv", "XDG_DATA_HOME",       filepath.Join(xdg.Home, ".local/share"),
+			"--setenv", "XDG_CONFIG_HOME",     filepath.Join(xdg.Home, ".config"),
+			"--setenv", "XDG_CACHE_HOME",      filepath.Join(xdg.Home, ".cache"),
+			"--setenv", "XDG_STATE_HOME",      filepath.Join(xdg.Home, ".local/state"),
 			"--die-with-parent",
 			"--new-session",
 			"--dir",         filepath.Join("/run/user", uid),
 			"--dev",         "/dev",
 			"--proc",        "/proc",
-			"--tmpfs",       filepath.Join(homed, ".cache"),
+			"--tmpfs",       filepath.Join(xdg.Home, ".cache"),
 			"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
 			"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
 			"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
@@ -162,10 +161,10 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind",     "/sys", "/sys",
 			"--ro-bind",     aiRoot(ai, "usr"), "/usr",
 			"--ro-bind-try", aiRoot(ai, "etc"), "/etc",
-			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(homed, ".fonts"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(homed, ".config/kdeglobals"),
+			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(xdg.Home, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config/fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(xdg.Home, ".config/gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config/kdeglobals"),
 		}...)
 	// Level 2 grants access to fewer system files, and all themes
 	// Likely to add more files here for compatability.
@@ -182,16 +181,22 @@ func GetWrapArgs(ai *AppImage) []string {
 			"--ro-bind-try", aiRoot(ai, "usr/share/libdrm"),       "/usr/share/librdm",
 			"--ro-bind-try", aiRoot(ai, "usr/share/glvnd"),        "/usr/share/glvnd",
 			"--ro-bind-try", aiRoot(ai, "usr/share/glib-2.0"),     "/usr/share/glib-2.0",
-			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(homed, ".fonts"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(homed, ".config/fontconfig"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(homed, ".config/gtk-3.0"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(homed, ".config/kdeglobals"),
+			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(xdg.Home, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config/fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(xdg.Home, ".config/gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config/kdeglobals"),
 		}...)
+	} else if ai.Perms.Level > 3 || ai.Perms.Level < 1 {
+		return []string{}, errors.New("AppImage permissions level does not allow sandboxing")
 	}
 
 	// These vars will only be used if x11 socket is granted access
 	xAuthority := os.Getenv("XAUTHORITY")
 	xDisplay := strings.ReplaceAll(os.Getenv("DISPLAY"), ":", "")
+	tempDir, present := os.LookupEnv("TMPDIR")
+	if !present {
+		tempDir = "/tmp"
+	}
 
 	// Set if Wayland is running on the host machine
 	// Using different Wayland display sessions currently not tested
@@ -250,12 +255,12 @@ func GetWrapArgs(ai *AppImage) []string {
 		// for security anyway, as it easilly allows control of the keyboard
 		// and mouse
 		"x11": {
-			"--ro-bind-try", xAuthority,                      homed+"/.Xauthority",
-			"--ro-bind-try", sysTemp+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
+			"--ro-bind-try", xAuthority,                      xdg.Home+"/.Xauthority",
+			"--ro-bind-try", tempDir+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
 			"--ro-bind-try", "/usr/share/X11",                "/usr/share/X11",
 			"--setenv",      "DISPLAY",         ":"+xDisplay,
 			"--setenv",      "QT_QPA_PLATFORM", "xcb",
-			"--setenv",      "XAUTHORITY",      homed+"/.Xauthority",
+			"--setenv",      "XAUTHORITY",      xdg.Home+"/.Xauthority",
 		},
 	}
 
@@ -311,7 +316,7 @@ func GetWrapArgs(ai *AppImage) []string {
 		}
 	}
 
-	return cmdArgs
+	return cmdArgs, nil
 }
 
 // Returns the location of the requested directory on the host filesystem with

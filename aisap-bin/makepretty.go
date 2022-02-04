@@ -1,3 +1,7 @@
+// Print everything in pretty-colored, valid YAML.
+// Why YAML? No practical reason, I just think it looks nice and I guess if you
+// really wanted to it would be easier to parse than unformatted text
+
 package main
 
 import (
@@ -8,6 +12,7 @@ import (
 //	helpers "github.com/mgord9518/aisap/helpers"
 	check "github.com/mgord9518/aisap/spooky"
 	xdg   "github.com/adrg/xdg"
+	clr   "github.com/gookit/color"
 )
 
 func makeDevPretty(str string) string {
@@ -20,48 +25,119 @@ func makeDevPretty(str string) string {
 	return str
 }
 
-func prettyList(str string, s []string) {
-	if len(s) == 0 {
-		return
-	}
-
-	fmt.Printf("%s - %s%s%s", g, z, str, c)
-
-	for i := range(s) {
-		if i > 0 {
-			fmt.Printf(", ")
+func prettyList(a ...interface{}) {
+	for i := range(a) {
+		if i == 0 {
+			clr.Printf("  <cyan>%s</>:", a[0])
+			continue
+		} else if i == len(a)-1 {
+			break	
 		}
 
-		fmt.Printf(s[i])
+		// pad with spaces until the requested lengh is reached
+		n := a[len(a)-1].(int)
+		str := a[0].(string)
+		for i := len(str); i < n; i++ {
+			fmt.Print(" ")
+		}
+
+		switch v := a[i].(type) {
+		default:
+			panic("invalid type!")
+		case string:
+			clr.Printf(" <green>%s</>\n", a[i])
+		case []string:
+			fmt.Print("[")
+			for i := range(v) {
+				if i > 0 {
+					fmt.Printf(", ")
+				}
+				clr.Printf("<green>%s</>", v[i])
+			}
+			fmt.Println("]")
+		case int:
+			clr.Printf(" <green>%d</>\n", a[i])
+		}
 	}
 
-	fmt.Println()
 }
 
 // Like `prettyList` but highlights spooky files in orange
-func prettyListFiles(str string, s []string) {
-	if len(s) == 0 {
-		return
-	}
-
-	fmt.Printf("%s - %s%s", g, z, str)
-
-	for i := range(s) {
-		s[i] = strings.Replace(s[i], xdg.Home, "~", 1)
-
-		if i > 0 {
-			fmt.Printf(", ")
+func prettyListFiles(a ...interface{}) {
+	for i := range(a) {
+		if i == 0 {
+			clr.Printf("  <cyan>%s</>:", a[0])
+			continue
+		} else if i == len(a)-1 {
+			break	
 		}
 
-		if check.IsSpooky(s[i]) {
-			fmt.Printf(y)
-		} else {
-			fmt.Printf(c)
+		// pad with spaces until the requested lengh is reached
+		n := a[len(a)-1].(int)
+		str := a[0].(string)
+		for i := len(str); i < n; i++ {
+			fmt.Print(" ")
 		}
 
-		fmt.Printf(s[i])
+		switch v := a[i].(type) {
+		default:
+			panic("invalid type!")
+		case []string:
+			fmt.Print("[")
+			for i := range(v) {
+				if i > 0 {
+					fmt.Printf(", ")
+				}
+				v[i] = strings.Replace(v[i], xdg.Home, "~", 1)
 
+				if check.IsSpooky(v[i]) {
+					clr.Printf("<yellow>%s</>", v[i])
+				} else {
+					clr.Printf("<green>%s</>", v[i])
+				}
+			}
+			fmt.Println("]")
+		}
 	}
 
-	fmt.Println()
 }
+//func prettyListFiles(a ...interface{}) {
+//	for i := range(a) {
+//		if i == 0 {
+//			clr.Printf("  <cyan>%s</>:", a[0])
+//			continue
+//		} else if i == len(a)-1 {
+//			break	
+//		}
+//
+//		str := a[0].(string)
+//		if len(str) == 0 {
+//			return
+//		}
+//
+//		clr.Printf("  <cyan>%s</>:", str)
+//
+//		n := a[len(a)-1].(int)
+//		for i := len(str); i < n; i++ {
+//			fmt.Print(" ")
+//		}
+//
+//		fmt.Print("[")
+//		for i := range(a) {
+//			a[i] = strings.Replace(a[i].(string), xdg.Home, "~", 1)
+//
+//			if i > 0 {
+//				fmt.Printf(", ")
+//			}
+//
+//			if check.IsSpooky(a[i].(string)) {
+//				clr.Printf("<yellow>%s</>", a[i])
+//			} else {
+//				clr.Printf("<green>%s</>", a[i])
+//			}
+//		}
+//		fmt.Print("]")
+//
+//		fmt.Println()
+//	}
+//}

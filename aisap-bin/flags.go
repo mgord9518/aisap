@@ -5,19 +5,13 @@ import (
 	"os"
 
 	flag "github.com/spf13/pflag"
+	clr  "github.com/gookit/color"
 )
 
 type arrayFlags []string
 
 var (
-	g = "\033[0;32m" // Green
-	b = "\033[1;34m" // Blue
-	y = "\033[0;33m" // Yellow
-	r = "\033[1;31m" // Red
-	c = "\033[0;36m" // Cyan
-	z = "\033[0;0m"  // Reset
-
-	ver = "0.3.0-alpha"
+	ver = "0.3.3-alpha"
 )
 
 var (
@@ -27,7 +21,7 @@ var (
 	listPerms = flag.BoolP("list-perms", "l", false, "print all permissions to be granted to the app")
 
 	// Long-only flags
-	color   = flag.Bool("color",   true,  "whether to show color (default: true)")
+	color   = flag.Bool("color",   true,  "whether to show color (default true)")
 	example = flag.Bool("example", false, "print out examples")
 	version = flag.Bool("version", false, "show the version and quit")
 	profile = flag.String("profile", "",  "use a profile from a desktop entry")
@@ -48,8 +42,8 @@ func init() {
 	handleCtrlC()
 
 	flag.Var(&addFile,   "add-file",   "give the sandbox access to a filesystem object")
-	flag.Var(&addDevice, "add-device", "add a device to the sandbox (eg: dri)")
-	flag.Var(&addSocket, "add-socket", "allow the sandbox to access another socket (eg: x11)")
+	flag.Var(&addDevice, "add-device", "add a device to the sandbox (eg dri)")
+	flag.Var(&addSocket, "add-socket", "allow the sandbox to access another socket (eg x11)")
 	flag.Var(&rmFile,    "rm-file",    "revoke a file from the sandbox")
 	flag.Var(&rmDevice,  "rm-device",  "remove access to a device")
 	flag.Var(&rmSocket,  "rm-socket",  "disable a socket")
@@ -60,15 +54,12 @@ func init() {
 	}
 
 	flag.Usage = func() {
-		fmt.Printf("usage: %s%s%s [OPTIONS] [APPIMAGE]\n\n", b, argv0, z)
-		fmt.Printf("wrapper binary around aisap to easily sandbox AppImages in BubbleWrap\n")
-		fmt.Printf("with no %sPERMFILE%s, read permissions directly from AppImage or internal\n", b, z)
-		fmt.Printf("permissions library\n")
-		fmt.Printf("\n%snormal options:\n", y)
+		clr.Printf("<yellow>usage</>: <blue>%s</> [OPTIONS] [APPIMAGE]\n", argv0)
+		clr.Printf("<yellow>description</>: easily sandbox AppImages in BubbleWrap\n")
+		clr.Printf("\n<yellow>normal options</>:\n")
 		printUsage("help")
 		printUsage("list-perms")
-		fmt.Printf("\n%slong-only options:\n", y)
-		printUsage("color")
+		clr.Printf("\n<yellow>long-only options</>:\n")
 		printUsage("example")
 		printUsage("level")
 		printUsage("add-file")
@@ -79,23 +70,19 @@ func init() {
 		printUsage("rm-socket")
 		printUsage("profile")
 		printUsage("version")
-		fmt.Printf("\n%sWARNING:%s no sandbox is impossible to escape! This is to *aid* security, not\n", r, z)
-		fmt.Printf("guarentee safety when downloading sketchy stuff online. Don't be stupid!\n\n")
-		fmt.Printf("for more information, visit <https://github.com/mgord9518/aisap>\n\n")
-		fmt.Printf("Plus, this is ALPHA software! Very little testing has been done;\n")
-		fmt.Printf("%sUSE AT YOUR OWN RISK!%s\n", r, z)
+		clr.Printf("\n<yellow>enviornment variables</>:\n")
+		clr.Printf("  <cyan>NO_COLOR</>: disable color\n")
+
+//		clr.Printf("\n<red>WARNING:</> no sandbox is impossible to escape! This is to *aid* security, not\n")
+//		fmt.Printf("guarentee safety when downloading sketchy stuff online. Don't be stupid!\n\n")
+		clr.Printf("\n<yellow>homepage</>: <https://github.com/mgord9518/aisap>\n\n")
+//		fmt.Printf("Plus, this is ALPHA software! Very little testing has been done;\n")
+		clr.Printf("<red>USE AT YOUR OWN RISK!</>\n")
 		os.Exit(0)
 	}
 
 	flag.Parse()
 
-	// Remove color if `color=false`
-	if !*color {
-		g = ""
-		y = ""
-		r = ""
-		c = ""
-	}
 
 	if *version {
 		fmt.Println(ver)
@@ -103,15 +90,15 @@ func init() {
 	}
 
 	if *example {
-		fmt.Printf("%sexamples:%s\n", y, z)
-		fmt.Printf("  %s%s --profile%s=./f.desktop -- ./f.app\n", g, argv0, z)
-		fmt.Printf("    sandbox `f.app` using permissions from `f.desktop`\n\n")
-		fmt.Printf("  %s%s ./f.app --level%s=2\n", g, argv0, z)
-		fmt.Printf("    tighten `f.app` sandbox to level 2 (default: 1)\n\n")
-		fmt.Printf("  %s%s --add-file%s=./f.txt %s--add-file%s ./other.bin ./f.app\n", g, argv0, z, g, z)
-		fmt.Printf("    allow sandbox to access files `f.txt` and `other.bin`\n\n")
-		fmt.Printf("  %s%s --rm-file%s=./secret.txt ./f.app\n", g, argv0, z, g, z)
-		fmt.Printf("    revoke access to `secret.txt` in the sandbox\n")
+//		clr.Printf("<yellow>examples</>:\n")
+//		fmt.Printf("  %s%s --profile%s=./f.desktop -- ./f.app\n", g, argv0, z)
+//		fmt.Printf("    sandbox `f.app` using permissions from `f.desktop`\n\n")
+//		fmt.Printf("  %s%s ./f.app --level%s=2\n", g, argv0, z)
+//		fmt.Printf("    tighten `f.app` sandbox to level 2 (default: 1)\n\n")
+//		fmt.Printf("  %s%s --add-file%s=./f.txt %s--add-file%s ./other.bin ./f.app\n", g, argv0, z, g, z)
+//		fmt.Printf("    allow sandbox to access files `f.txt` and `other.bin`\n\n")
+//		fmt.Printf("  %s%s --rm-file%s=./secret.txt ./f.app\n", g, argv0, z, g, z)
+//		fmt.Printf("    revoke access to `secret.txt` in the sandbox\n")
 		os.Exit(0)
 	}
 
@@ -124,14 +111,14 @@ func printUsage(name string) {
 	fg := flag.Lookup(name)
 
 	if len(fg.Shorthand) > 0 {
-		fmt.Printf("  %s-%s%s, %s--%s%s", c, fg.Shorthand, z, c, fg.Name, z)
+		clr.Printf("  <cyan>-%s</>, <cyan>--%s</>:", fg.Shorthand, fg.Name)
 
 		// Pad with spaces
 		for i := len(fg.Name); i < 12; i++ {
 			fmt.Print(" ")		
 		}
 	} else {
-		fmt.Printf("  %s--%s%s", c, fg.Name, z)
+		clr.Printf("  <cyan>--%s</>:", fg.Name)
 
 		for i := len(fg.Name); i < 12; i++ {
 			fmt.Print(" ")		

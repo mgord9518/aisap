@@ -297,6 +297,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"brave":               "google chrome",
 		"chromium":            "google chrome",
 		"desmume":             "mgba",
+		"edex-ui":             "cool retro term",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
 		"librewolf":           "firefox",

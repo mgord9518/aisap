@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"os"
 	"os/exec"
-	"os/user"
-	"strconv"
+//	"os/user"
+//	"strconv"
 	"strings"
 	"time"
 
@@ -22,13 +22,10 @@ import (
 	profiles    "github.com/mgord9518/aisap/profiles"
 	permissions "github.com/mgord9518/aisap/permissions"
 	imgconv     "github.com/mgord9518/imgconv"
+	xdg         "github.com/adrg/xdg"
 )
 
 var (
-	usern string
-	homed string
-
-	sysTemp   string
 	mnt      *exec.Cmd
 
 	err     error
@@ -51,18 +48,6 @@ type AppImage struct {
 	imageType    int    // Type of AppImage (either 1 or 2)
 }
 
-func init() {
-	usr, _ := user.Current()
-	usern   = usr.Username
-	homed   = filepath.Join("/home", usern)
-	uid := strconv.Itoa(os.Getuid())
-
-	sysTemp, present = os.LookupEnv("XDG_RUNTIME_DIR")
-	if !present {
-		sysTemp = filepath.Join("/run", "user", uid)
-	}
-}
-
 // Create a new AppImage object from a path
 func NewAppImage(src string) (*AppImage, error) {
 	if !helpers.FileExists(src) {
@@ -76,7 +61,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	pfx := path.Base(ai.Path)[0:6]
 	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
 
-	ai.tempDir, err = helpers.MakeTemp(filepath.Join(sysTemp, "aisap"), ai.runId)
+	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
 	if err != nil { return nil, err }
 	ai.rootDir = "/"
 
