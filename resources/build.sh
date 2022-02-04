@@ -36,7 +36,7 @@ fi
 
 if [ "$GITHUB_ACTIONS" ]; then
   sudo apt-get update
-  sudo apt-get install appstream
+  sudo apt-get install appstream squashfs-tools
 fi
 
 if [ ! $(command -v 'go') ]; then
@@ -115,3 +115,12 @@ aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zs
 #
 #export ARCH="armhf"
 #aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
+
+# Experimental shImg build
+mkdir -p '../AppDir/usr.aarch64/bin'
+CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../AppDir/usr.aarch64/bin'
+wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
+mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
+wget "https://github.com/mgord9518/shappimage/releases/download/continuous/shImg_runtime-lz4"
+sed -i '/updInfo=/updInfo=gh-releases-zsync|mgord9518|aisap|continuous|aisap-*x86_64_aarch64.shImg.zsync' shImg_runtime-lz4
+cat shImg_runtime-lz4 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"

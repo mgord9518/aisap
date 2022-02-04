@@ -27,4 +27,5 @@ jobs:
         title: "Continuous Build"
         files: |
           *.AppImage
+          *.shImg
           *.zsync
