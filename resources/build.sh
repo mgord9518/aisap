@@ -60,6 +60,7 @@ echo 'replace github.com/mgord9518/aisap => ../
 replace github.com/mgord9518/aisap/permissions => ../permissions
 replace github.com/mgord9518/aisap/profiles => ../profiles
 replace github.com/mgord9518/aisap/spooky => ../spooky
+replace github.com/mgord9518/aisap/helpers => ../helpers
 ' >> go.mod
 
 go mod tidy
