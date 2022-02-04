@@ -131,8 +131,10 @@ func GetAppImageType(src string) (int, error) {
 
 // Checks the magic of a given file against the byte array provided
 // if identical, return true
-func HasMagic(r io.Reader, str string, length int) bool {
+func HasMagic(r io.ReadSeeker, str string, length int) bool {
 	magic := make([]byte, len(str))
+	
+	r.Seek(0, io.SeekStart)
 
 	_, err := io.ReadFull(r, magic[:])
 	if err != nil { return false }

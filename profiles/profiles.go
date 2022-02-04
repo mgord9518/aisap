@@ -57,12 +57,12 @@ var profiles = map[string]permissions.AppImagePerms{
 	// TODO: add more files but keep it isolated from the host system
 	// Untested with real equipment but launches
 	"cool retro term": {
-		Level: 1,
+		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
 		                   "~/.bashrc:ro",      "~/.zshrc:ro",
 		                   "~/.viminfo:ro"},
-		Sockets: []string{ "x11" },
+		Sockets: []string{ "x11", "network" },
 	},
 	"deemix-gui": {
 		Level: 2,
