@@ -115,8 +115,10 @@ aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zs
 
 # Experimental shImg build
 mkdir -p 'AppDir/usr.aarch64/bin'
+cd aisap-bin
 go mod tidy
-CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o 'AppDir/usr.aarch64/bin'
+CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../AppDir/usr.aarch64/bin'
+cd ..
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/shImg_runtime-lz4"
