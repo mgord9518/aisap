@@ -122,5 +122,5 @@ cd ..
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/shImg_runtime-lz4"
-sed -i 's/updInfo=/updInfo=gh-releases-zsync|mgord9518|aisap|continuous|aisap-*x86_64_aarch64.shImg.zsync' shImg_runtime-lz4
+sed -i 's/updInfo=/updInfo=gh-releases-zsync|mgord9518|aisap|continuous|aisap-*x86_64_aarch64.shImg.zsync/' shImg_runtime-lz4
 cat shImg_runtime-lz4 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
