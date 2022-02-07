@@ -16,7 +16,7 @@ import (
 // Run the AppImage with appropriate sandboxing. If `ai.Perms.Level` == 0, use
 // no sandbox. If > 0, sandbox
 func Run(ai *AppImage, args []string) error {
-	err = setupRun(ai)
+	err := setupRun(ai)
 	if err != nil { return err }
 
 	cmd := exec.Command(filepath.Join(ai.mountDir, "AppRun"), args...)
@@ -73,6 +73,11 @@ func setupRun(ai *AppImage) error {
 		if err != nil { return err }
 	}
 
+	if !helpers.DirExists(filepath.Join(xdg.CacheHome, "appimagekit_" + ai.md5)) {
+		err := os.MkdirAll(filepath.Join(xdg.CacheHome, "appimagekit_" + ai.md5), 0744)
+		if err != nil { return err }
+	}
+
 	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
 		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
 		if err != nil { return err }
@@ -84,9 +89,12 @@ func setupRun(ai *AppImage) error {
 
 	// Set required vars to correctly mount our target AppImage
 	// If sandboxed, these values will be overwritten
-	os.Setenv("TMPDIR",   ai.tempDir)
-	os.Setenv("HOME",     ai.dataDir)
-	os.Setenv("APPDIR",   ai.mountDir)
+	os.Setenv("TMPDIR",         ai.tempDir)
+	os.Setenv("HOME",           ai.dataDir)
+	os.Setenv("APPDIR",         ai.mountDir)
+	os.Setenv("APPIMAGE",       ai.Path)
+	os.Setenv("ARGV0",          ai.Path)
+	os.Setenv("XDG_CACHE_HOME", ai.Path)
 
 	return err
 }
@@ -116,7 +124,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 			"--dir",         filepath.Join("/run/user", uid),
 			"--dev",         "/dev",
 			"--proc",        "/proc",
-			"--tmpfs",       filepath.Join(xdg.Home, ".cache"),
+			"--bind",        filepath.Join(xdg.Home, ".cache", "appimagekit_" + ai.md5), filepath.Join(xdg.Home, ".cache"),
 			"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
 			"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
 			"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",

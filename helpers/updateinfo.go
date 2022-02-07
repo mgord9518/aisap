@@ -13,7 +13,7 @@ func ReadUpdateInfo(src string) (string, error) {
 	format, err := GetAppImageType(src)
 	if err != nil { return "", err }
 
-	if format == 2 {
+	if format == 2 || format == 1 {
 		return readUpdateInfoFromElf(src)
 	} else if format == -2 {
 		return readUpdateInfoFromShappimage(src)
@@ -56,11 +56,13 @@ func readUpdateInfoFromShappimage(src string) (string, error) {
 	for scanner.Scan() {
 		if len(scanner.Text()) > 8 && scanner.Text()[0:8] == "updInfo=" &&
 		len(strings.Split(scanner.Text(), "=")) == 2 {
-			return strings.Join(strings.Split(scanner.Text(), "=")[1:], "="), nil
-		} else {
-			continue
+			updInfo := strings.Join(strings.Split(scanner.Text(), "=")[1:], "=")
+			updInfo  = strings.ReplaceAll(updInfo, "'",  "")
+			updInfo  = strings.ReplaceAll(updInfo, "\"", "")
+
+			return updInfo, nil
 		}
 	}
 	
-	return "", errors.New("unable to find update information in shappimage")
+	return "", errors.New("unable to find update information in shImg")
 }

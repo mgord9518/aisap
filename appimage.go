@@ -6,14 +6,13 @@ package aisap
 
 import (
 	"bufio"
+	"crypto/md5"
+	"fmt"
 	"errors"
 	"io"
 	"path"
 	"path/filepath"
 	"os"
-	"os/exec"
-//	"os/user"
-//	"strconv"
 	"strings"
 	"time"
 
@@ -25,13 +24,6 @@ import (
 	xdg         "github.com/adrg/xdg"
 )
 
-var (
-	mnt      *exec.Cmd
-
-	err     error
-	present bool
-)
-
 type AppImage struct {
 	Desktop     *ini.File                  // INI of internal desktop entry
 	Perms       *permissions.AppImagePerms // Permissions
@@ -40,6 +32,7 @@ type AppImage struct {
 	rootDir      string // Can be used to give the AppImage fake system files
 	tempDir      string // The AppImage's `/tmp` directory
 	mountDir     string // The location the AppImage is mounted at
+	md5          string // MD5 of AppImage's URI
 	runId        string // Random string associated with this specific run instance
 	Name         string // AppImage name from the desktop entry 
 	Version      string // Version of the AppImage
@@ -50,16 +43,21 @@ type AppImage struct {
 
 // Create a new AppImage object from a path
 func NewAppImage(src string) (*AppImage, error) {
-	if !helpers.FileExists(src) {
+	var err error
+	ai := &AppImage{Path: src}
+
+	if !helpers.FileExists(ai.Path) {
 		return nil, errors.New("file not found!")
 	}
 
-	ai := &AppImage{}
-	ai.Path = src
-
 	// Set the runId, tempDir and rootDir of the AppImage
-	pfx := path.Base(ai.Path)[0:6]
+	pfx := path.Base(ai.Path)
+	if len(pfx) > 6 {
+		pfx = pfx[0:6]
+	}
 	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
+
+	ai.md5 = fmt.Sprintf("%x", md5.Sum([]byte("file://" + ai.Path)))
 
 	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
 	if err != nil { return nil, err }
@@ -126,6 +124,10 @@ func (ai AppImage) Thumbnail() (io.Reader, error) {
 	f.Seek(0, io.SeekStart)
 
 	return f, err
+}
+
+func (ai AppImage) Md5() string {
+	return ai.md5
 }
 
 func (ai AppImage) TempDir() string {

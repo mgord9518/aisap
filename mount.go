@@ -16,19 +16,22 @@ import (
 func mount(src string, dest string, offset int) error {
 	var squashfuse string
 
-	e, _ := os.Executable()
+	e, err := os.Executable()
+	if err != nil {
+		return errors.New("failed to find executable! this shouldn't happen")
+	}
 
 	// Make sure squashfuse exists
 	if squashfuse, err = exec.LookPath("squashfuse"); err != nil {
 		squashfuse, err = exec.LookPath(filepath.Join(path.Dir(e), "squashfuse"))
 		if err != nil {
-			return errors.New("failed to find squashfuse binary! Cannot mount AppImage")
+			return errors.New("failed to find squashfuse binary! cannot mount AppImage")
 		}
 	}
 
 	// Convert the offset to a string and mount using squashfuse
 	o := strconv.Itoa(offset)
-	mnt = exec.Command(squashfuse, "-o", "offset=" + o, src, dest)
+	mnt := exec.Command(squashfuse, "-o", "offset=" + o, src, dest)
 
 	return mnt.Run()
 }
@@ -41,7 +44,7 @@ func Unmount(ai *AppImage) error {
 		return errors.New("AppImage contains no path")
 	}
 
-	err = unmountDir(ai.MountDir())
+	err := unmountDir(ai.MountDir())
 	if err != nil { return err }
 
 	// Clean up

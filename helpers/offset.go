@@ -26,11 +26,8 @@ func GetOffset(src string) (int, error) {
 	return -1, errors.New("an unknown error occured at aisap/helpers/GetOffset.go")
 }
 
-// Takes a src file as argument, returning the size of the shappimage header
-// and an error if unsuccessful
-// I HAVEN'T PUBLISHED THIS PROJECT YET, that's why these functions are
-// undocumented. Probably will be a minute until I do too because I'm pretty
-// caught up in aisap
+// Takes a src file as argument, returning the size of the shImg header and
+// an error if fail
 func getShappImageSize(src string) (int, error) {
 	f, err := os.Open(src)
 	defer f.Close()
@@ -45,7 +42,9 @@ func getShappImageSize(src string) (int, error) {
 		len(strings.Split(scanner.Text(), "=")) == 2 {
 
 			offHex := strings.Split(scanner.Text(), "=")[1]
-			o, err := strconv.ParseInt(offHex, 16, 32)
+			offHex  = strings.ReplaceAll(offHex, "'", "")
+			offHex  = strings.ReplaceAll(offHex, "\"", "")
+			o, err := strconv.Atoi(offHex)
 
 			return int(o), err
 		}

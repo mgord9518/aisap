@@ -4,8 +4,9 @@ import (
 	"strings"
 )
 
-// Check if a file or directory is spooky (sandbox escape vector) so that the
-// user can be warned that their sandbox is insecure
+// Check if a file or directory is spooky (sandbox escape vector or possibly
+// suspiscious files to request) so that the user can be warned that their
+// sandbox may be insecure or leak information from other applications
 // TODO: expand this list! There are a lot of files that can be used to escape
 // the sandbox, while it's impossible to cover all bases, we should try to get
 // as close as possible
@@ -14,10 +15,8 @@ func IsSpooky(str string) bool {
 	spookyFiles := []string{
 		"~",
 		"/",
+		"/etc",
 		"/home",
-		"~/Apps",
-		"~/Applications",
-		"~/AppImages",
 		"~/.profile",
 		"~/.bashrc",
 		"~/.zshrc",
@@ -26,7 +25,11 @@ func IsSpooky(str string) bool {
 	// Requesting these, or any file under them at all could be a potential
 	// escape route or leak personal information
 	spookyDirs := []string{
+		"~/Apps",
+		"~/AppImages",
+		"~/Applications",
 		"~/go",
+		"~/.cache",
 		"~/.ssh",
 		"~/.vim",
 		"~/.gnupg",
@@ -42,10 +45,9 @@ func IsSpooky(str string) bool {
 	// read write
 	slice := strings.Split(str, ":")
 	s1 := strings.Join(slice[:len(slice)-1], ":")
-	s2 := ":"+strings.Split(str, ":")[len(slice)-1]
 
 	for _, val := range(spookyFiles) {
-		if s1 == val && s2 == ":rw" {
+		if s1 == val {
 			return true
 		}
 	}
@@ -61,10 +63,6 @@ func IsSpooky(str string) bool {
 			} else {
 				continue
 			}
-		}
-
-		if c := s1[len(val)]; c != '/' && c != ':' {
-			continue
 		}
 	}
 
