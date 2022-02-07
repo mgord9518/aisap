@@ -85,7 +85,7 @@ wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 	'AppDir/usr/share/metainfo/io.github.mgord9518.aisap.appdata.xml'
 
 # Download squashfuse binary
-wget "https://github.com/mgord9518/portable_squashfuse/releases/download/continuous/squashfuse_lz4_xz_zstd.$ARCH" -O 'AppDir/usr/bin/squashfuse'
+wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd.$ARCH" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
 
 # Download excludelist
