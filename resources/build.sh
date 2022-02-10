@@ -35,7 +35,7 @@ else
 fi
 
 if [ "$GITHUB_ACTIONS" ]; then
-	./install_deps.sh
+	./resources/install_deps.sh
 fi
 
 if [ ! $(command -v 'go') ]; then
