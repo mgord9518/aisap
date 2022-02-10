@@ -34,10 +34,6 @@ else
 	}
 fi
 
-if [ "$GITHUB_ACTIONS" ]; then
-	./resources/install_deps.sh
-fi
-
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
 	exit 1
