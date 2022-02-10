@@ -132,3 +132,5 @@ cat runtime-lz4-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
 wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
 [ $? -ne 0 ] && exit $?
 sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync"
+
+exit 0
