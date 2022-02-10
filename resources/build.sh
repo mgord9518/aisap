@@ -65,27 +65,27 @@ replace github.com/mgord9518/aisap/helpers => ../../helpers
 go mod tidy
 
 CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
+[ $? -ne 0 ] && exit $?
 cd ../..
-
-if [ $? -ne 0 ]; then
-	echo "Failed to build!"
-	exit 1
-fi
 
 # Download icon
 wget "$aisapRawUrl/resources/aisap.svg" -O \
 	'AppDir/usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg'
+[ $? -ne 0 ] && exit $?
 
 # Download desktop entry
 wget "$aisapRawUrl/resources/aisap.desktop" -O 'AppDir/io.github.mgord9518.aisap.desktop'
+[ $? -ne 0 ] && exit $?
 
 # Download AppStream metainfo
 wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 	'AppDir/usr/share/metainfo/io.github.mgord9518.aisap.appdata.xml'
+[ $? -ne 0 ] && exit $?
 
 # Download squashfuse binary
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd.$ARCH" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
+[ $? -ne 0 ] && exit $?
 
 # Download excludelist
 wget 'https://raw.githubusercontent.com/AppImage/pkg2appimage/master/excludelist' -O \
@@ -100,6 +100,7 @@ export ARCH="$ARCH"
 export VERSION=$('AppDir/usr/bin/aisap' --version)
 
 aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
+[ $? -ne 0 ] && exit $?
 
 # Build for ARM
 #cd aisap-bin
@@ -123,5 +124,11 @@ ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun'
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64"
+[ $? -ne 0 ] && exit $?
 #sed -i "s/updInfo=/updInfo='gh-releases-zsync|mgord9518|aisap|continuous|aisap-*x86_64_aarch64.shImg.zsync'/" shImg_runtime-lz4
 cat runtime-lz4-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
+
+# Apply desktop integration info
+wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
+[ $? -ne 0 ] && exit $?
+sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync"
