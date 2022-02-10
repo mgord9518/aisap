@@ -120,6 +120,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
+	"imagemagick": {
+		Level: 3,
+		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
+		Devices: []string{ "dri" },
+	},
 	"inkscape": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
@@ -189,6 +194,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"nmeasimulator": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "network" },
+	},
 	// Network needed for cloud service, and can run in level 2 if given
 	// `/etc/passwd`
 	// TODO: Provide a fake `/etc/passwd` when running in level 2 or 3
@@ -248,6 +258,19 @@ var profiles = map[string]permissions.AppImagePerms{
 	"smallbasic": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw" },
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11" },
+	},
+	"station": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
+		                   "~/.bashrc:ro",      "~/.zshrc:ro",
+		                   "~/.viminfo:ro"},
+		Sockets: []string{ "wayland", "x11", "network" },
+	},
+	"stellarium": {
+		Level: 1,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
@@ -311,7 +334,9 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"python3.9.9":         "python",
 		"python3.10.1":        "python",
 		"supertux 2":          "supertuxkart",
-		"station":             "cool retro term",
+		"stacer":              "minecraft",
+		"waterfox":            "firefox",
+		"waterfox classic":    "firefox",
 		"yuzu":                "dolphin emulator",
 	}
 

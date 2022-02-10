@@ -35,8 +35,7 @@ else
 fi
 
 if [ "$GITHUB_ACTIONS" ]; then
-  sudo apt-get update
-  sudo apt-get install appstream squashfs-tools
+	./install_deps.sh
 fi
 
 if [ ! $(command -v 'go') ]; then
@@ -54,19 +53,19 @@ mkdir -p 'AppDir/usr/bin' \
 # Compile the binary into the AppDir
 #CGO_ENABLED=0 GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
 #	"$aisapUrl/aisap-bin@latest"
-cd aisap-bin
+cd cmd/aisap
 
-echo 'replace github.com/mgord9518/aisap => ../
-replace github.com/mgord9518/aisap/permissions => ../permissions
-replace github.com/mgord9518/aisap/profiles => ../profiles
-replace github.com/mgord9518/aisap/spooky => ../spooky
-replace github.com/mgord9518/aisap/helpers => ../helpers
+echo 'replace github.com/mgord9518/aisap => ../../
+replace github.com/mgord9518/aisap/permissions => ../../permissions
+replace github.com/mgord9518/aisap/profiles => ../../profiles
+replace github.com/mgord9518/aisap/spooky => ../../spooky
+replace github.com/mgord9518/aisap/helpers => ../../helpers
 ' >> go.mod
 
 go mod tidy
 
-CGO_ENABLED=0 go build -ldflags '-s -w' -o '../AppDir/usr/bin'
-cd ..
+CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
+cd ../..
 
 if [ $? -ne 0 ]; then
 	echo "Failed to build!"
@@ -94,11 +93,11 @@ wget 'https://raw.githubusercontent.com/AppImage/pkg2appimage/master/excludelist
 
 # Link up files
 ln -s './usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg' 'AppDir/io.github.mgord9518.aisap.svg'
-ln -s './usr/bin/aisap-bin' 'AppDir/AppRun'
+ln -s './usr/bin/aisap' 'AppDir/AppRun'
 
 # Build the AppImage
 export ARCH="$ARCH"
-export VERSION=$('AppDir/usr/bin/aisap-bin' --version)
+export VERSION=$('AppDir/usr/bin/aisap' --version)
 
 aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
@@ -116,10 +115,11 @@ aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zs
 
 # Experimental multi-arch shImg build
 mkdir -p 'AppDir/usr.aarch64/bin'
-cd aisap-bin
+cd cmd/aisap
 go mod tidy
-CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../AppDir/usr.aarch64/bin'
-cd ..
+CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
+cd ../..
+ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun'
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64"
