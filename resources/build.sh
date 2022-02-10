@@ -123,6 +123,7 @@ wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runti
 [ $? -ne 0 ] && exit $?
 #sed -i "s/updInfo=/updInfo='gh-releases-zsync|mgord9518|aisap|continuous|aisap-*x86_64_aarch64.shImg.zsync'/" shImg_runtime-lz4
 cat runtime-lz4-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
+chmod +x "aisap-$VERSION-x86_64_aarch64.shImg"
 
 # Apply desktop integration info
 wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
