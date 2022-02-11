@@ -139,7 +139,7 @@ func HasMagic(r io.ReadSeeker, str string, offset int) bool {
 	if err != nil { return false }
 
 	for i := 0; i < len(str); i++ {
-		if magic[i] != byte(str[i]) {
+		if magic[i] != str[i] {
 			return false
 		}
 	}
