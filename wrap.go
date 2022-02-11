@@ -180,7 +180,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	cmdArgs = append(cmdArgs, parseFiles(ai)...)
 	cmdArgs = append(cmdArgs, parseSockets(ai)...)
 	cmdArgs = append(cmdArgs, parseDevices(ai)...)
-
+	
 	return cmdArgs, nil
 }
 
@@ -350,9 +350,10 @@ func parseSockets(ai *AppImage) []string {
 			waylandEnabled && waylandApp && soc == "x11" {
 				continue
 			}
+			s = append(s, sockets[soc]...)
+		} else {
+			s = append(s, unsocks[soc]...)
 		}
-
-		s = append(s, unsocks[soc]...)
 	}
 
 	return s
