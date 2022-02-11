@@ -1,6 +1,9 @@
 package helpers
 
 import (
+	"archive/zip"
+	"errors"
+	"io"
 	"path/filepath"
    	"math/rand"
    	"strings"
@@ -191,4 +194,34 @@ func ExpandGenericDir(str string) string {
 	}
 
 	return expandEither(str, xdgDirs)
+}
+
+
+func ExtractResource(aiPath string, src string, dest string) error {
+	inF, err := ExtractResourceReader(aiPath, src)
+	defer inF.Close()
+	if err != nil { return err }
+
+	outF, err := os.Create(dest)
+	defer outF.Close()
+	if err != nil { return err }
+
+	 _, err = io.Copy(outF, inF)
+	return err
+}
+
+func ExtractResourceReader(aiPath string, src string) (io.ReadCloser, error) {
+	zr, err := zip.OpenReader(aiPath)
+	if err != nil { return nil, err }
+
+	for _, f := range(zr.File) {
+		if f.Name == filepath.Join(".APPIMAGE_RESOURCES", src) {
+			rc, err := f.Open()
+			if err != nil { return nil, err }
+
+			return rc, nil
+		}
+	}
+
+	return nil, errors.New("failed to find `" + src + "` in AppImage resources")
 }

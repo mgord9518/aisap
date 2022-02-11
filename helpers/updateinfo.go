@@ -1,7 +1,7 @@
 package helpers
 
 import (
-	"os"
+//	"os"
 	"bufio"
 	"strings"
 	"bytes"
@@ -49,18 +49,15 @@ func readUpdateInfoFromElf(src string) (string, error) {
 }
 
 func readUpdateInfoFromShappimage(src string) (string, error) {
-	f, err := os.Open(src)
+	f, err := ExtractResourceReader(src, "updInfo")
 	if err != nil { return "", err }
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		if len(scanner.Text()) > 8 && scanner.Text()[0:8] == "updInfo=" &&
-		len(strings.Split(scanner.Text(), "=")) == 2 {
-			updInfo := strings.Join(strings.Split(scanner.Text(), "=")[1:], "=")
-			updInfo  = strings.ReplaceAll(updInfo, "'",  "")
-			updInfo  = strings.ReplaceAll(updInfo, "\"", "")
-
-			return updInfo, nil
+		// Quit on first non-matching line as the update info should only be
+		// one line long
+		if !strings.Contains(scanner.Text(), " APPIMAGE [updInfo]") {
+			return scanner.Text(), nil
 		}
 	}
 	

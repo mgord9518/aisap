@@ -103,63 +103,41 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	uid := strconv.Itoa(os.Getuid())
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
-			"--setenv", "TMPDIR",              "/tmp",
-			"--setenv", "HOME",                xdg.Home,
-			"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
-			"--setenv", "ARGV0",               filepath.Join("/app", path.Base(ai.Path)),
-			"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(xdg.Home, "Desktop"),
-			"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(xdg.Home, "Downloads"),
-			"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(xdg.Home, "Documents"),
-			"--setenv", "XDG_MUSIC_DIR",       filepath.Join(xdg.Home, "Music"),
-			"--setenv", "XDG_PICTURES_DIR",    filepath.Join(xdg.Home, "Pictures"),
-			"--setenv", "XDG_VIDEOS_DIR",      filepath.Join(xdg.Home, "Videos"),
-			"--setenv", "XDG_TEMPLATES_DIR",   filepath.Join(xdg.Home, "Templates"),
-			"--setenv", "XDG_PUBLICSHARE_DIR", filepath.Join(xdg.Home, "Share"),
-			"--setenv", "XDG_DATA_HOME",       filepath.Join(xdg.Home, ".local/share"),
-			"--setenv", "XDG_CONFIG_HOME",     filepath.Join(xdg.Home, ".config"),
-			"--setenv", "XDG_CACHE_HOME",      filepath.Join(xdg.Home, ".cache"),
-			"--setenv", "XDG_STATE_HOME",      filepath.Join(xdg.Home, ".local/state"),
-			"--die-with-parent",
-			"--new-session",
-			"--dir",         filepath.Join("/run/user", uid),
-			"--dev",         "/dev",
-			"--proc",        "/proc",
-			"--bind",        filepath.Join(xdg.Home, ".cache", "appimagekit_" + ai.md5), filepath.Join(xdg.Home, ".cache"),
-			"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
-			"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
-			"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
-			"--ro-bind",     aiRoot(ai, "lib"),       "/lib",
-			"--ro-bind-try", aiRoot(ai, "lib32"),     "/lib32",
-			"--ro-bind-try", aiRoot(ai, "lib64"),     "/lib64",
-			"--ro-bind",     aiRoot(ai, "usr/bin"),   "/usr/bin",
-			"--ro-bind",     aiRoot(ai, "usr/sbin"),  "/usr/sbin",
-			"--ro-bind",     aiRoot(ai, "usr/lib"),   "/usr/lib",
-			"--ro-bind-try", aiRoot(ai, "usr/lib32"), "/usr/lib32",
-			"--ro-bind-try", aiRoot(ai, "usr/lib64"), "/usr/lib64",
-			"--dir",         "/app",
-			"--bind",        ai.Path, filepath.Join("/app", path.Base(ai.Path)),
-	}
-
-	// Convert device perms to bwrap format
-	for _, v := range(ai.Perms.Devices) {
-		if len(v) < 5 || v[0:5] != "/dev/" {
-			v = filepath.Join("/dev", v)
-		}
-
-		cmdArgs = append(cmdArgs, "--dev-bind-try", v, v)
-	}
-
-	// Convert requested files/ dirs to brap flags
-	for _, val := range(ai.Perms.Files) {
-		s   := strings.Split(val, ":")
-		ex  := s[len(s)-1]
-		dir := strings.Join(s[:len(s)-1], ":")
-
-		if ex == "rw" {
-			cmdArgs = append(cmdArgs, "--bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))
-		} else if ex == "ro" {
-			cmdArgs = append(cmdArgs, "--ro-bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))
-		}
+		"--setenv", "TMPDIR",              "/tmp",
+		"--setenv", "HOME",                xdg.Home,
+		"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
+		"--setenv", "ARGV0",               filepath.Join("/app", path.Base(ai.Path)),
+		"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(xdg.Home, "Desktop"),
+		"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(xdg.Home, "Downloads"),
+		"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(xdg.Home, "Documents"),
+		"--setenv", "XDG_MUSIC_DIR",       filepath.Join(xdg.Home, "Music"),
+		"--setenv", "XDG_PICTURES_DIR",    filepath.Join(xdg.Home, "Pictures"),
+		"--setenv", "XDG_VIDEOS_DIR",      filepath.Join(xdg.Home, "Videos"),
+		"--setenv", "XDG_TEMPLATES_DIR",   filepath.Join(xdg.Home, "Templates"),
+		"--setenv", "XDG_PUBLICSHARE_DIR", filepath.Join(xdg.Home, "Share"),
+		"--setenv", "XDG_DATA_HOME",       filepath.Join(xdg.Home, ".local/share"),
+		"--setenv", "XDG_CONFIG_HOME",     filepath.Join(xdg.Home, ".config"),
+		"--setenv", "XDG_CACHE_HOME",      filepath.Join(xdg.Home, ".cache"),
+		"--setenv", "XDG_STATE_HOME",      filepath.Join(xdg.Home, ".local/state"),
+		"--die-with-parent",
+		"--new-session",
+		"--dir",         filepath.Join("/run/user", uid),
+		"--dev",         "/dev",
+		"--proc",        "/proc",
+		"--bind",        filepath.Join(xdg.Home, ".cache", "appimagekit_" + ai.md5), filepath.Join(xdg.Home, ".cache"),
+		"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
+		"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
+		"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
+		"--ro-bind",     aiRoot(ai, "lib"),       "/lib",
+		"--ro-bind-try", aiRoot(ai, "lib32"),     "/lib32",
+		"--ro-bind-try", aiRoot(ai, "lib64"),     "/lib64",
+		"--ro-bind",     aiRoot(ai, "usr/bin"),   "/usr/bin",
+		"--ro-bind",     aiRoot(ai, "usr/sbin"),  "/usr/sbin",
+		"--ro-bind",     aiRoot(ai, "usr/lib"),   "/usr/lib",
+		"--ro-bind-try", aiRoot(ai, "usr/lib32"), "/usr/lib32",
+		"--ro-bind-try", aiRoot(ai, "usr/lib64"), "/usr/lib64",
+		"--dir",         "/app",
+		"--bind",        ai.Path, filepath.Join("/app", path.Base(ai.Path)),
 	}
 
 	// Level 1 is minimal sandboxing, grants access to most system files, all devices and only really attempts to isolate home files
@@ -198,6 +176,81 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	} else if ai.Perms.Level > 3 || ai.Perms.Level < 1 {
 		return []string{}, errors.New("AppImage permissions level does not allow sandboxing")
 	}
+
+	cmdArgs = append(cmdArgs, parseFiles(ai)...)
+	cmdArgs = append(cmdArgs, parseSockets(ai)...)
+	cmdArgs = append(cmdArgs, parseDevices(ai)...)
+
+	return cmdArgs, nil
+}
+
+// Returns the location of the requested directory on the host filesystem with
+// symlinks resolved. This should solve systems like GoboLinux, where
+// traditionally named directories are symlinks to something unconventional.
+func aiRoot(ai *AppImage, src string) string {
+	s, _ := filepath.EvalSymlinks(filepath.Join(ai.rootDir, src))
+
+	return s
+}
+
+func parseFiles(ai *AppImage) []string {
+	var s []string
+
+	// Convert requested files/ dirs to brap flags
+	for _, val := range(ai.Perms.Files) {
+		s   := strings.Split(val, ":")
+		ex  := s[len(s)-1]
+		dir := strings.Join(s[:len(s)-1], ":")
+
+		if ex == "rw" {
+			s = append(s, "--bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))
+		} else if ex == "ro" {
+			s = append(s, "--ro-bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))
+		}
+	}
+
+	return s
+}
+// Give all requried flags to add the devices
+func parseDevices(ai *AppImage) []string {
+	var d []string
+
+	// Convert device perms to bwrap format
+	for _, v := range(ai.Perms.Devices) {
+		if len(v) < 5 || v[0:5] != "/dev/" {
+			v = filepath.Join("/dev", v)
+		}
+
+		d = append(d, "--dev-bind-try", v, v)
+	}
+
+	// Required files to go along with them
+	var devices = map[string][]string {
+		"dri": {
+			"--ro-bind",      "/sys/dev/char",           "/sys/dev/char",
+			"--ro-bind",      "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
+			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
+			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
+			"--dev-bind-try", "/dev/nvidia-modeset",     "/dev/nvidia-modeset",
+			"--ro-bind-try",  aiRoot(ai, "usr/share/glvnd"), "/usr/share/glvnd",
+		},
+		"input": {
+			"--ro-bind", "/sys/class/input", "/sys/class/input",
+		},
+	}
+
+	for device, _ := range(devices) {
+		if _, present := helpers.Contains(ai.Perms.Devices, device); present {
+			d = append(d, devices[device]...)
+		}
+	}
+
+	return d
+}
+
+func parseSockets(ai *AppImage) []string {
+	var s []string
+	uid := strconv.Itoa(os.Getuid())
 
 	// These vars will only be used if x11 socket is granted access
 	xAuthority := os.Getenv("XAUTHORITY")
@@ -273,7 +326,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		},
 	}
 
-	// Args to disable sockets if not requested
+	// Args to disable sockets if not given
 	var unsocks = map[string][]string {
 		"alsa":       {},
 		"audio":      {},
@@ -289,50 +342,18 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		"x11":        {},
 	}
 
-	for s, _ := range(sockets) {
-		if _, present := helpers.Contains(ai.Perms.Sockets, s); present {
+	for soc, _ := range(sockets) {
+		if _, present := helpers.Contains(ai.Perms.Sockets, soc); present {
 			// Don't give access to X11 if wayland is running on the machine
 			// and the app supports it
 			if _, waylandApp := helpers.Contains(ai.Perms.Sockets, "wayland");
-			waylandEnabled && waylandApp && s == "x11" {
+			waylandEnabled && waylandApp && soc == "x11" {
 				continue
 			}
-
-			cmdArgs = append(cmdArgs, sockets[s]...)
-		} else {
-			cmdArgs = append(cmdArgs, unsocks[s]...)
 		}
+
+		s = append(s, unsocks[soc]...)
 	}
-
-	// Give access to all files needed to run device
-	var devices = map[string][]string {
-		"dri": {
-			"--ro-bind",      "/sys/dev/char",           "/sys/dev/char",
-			"--ro-bind",      "/sys/devices/pci0000:00", "/sys/devices/pci0000:00",
-			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
-			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
-			"--dev-bind-try", "/dev/nvidia-modeset",     "/dev/nvidia-modeset",
-			"--ro-bind-try",  aiRoot(ai, "usr/share/glvnd"), "/usr/share/glvnd",
-		},
-		"input": {
-			"--ro-bind", "/sys/class/input", "/sys/class/input",
-		},
-	}
-
-	for device, _ := range(devices) {
-		if _, present := helpers.Contains(ai.Perms.Devices, device); present {
-			cmdArgs = append(cmdArgs, devices[device]...)
-		}
-	}
-
-	return cmdArgs, nil
-}
-
-// Returns the location of the requested directory on the host filesystem with
-// symlinks resolved. This should solve systems like GoboLinux, where
-// traditionally named directories are symlinks to something unconventional.
-func aiRoot(ai *AppImage, src string) string {
-	s, _ := filepath.EvalSymlinks(filepath.Join(ai.rootDir, src))
 
 	return s
 }
