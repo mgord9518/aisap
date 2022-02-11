@@ -11,7 +11,7 @@ import (
 type arrayFlags []string
 
 var (
-	ver = "0.3.7-alpha"
+	ver = "0.3.10-alpha"
 )
 
 var (
