@@ -198,9 +198,9 @@ func parseFiles(ai *AppImage) []string {
 
 	// Convert requested files/ dirs to brap flags
 	for _, val := range(ai.Perms.Files) {
-		s   := strings.Split(val, ":")
-		ex  := s[len(s)-1]
-		dir := strings.Join(s[:len(s)-1], ":")
+		sl  := strings.Split(val, ":")
+		ex  := sl[len(sl)-1]
+		dir := strings.Join(sl[:len(sl)-1], ":")
 
 		if ex == "rw" {
 			s = append(s, "--bind-try", helpers.ExpandDir(dir), helpers.ExpandGenericDir(dir))

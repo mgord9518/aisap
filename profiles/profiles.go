@@ -51,6 +51,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	// TODO: Find files responsible for reporting MESA info to increase sandbox
+	"bugdom": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "audio", "network" },
+	},
 	// I think it's an interesting idea to have a confined terminal
 	// enviornment although it could also greatly hinder its usefullness
 	// so I'd like to hear feedback
@@ -69,6 +75,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-music:rw" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"densify": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw" },
+		Sockets: []string{ "x11" },
 	},
 	// Network for netplay
 	"dolphin emulator": {
@@ -281,6 +293,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
+	"stunk car remake": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	"supertuxkart": {
 		Level: 3,
 		Devices: []string{ "dri", "input" },
@@ -321,10 +338,13 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"chromium":            "google chrome",
 		"desmume":             "mgba",
 		"edex-ui":             "cool retro term",
+		// TODO: test gambatte on X11 (borked on XWayland)
+		"gambatte_qt":        "mgba",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
 		"librewolf":           "firefox",
 		"microsoft edge":      "google chrome",
+		"play 2048":           "linedancer",
 		"python2.7.18":        "python",
 		"python3":             "python",
 		"python3.5.10":        "python",

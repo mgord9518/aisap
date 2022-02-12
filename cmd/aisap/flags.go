@@ -11,7 +11,7 @@ import (
 type arrayFlags []string
 
 var (
-	ver = "0.3.10-alpha"
+	ver = "0.3.12-alpha"
 )
 
 var (
@@ -54,13 +54,13 @@ func init() {
 	}
 
 	flag.Usage = func() {
-		clr.Printf("<yellow>usage</>: <blue>%s</> [OPTIONS] [APPIMAGE]\n", argv0)
+		clr.Printf("<yellow>usage</>: <blue>%s</> [<green>OPTIONS</>] [<green>APPIMAGE</>]\n", argv0)
 		clr.Printf("<yellow>description</>: easily sandbox AppImages in BubbleWrap\n")
 		clr.Printf("\n<yellow>normal options</>:\n")
 		printUsage("help")
 		printUsage("list-perms")
 		clr.Printf("\n<yellow>long-only options</>:\n")
-		printUsage("example")
+//		printUsage("example")
 		printUsage("level")
 		printUsage("add-file")
 		printUsage("add-device")
@@ -82,7 +82,6 @@ func init() {
 	}
 
 	flag.Parse()
-
 
 	if *version {
 		fmt.Println(ver)

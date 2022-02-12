@@ -38,12 +38,13 @@ import (
 
 var (
 	ai   *aisap.AppImage
-	err   error
 	argv0 string
 )
 
 // Process flags
 func main() {
+	var err error
+
 	if len(flag.Args()) >= 1 {
 		ai, err = aisap.NewAppImage(flag.Args()[0])
 		if err != nil {
@@ -76,29 +77,32 @@ func main() {
 	if *level > -1 && *level <= 3 {
 		err = ai.Perms.SetLevel(*level)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to set permissions level:", err)
+			clr.Fprintln(os.Stderr, "<red>error</> (this shouldn't happen!): failed to set permissions level:", err)
 		}
 	}
 
 	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
-		fmt.Println("failed to retrieve AppImage permissions!")
-		fmt.Println("defaulting sandbox level to 3 with no further access")
-		fmt.Println("in the case this sandbox does not work properly, use the command line")
-		fmt.Println("flags to add the necessary minimum permissions or create a custom profile")
+		clr.Println("<yellow>info</>: this app has no profile! defaulting to level 3")
+		clr.Println("use the command line flag <cyan>--level</> [<green>1</>-<green>3</>] to try to sandbox it anyway\n")
 		ai.Perms.SetLevel(3)
 	}
 
 	if *listPerms && ai.Perms.Level == 0 {
-		clr.Fprintf(os.Stdout, "<yellow>application `%s` requests to be used unsandboxed!</>\n", ai.Name)
-		fmt.Fprintln(os.Stdout, "Use the command line flag `--level [1-3]` to try to sandbox it anyway")
+		clr.Println("<yellow>permissions</>:")
+		prettyList("level", 0, 11)
+		prettyList("filesystem", "ALL", 11)
+		prettyList("devices", "ALL", 11)
+		prettyList("sockets", "ALL", 11)
+
+		clr.Printf("\n<yellow>warning</>: this app requests to be unsandboxed\n")
+		clr.Println("use the command line flag <cyan>--level</> [<green>1</>-<green>3</>] to try to sandbox it anyway\n")
 		cleanExit(0)
 	}
 
 	// Give basic info on the permissions the AppImage requests
 	if *listPerms {
-		clr.Printf("<yellow>permissions</>: \n")
+		clr.Println("<yellow>permissions</>:")
 
-		//clr.Printf("<green> - </>level:      <cyan>%d</>\n", ai.Perms.Level)
 		prettyList("level", ai.Perms.Level, 11)
 		prettyListFiles("filesystem", ai.Perms.Files, 11)
 		prettyList("devices", ai.Perms.Devices, 11)
@@ -131,7 +135,7 @@ func main() {
 }
 
 func cleanExit(exitCode int) {
-	err = aisap.Unmount(ai)
+	aisap.Unmount(ai)
 	os.Exit(exitCode)
 }
 
