@@ -158,6 +158,8 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
 			"--ro-bind-try", aiRoot(ai, "etc/fonts"),              "/etc/fonts",
+			"--ro-bind-try", aiRoot(ai, "etc/mime.types"),         "/etc/mime.types",
+			"--ro-bind-try", aiRoot(ai, "etc/xdg"),                "/etc/xdg",
 			"--ro-bind-try", aiRoot(ai, "usr/share/fontconfig"),   "/usr/share/fontconfig",
 			"--ro-bind-try", aiRoot(ai, "usr/share/fonts"),        "/usr/share/fonts",
 			"--ro-bind-try", aiRoot(ai, "usr/share/icons"),        "/usr/share/icons",

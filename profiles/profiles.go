@@ -14,6 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
+// 68 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -25,6 +26,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"appimage pool": {
+		Level: 2,
+		Files:   []string{ "~/Applications:rw" },
+		Devices: []string{ "dri" },
+		Sockets: []string{ "wayland", "x11", "network" },
 	},
 	"appimageupdate": {
 		Level: 2,
@@ -95,6 +102,18 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"eagle mode": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		// Not really sure if the better way to go about it is just supplying
+		// it with access to the home directory or giving XDG directories like
+		// so
+		Files:   []string{ "xdg-documents:rw", "xdg-publicshare:rw",
+		                   "xdg-templates:rw",  "xdg-desktop:rw",
+						   "xdg-documents:rw",  "xdg-download:rw",
+					       "xdg-music:rw",      "xdg-videos:rw"},
+		Sockets: []string{ "x11", "audio" },
+	},
 	"endless sky": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -110,6 +129,11 @@ var profiles = map[string]permissions.AppImagePerms{
 	"fontforge": {
 		Level: 2,
 		Files:   []string{ "xdg-documents:rw", "~/.fonts:rw" },
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11" },
+	},
+	"fractale": {
+		Level: 2,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
@@ -339,11 +363,13 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"desmume":             "mgba",
 		"edex-ui":             "cool retro term",
 		// TODO: test gambatte on X11 (borked on XWayland)
-		"gambatte_qt":        "mgba",
+		"gambatte_qt":         "mgba",
+		"hyper":               "cool retro term",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
 		"librewolf":           "firefox",
 		"microsoft edge":      "google chrome",
+		"nx-software-center":  "appimageupdate",
 		"play 2048":           "linedancer",
 		"python2.7.18":        "python",
 		"python3":             "python",

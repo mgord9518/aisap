@@ -251,7 +251,10 @@ func getEntry(ai *AppImage) (*ini.File, error) {
 
 	if ai.imageType == -2 {
 		f, err = helpers.ExtractResourceReader(ai.Path, "desktop_entry")
-	} else {
+	}
+
+	// Extract from SquashFS if type 2 or zip fails
+	if ai.imageType == 2 || err != nil {
 		// Return all `.desktop` files. A vadid AppImage should only have one
 		var fp []string
 		fp, err = filepath.Glob(ai.mountDir + "/*.desktop")
