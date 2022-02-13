@@ -19,7 +19,7 @@ func ReadUpdateInfo(src string) (string, error) {
 		return readUpdateInfoFromShappimage(src)
 	}
 
-	return "", errors.New("appimage is of unknown type")
+	return "", errors.New("AppImage is of unknown type")
 }
 
 // Taken and modified from
@@ -49,14 +49,14 @@ func readUpdateInfoFromElf(src string) (string, error) {
 }
 
 func readUpdateInfoFromShappimage(src string) (string, error) {
-	f, err := ExtractResourceReader(src, "updInfo")
+	f, err := ExtractResourceReader(src, "update_info")
 	if err != nil { return "", err }
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		// Quit on first non-matching line as the update info should only be
 		// one line long
-		if !strings.Contains(scanner.Text(), " APPIMAGE [updInfo]") {
+		if !strings.Contains(scanner.Text(), " APPIMAGE [update_info]") {
 			return scanner.Text(), nil
 		}
 	}

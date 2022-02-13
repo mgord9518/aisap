@@ -57,6 +57,9 @@ func NewAppImage(src string) (*AppImage, error) {
 	}
 	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
 
+	ai.imageType, err = helpers.GetAppImageType(ai.Path)
+	if err != nil { return nil, err }
+
 	ai.md5 = fmt.Sprintf("%x", md5.Sum([]byte("file://" + ai.Path)))
 
 	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
@@ -71,24 +74,9 @@ func NewAppImage(src string) (*AppImage, error) {
 	err = mount(src, ai.mountDir, ai.Offset)
 	if err != nil { return nil, err }
 
-	// Return all `.desktop` files. A vadid AppImage should only have one
-	fp, err := filepath.Glob(ai.mountDir + "/*.desktop")
-	if err != nil { return nil, err }
-	f, err := os.Open(fp[0])
-	defer f.Close()
-
-	// Replace normal semicolons with fullwidth semicolons so that it doen't
-	// interfere with the INI parsing
-	var e string
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		e = e + strings.ReplaceAll(scanner.Text(), ";", "；") + "\n"
-	}
-	entry, _ := ini.Load([]byte(e))
-
-	ai.Desktop = entry
-	ai.Name    = entry.Section("Desktop Entry").Key("Name").Value()
-	ai.Version = entry.Section("Desktop Entry").Key("X-AppImage-Version").Value()
+	ai.Desktop, err = getEntry(ai)
+	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
+	ai.Version = ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Version").Value()
 
 	ai.UpdateInfo, _ = helpers.ReadUpdateInfo(ai.Path)
 
@@ -110,6 +98,12 @@ func NewAppImage(src string) (*AppImage, error) {
 // Return a reader for the `.DirIcon` file of the AppImage, converting it to
 // PNG if it's in SVG or XPM format
 func (ai AppImage) Thumbnail() (io.Reader, error) {
+	// Try to extract from zip, continue to SquashFS if it fails
+	if ai.imageType == -2 {
+		r, err := helpers.ExtractResourceReader(ai.Path, "icon/256.png")
+		if err == nil { return r, nil }
+	}
+
 	f, err := os.Open(filepath.Join(ai.mountDir, ".DirIcon"))
 	if err != nil { return nil, err }
 
@@ -208,6 +202,16 @@ func (ai AppImage) ExtractFileReader(path string) (io.ReadCloser, error) {
 
 // Returns the icon reader of the AppImage, valid formats are SVG and PNG
 func (ai AppImage) Icon() (io.ReadCloser, string, error) {
+	if ai.imageType == -2 {
+		r, err := helpers.ExtractResourceReader(ai.Path, "icon/default.svg")
+		// Didn't really know what to put in the string here as the name inside
+		// the zip is always `default`, so just decided to use the extension
+		if err == nil { return r, ".svg", nil }
+
+		r, err  = helpers.ExtractResourceReader(ai.Path, "icon/default.png")
+		if err == nil { return r, ".png", nil }
+	}
+
 	if ai.Desktop == nil {
 		return nil, "", errors.New("desktop file wasn't parsed")
 	}
@@ -237,4 +241,31 @@ func (ai AppImage) Icon() (io.ReadCloser, string, error) {
 	}
 
 	return nil, "", errors.New("unable to find icon with valid extension (.png, .svg) inside AppImage")
+}
+
+// Extract the desktop file from the AppImage
+func getEntry(ai *AppImage) (*ini.File, error) {
+	var err error
+	var f   io.ReadCloser
+	var e   string
+
+	if ai.imageType == -2 {
+		f, err = helpers.ExtractResourceReader(ai.Path, "desktop_entry")
+	} else {
+		// Return all `.desktop` files. A vadid AppImage should only have one
+		var fp []string
+		fp, err = filepath.Glob(ai.mountDir + "/*.desktop")
+		if err != nil { return nil, err }
+		f, err = os.Open(fp[0])
+		defer f.Close()
+	}
+
+	// Replace normal semicolons with fullwidth semicolons so that it doen't
+	// interfere with the INI parsing
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		e = e + strings.ReplaceAll(scanner.Text(), ";", "；") + "\n"
+	}
+
+	return ini.Load([]byte(e))
 }

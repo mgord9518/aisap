@@ -38,7 +38,7 @@ func getShappImageSize(src string) (int, error) {
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		if len(scanner.Text()) > 10 && scanner.Text()[0:10] == "sfsOffset=" &&
+		if len(scanner.Text()) > 10 && scanner.Text()[0:11] == "sfs_offset=" &&
 		len(strings.Split(scanner.Text(), "=")) == 2 {
 
 			offHex := strings.Split(scanner.Text(), "=")[1]
@@ -50,7 +50,7 @@ func getShappImageSize(src string) (int, error) {
 		}
 	}
 
-	return -1, errors.New("unable to find shappimage offset from `sfsOffset` variable")
+	return -1, errors.New("unable to find shappimage offset from `sfs_offset` variable")
 }
 
 // Function from <github.com/probonopd/go-appimage/internal/helpers/elfsize.go>
