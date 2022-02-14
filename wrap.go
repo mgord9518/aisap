@@ -192,6 +192,10 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 func aiRoot(ai *AppImage, src string) string {
 	s, _ := filepath.EvalSymlinks(filepath.Join(ai.rootDir, src))
 
+	if s == "" {
+		s = "/" + src
+	}
+
 	return s
 }
 
