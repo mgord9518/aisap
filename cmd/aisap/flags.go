@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"os"
 
-	flag "github.com/spf13/pflag"
-	clr  "github.com/gookit/color"
+	flag  "github.com/spf13/pflag"
+	clr   "github.com/gookit/color"
+	aisap "github.com/mgord9518/aisap"
 )
 
 type arrayFlags []string
 
-var (
-	ver = "0.3.13-alpha"
-)
+//var (
+//	ver = "0.3.13-alpha"
+//	ver = fmt.Sprintf("%d.%d.%d", aisap.)
+//)
 
 var (
 	// Normal flags
@@ -84,7 +86,7 @@ func init() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println(ver)
+		fmt.Println(aisap.Version)
 		os.Exit(0)
 	}
 

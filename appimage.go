@@ -41,6 +41,11 @@ type AppImage struct {
 	imageType    int    // Type of AppImage (either 1 or 2)
 }
 
+// Current version of aisap
+const (
+	Version = "0.3.14-alpha"
+)
+
 // Create a new AppImage object from a path
 func NewAppImage(src string) (*AppImage, error) {
 	var err error
