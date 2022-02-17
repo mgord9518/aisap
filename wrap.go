@@ -121,6 +121,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		"--setenv", "XDG_STATE_HOME",      filepath.Join(xdg.Home, ".local/state"),
 		"--die-with-parent",
 		"--new-session",
+		"--perms",       "0700",
 		"--dir",         filepath.Join("/run/user", uid),
 		"--dev",         "/dev",
 		"--proc",        "/proc",

@@ -11,11 +11,6 @@ import (
 
 type arrayFlags []string
 
-//var (
-//	ver = "0.3.13-alpha"
-//	ver = fmt.Sprintf("%d.%d.%d", aisap.)
-//)
-
 var (
 	// Normal flags
 	help      = flag.BoolP("help",       "h", false, "display this help menu")
@@ -62,7 +57,7 @@ func init() {
 		printUsage("help")
 		printUsage("list-perms")
 		clr.Printf("\n<yellow>long-only options</>:\n")
-//		printUsage("example")
+		printUsage("example")
 		printUsage("level")
 		printUsage("add-file")
 		printUsage("add-device")
@@ -75,10 +70,7 @@ func init() {
 		clr.Printf("\n<yellow>enviornment variables</>:\n")
 		clr.Printf("  <cyan>NO_COLOR</>: disable color\n")
 
-//		clr.Printf("\n<red>WARNING:</> no sandbox is impossible to escape! This is to *aid* security, not\n")
-//		fmt.Printf("guarentee safety when downloading sketchy stuff online. Don't be stupid!\n\n")
 		clr.Printf("\n<yellow>homepage</>: <https://github.com/mgord9518/aisap>\n\n")
-//		fmt.Printf("Plus, this is ALPHA software! Very little testing has been done;\n")
 		clr.Printf("<red>USE AT YOUR OWN RISK!</>\n")
 		os.Exit(0)
 	}
@@ -91,15 +83,15 @@ func init() {
 	}
 
 	if *example {
-//		clr.Printf("<yellow>examples</>:\n")
-//		fmt.Printf("  %s%s --profile%s=./f.desktop -- ./f.app\n", g, argv0, z)
-//		fmt.Printf("    sandbox `f.app` using permissions from `f.desktop`\n\n")
-//		fmt.Printf("  %s%s ./f.app --level%s=2\n", g, argv0, z)
-//		fmt.Printf("    tighten `f.app` sandbox to level 2 (default: 1)\n\n")
-//		fmt.Printf("  %s%s --add-file%s=./f.txt %s--add-file%s ./other.bin ./f.app\n", g, argv0, z, g, z)
-//		fmt.Printf("    allow sandbox to access files `f.txt` and `other.bin`\n\n")
-//		fmt.Printf("  %s%s --rm-file%s=./secret.txt ./f.app\n", g, argv0, z, g, z)
-//		fmt.Printf("    revoke access to `secret.txt` in the sandbox\n")
+		clr.Printf("<yellow>examples</>:\n")
+		clr.Printf("  <blue>%s</> <green>--profile</>=./f.desktop ./f.app\n", argv0)
+		clr.Printf("    sandbox `f.app` using permissions from `f.desktop`\n\n")
+		clr.Printf("  <blue>%s</> <green>--level 2</>./f.app\n", argv0)
+		fmt.Printf("    change `f.app` sandbox base to level 2\n\n")
+		clr.Printf("  <blue>%s</> <green>--add-file</> other.bin ./f.app <green>--add-file</>=./f.txt\n", argv0)
+		fmt.Printf("    allow sandbox to access files `f.txt` and `other.bin`\n\n")
+		clr.Printf("  <blue>%s</> <green>--rm-file</> secret.txt./f.app\n", argv0)
+		fmt.Printf("    revoke access to `secret.txt` in the sandbox\n")
 		os.Exit(0)
 	}
 

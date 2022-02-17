@@ -50,7 +50,7 @@ aisap CLI tool is a simple wrapper around the library to mainly serve as a
 demonstration. It does *not* offer any desktop integration, but it should be
 fairly easy to wrap it into shell scripts to automatically launch AppImages in.
 I use it daily on my system and it generally works well, but there is no
-guarentee everything will work as intended yet. If something isn't working,
+guarantee everything will work as intended yet. If something isn't working,
 send a bug report! I'll try to fix it ASAP
 
 If a program is supported by aisap's internal library, or if the AppImage has
