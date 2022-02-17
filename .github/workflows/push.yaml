@@ -21,10 +21,9 @@ jobs:
     - name: Build
       run: ./resources/build.sh
 
-    - name: Test
-      run: ./*.shImg --help
-      run: ./*.AppImage --help
-  
+    - name: Test build
+      run: ./resources/test.sh
+
     - name: Upload build
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
