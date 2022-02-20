@@ -1,9 +1,11 @@
 package aisap
 
 import (
+	"bufio"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"errors"
 	"path"
 	"path/filepath"
@@ -70,4 +72,19 @@ func unmountDir(mntPt string) error {
 	}
 
 	return err
+}
+
+// Returns true if directory is detected as already being mounted
+func isMountPoint(dir string) bool {
+	f, _ := os.Open("/proc/self/mountinfo")
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		str := strings.Split(scanner.Text(), " ")[4]
+		if str == dir {
+			return true
+		}
+	}
+
+	return false
 }

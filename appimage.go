@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"os"
 	"strings"
-	"time"
+//	"time"
 
 	ini         "gopkg.in/ini.v1"
 	helpers     "github.com/mgord9518/aisap/helpers"
@@ -43,7 +43,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.3.15-alpha"
+	Version = "0.3.17-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -55,17 +55,21 @@ func NewAppImage(src string) (*AppImage, error) {
 		return nil, errors.New("file not found!")
 	}
 
+	b := md5.Sum([]byte("file://" + ai.Path))
+	ai.md5 = fmt.Sprintf("%x", b)
+
 	// Set the runId, tempDir and rootDir of the AppImage
 	pfx := path.Base(ai.Path)
 	if len(pfx) > 6 {
 		pfx = pfx[0:6]
 	}
-	ai.runId = pfx + helpers.RandString(int(time.Now().UTC().UnixNano()), 6)
+
+	// Now use a chunk of the MD5sum as seed instead of date
+	seed := int(b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + b[7] + b[8])
+	ai.runId = pfx + helpers.RandString(seed, 6)
 
 	ai.imageType, err = helpers.GetAppImageType(ai.Path)
 	if err != nil { return nil, err }
-
-	ai.md5 = fmt.Sprintf("%x", md5.Sum([]byte("file://" + ai.Path)))
 
 	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
 	if err != nil { return nil, err }
@@ -76,8 +80,13 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
 
-	err = mount(src, ai.mountDir, ai.Offset)
-	if err != nil { return nil, err }
+	// Only mount if no previous instances (launced the same day) are already
+	// mounted there. This is to reuse their libraries, save on RAM and to spam
+	// the mount list as little as possible
+	if !isMountPoint(ai.mountDir) {
+		err = mount(src, ai.mountDir, ai.Offset)
+		if err != nil { return nil, err }
+	}
 
 	ai.Desktop, err = getEntry(ai)
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()

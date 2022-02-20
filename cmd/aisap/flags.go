@@ -56,6 +56,7 @@ func init() {
 		clr.Printf("\n<yellow>normal options</>:\n")
 		printUsage("help")
 		printUsage("list-perms")
+		printUsage("verbose")
 		clr.Printf("\n<yellow>long-only options</>:\n")
 		printUsage("example")
 		printUsage("level")
@@ -68,10 +69,11 @@ func init() {
 		printUsage("profile")
 		printUsage("version")
 		clr.Printf("\n<yellow>enviornment variables</>:\n")
-		clr.Printf("  <cyan>NO_COLOR</>: disable color\n")
+		clr.Printf("  <cyan>NO_COLOR</>:                disable color\n")
+		clr.Printf("  <cyan>PREFER_SYSTEM_LIBRARIES</>: force use of system libraries\n")
 
 		clr.Printf("\n<yellow>homepage</>: <https://github.com/mgord9518/aisap>\n\n")
-		clr.Printf("<red>USE AT YOUR OWN RISK!</>\n")
+		clr.Printf("<red>warning</>: USE AT YOUR OWN RISK!\n")
 		os.Exit(0)
 	}
 

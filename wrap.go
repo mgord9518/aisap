@@ -1,7 +1,10 @@
 package aisap
 
 import (
+//	"io"
 	"errors"
+	"bytes"
+	"bufio"
 	"os"
 	"os/exec"
 	"path"
@@ -30,32 +33,30 @@ func Run(ai *AppImage, args []string) error {
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 func Sandbox(ai *AppImage, args []string) error {
-	bwrapArgs, err := GetWrapArgs(ai)
+	cmdArgs, err := GetWrapArgs(ai)
 	if err != nil { return err }
-
-	if _, err := exec.LookPath("bwrap"); err != nil {
-		return errors.New("bubblewrap not found! It's required to use sandboxing")
-	}
 
 	err = setupRun(ai)
 	if err != nil { return err }
 
 	// Bind the fake `~` and `/tmp` dirs
-	bwrapArgs = append([]string{
+	cmdArgs = append([]string{
 		"--bind",   ai.dataDir, xdg.Home,
-		"--bind",   ai.tempDir, "/tmp",
 		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
-	}, bwrapArgs...)
+	}, cmdArgs...)
 
-	// Run the AppImage's AppRun through bwrap
-	bwrapArgs = append(bwrapArgs, "--",
+	cmdArgs = append(cmdArgs, "--",
 		"/tmp/.mount_"+ai.runId+"/AppRun",
 	)
 
-	// Append console arguments provided by the user
-	bwrapArgs = append(bwrapArgs, args...)
+	if _, err = exec.LookPath("bwrap"); err != nil {
+		return errors.New("bubblewrap not found! It's required to use sandboxing")
+	}
 
-	bwrap := exec.Command("bwrap", bwrapArgs...)
+	// Append console arguments provided by the user
+	cmdArgs = append(cmdArgs, args...)
+
+	bwrap := exec.Command("bwrap", cmdArgs...)
 	bwrap.Stdout = os.Stdout
 	bwrap.Stderr = os.Stderr
 	bwrap.Stdin  = os.Stdin
@@ -159,6 +160,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
 			"--ro-bind-try", aiRoot(ai, "etc/fonts"),              "/etc/fonts",
+			"--ro-bind-try", aiRoot(ai, "etc/ld.so.cache"),        "/etc/ld.so.cache",
 			"--ro-bind-try", aiRoot(ai, "etc/mime.types"),         "/etc/mime.types",
 			"--ro-bind-try", aiRoot(ai, "etc/xdg"),                "/etc/xdg",
 			"--ro-bind-try", aiRoot(ai, "usr/share/fontconfig"),   "/usr/share/fontconfig",
@@ -183,7 +185,60 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	cmdArgs = append(cmdArgs, parseFiles(ai)...)
 	cmdArgs = append(cmdArgs, parseSockets(ai)...)
 	cmdArgs = append(cmdArgs, parseDevices(ai)...)
-	
+
+	// Only supply libraries that aren't present on the host system to the
+	// sandbox. This needs more work (eg: move whole directories over if they
+	// contain no libs), but for some AppImages it may reduce RAM usage, reduce
+	// launch time and significantly speed up execution in emulating a
+	// different architecture (although this isn't a common thing)
+	_, present := os.LookupEnv("PREFER_SYSTEM_LIBRARIES")
+	if present {
+		// Get a list of the system libraries into a string by running ldconfig
+		r := &bytes.Buffer{}
+		cmd := exec.Command("ldconfig", "-p")
+		cmd.Stdout = r
+		cmd.Run()
+		scanner := bufio.NewScanner(r)
+		sysLibs := []string{}
+		for scanner.Scan() {
+			s := strings.Split(scanner.Text(), " ")
+			sysLibs = append(sysLibs, s[len(s)-1])
+		}
+
+		filepath.Walk(ai.mountDir, func(dir string, info os.FileInfo, err error) error {
+			if err != nil { return err }
+			if info.IsDir() {
+				return nil
+			}
+
+			var nDir string
+			foundLib := false
+			for _, val := range(sysLibs) {
+				if path.Base(val) == path.Base(dir) {
+					nDir = val
+					foundLib = true
+				}
+			}
+
+			if !foundLib {
+				nDir = strings.Replace(dir, ai.mountDir, "", 1)
+			}
+
+			cmdArgs = append([]string{
+				"--ro-bind", dir, "/tmp/.mount_"+ai.runId+nDir,
+			}, cmdArgs...)
+
+			return nil
+		})
+		cmdArgs = append([]string{
+			"--dir", "/tmp/.mount_"+ai.runId,
+		}, cmdArgs...)
+	} else {
+		cmdArgs = append([]string{
+			"--bind",   ai.tempDir, "/tmp",
+		}, cmdArgs...)
+	}
+
 	return cmdArgs, nil
 }
 

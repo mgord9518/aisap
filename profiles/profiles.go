@@ -317,7 +317,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
-	"stunk car remake": {
+	"stunt car remake": {
 		Level: 3,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa" },
