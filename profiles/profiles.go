@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 68 unique apps currently supported
+// 73 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -23,28 +23,28 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"aranym jit": {
 		Level: 3,
-		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"appimage pool": {
 		Level: 2,
-		Files:   []string{ "~/Applications:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "~/Applications:rw" },
 		Sockets: []string{ "wayland", "x11", "network" },
 	},
 	"appimageupdate": {
 		Level: 2,
-		Files:   []string{ "~/Applications:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "~/Applications:rw" },
 		Sockets: []string{ "x11", "network" },
 	},
 	// Untested with Android device, left level 1 assuming it needs access to all
 	// of `/dev`
 	"apk editor studio": {
 		Level: 1,
-		Files:   []string{ "xdg-templates:rw", "xdg-download:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-templates:rw", "xdg-download:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"badlion client": {
@@ -92,8 +92,8 @@ var profiles = map[string]permissions.AppImagePerms{
 	// Network for netplay
 	"dolphin emulator": {
 		Level: 2,
-		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri", "input" },
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Sockets: []string{ "x11", "alsa", "network" },
 	},
 	"dust3d": {
@@ -114,6 +114,11 @@ var profiles = map[string]permissions.AppImagePerms{
 					       "xdg-music:rw",      "xdg-videos:rw"},
 		Sockets: []string{ "x11", "audio" },
 	},
+	"element": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "network" },
+	},
 	"endless sky": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -122,14 +127,14 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"firefox": {
 		Level: 2,
-		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
 		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	"fontforge": {
 		Level: 2,
-		Files:   []string{ "xdg-documents:rw", "~/.fonts:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw", "~/.fonts:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"fractale": {
@@ -140,20 +145,20 @@ var profiles = map[string]permissions.AppImagePerms{
 	// Also requires `/etc/passwd`
 	"freecad conda": {
 		Level: 1,
-		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"geometrize": {
 		Level: 2,
-		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"gnu image manipulation program": {
 		Level: 1,
-		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"imagemagick": {
@@ -163,27 +168,27 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"inkscape": {
 		Level: 2,
-		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
 	// Network for plugins and syncing
 	"joplin": {
 		Level: 2,
-		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11", "network" },
 	},
 	"krita": {
 		Level: 2,
-		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"leocad": {
 		Level: 2,
-		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"linedancer": {
@@ -193,14 +198,14 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"liteide": {
 		Level: 2,
-		Files:   []string{ "xdg-documents:rw", "~/go:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw", "~/go:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"google chrome": {
 		Level: 2,
-		Files:   []string{ "xdg-download:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
 		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	// Minecraft requires access to keyring in order to launch correctly,
@@ -218,16 +223,16 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"mypaint": {
 		Level: 2,
-		Files:   []string{ "xdg-pictures:rw", "xdg-templates:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
 	// Write access given to because save files are stored in the same
 	// directory as the rom
 	"mgba": {
 		Level: 2,
-		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Devices: []string{ "dri", "input" },
+		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Sockets: []string{ "x11", "alsa" },
 	},
 	"nmeasimulator": {
@@ -240,20 +245,26 @@ var profiles = map[string]permissions.AppImagePerms{
 	// TODO: Provide a fake `/etc/passwd` when running in level 2 or 3
 	"onlyoffice desktop editors": {
 		Level: 1,
-		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"photogimp": {
 		Level: 1,
-		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"pixsrt": {
 		Level: 2,
-		Files:   []string{ "xdg-pictures:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw" },
+		Sockets: []string{ "x11" },
+	},
+	"potato presenter": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"powder toy": {
@@ -263,8 +274,8 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"ppsspp": {
 		Level: 2,
-		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
 		Sockets: []string{ "x11", "audio" },
 	},
 	// Python given no extra permissions, but can easily be customized for
@@ -293,9 +304,14 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 	"smallbasic": {
 		Level: 2,
-		Files:   []string{ "xdg-documents:rw" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
+	},
+	"stallboard": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "audio" },
 	},
 	"station": {
 		Level: 2,
@@ -313,8 +329,8 @@ var profiles = map[string]permissions.AppImagePerms{
 	// TODO: Properly test Subsurface
 	"subsurface": {
 		Level: 1,
-		Files:   []string{ "xdg-documents:ro" },
 		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:ro" },
 		Sockets: []string{ "x11" },
 	},
 	"stunt car remake": {
@@ -331,6 +347,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
+		Sockets: []string{ "x11" },
+	},
+	"tiled": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
 	"visual studio code": {
@@ -380,6 +402,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"python3.9.9":         "python",
 		"python3.10.1":        "python",
 		"supertux 2":          "supertuxkart",
+		"synthein":            "stunt car remake",
 		"stacer":              "minecraft",
 		"waterfox":            "firefox",
 		"waterfox classic":    "firefox",

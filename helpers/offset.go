@@ -23,7 +23,7 @@ func GetOffset(src string) (int, error) {
 		return getElfSize(src)
 	}
 
-	return -1, errors.New("an unknown error occured at aisap/helpers/GetOffset.go")
+	return -1, errors.New("unsupported AppImage type")
 }
 
 // Takes a src file as argument, returning the size of the shImg header and
