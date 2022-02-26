@@ -116,16 +116,15 @@ cd cmd/aisap
 go mod tidy
 CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
 cd ../..
-ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun'
+ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64"
 [ $? -ne 0 ] && exit $?
-#sed -i "s/updInfo=/updInfo='gh-releases-zsync|mgord9518|aisap|continuous|aisap-*x86_64_aarch64.shImg.zsync'/" shImg_runtime-lz4
 cat runtime-lz4-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
 chmod +x "aisap-$VERSION-x86_64_aarch64.shImg"
 
-# Apply desktop integration info
+# Append desktop integration info
 wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
 [ $? -ne 0 ] && exit $?
 sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync"
