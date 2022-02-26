@@ -343,8 +343,9 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
+	// Must be level 1 to get necessary files from /usr
 	"texstudio": {
-		Level: 2,
+		Level: 1,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
