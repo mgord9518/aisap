@@ -118,6 +118,7 @@ CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch6
 cd ../..
 ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
+chmod +x 'AppDir/usr.aarch64/bin/squashfuse'
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64"
 [ $? -ne 0 ] && exit $?
