@@ -71,9 +71,13 @@ func init() {
 		clr.Printf("\n<yellow>enviornment variables</>:\n")
 		clr.Printf("  <cyan>NO_COLOR</>:                disable color\n")
 		clr.Printf("  <cyan>PREFER_SYSTEM_LIBRARIES</>: force use of system libraries (not recommended for most)\n")
+		clr.Printf("  <cyan>PREFER_AISAP_PROFILE</>:    prefer aisap internal profile over the AppImage's if present\n")
+		clr.Printf("\n<yellow>config</>:\n")
+		clr.Printf("  <cyan>~/.local/share/aisap</>: parent config directory\n")
+		clr.Printf("  <cyan>profiles</>:             location to overwrite AppImage permissions\n")
 
-		clr.Printf("\n<yellow>homepage</>: <https://github.com/mgord9518/aisap>\n\n")
-		clr.Printf("<red>warning</>: USE AT YOUR OWN RISK!\n")
+		clr.Printf("\n<yellow>homepage</>: <https://github.com/mgord9518/aisap> (see for full documentation)\n\n")
+		clr.Printf("<red>warning</>: THIS SOFTWARE IS PROVIDED WITH NO WARRANTY! USE AT YOUR OWN RISK!\n")
 		os.Exit(0)
 	}
 

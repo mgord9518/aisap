@@ -1,7 +1,6 @@
 package aisap
 
 import (
-//	"io"
 	"errors"
 	"bytes"
 	"bufio"
@@ -14,6 +13,11 @@ import (
 
 	helpers "github.com/mgord9518/aisap/helpers"
 	xdg     "github.com/adrg/xdg"
+)
+
+var (
+	home    string
+	homeSet bool
 )
 
 // Run the AppImage with appropriate sandboxing. If `ai.Perms.Level` == 0, use
@@ -33,6 +37,9 @@ func Run(ai *AppImage, args []string) error {
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 func Sandbox(ai *AppImage, args []string) error {
+	unsetHome()
+	defer restoreHome()
+
 	cmdArgs, err := GetWrapArgs(ai)
 	if err != nil { return err }
 
@@ -65,6 +72,9 @@ func Sandbox(ai *AppImage, args []string) error {
 }
 
 func setupRun(ai *AppImage) error {
+	unsetHome()
+	defer restoreHome()
+
 	if ai.dataDir == "" {
 		ai.dataDir = ai.Path + ".home"
 	}
@@ -102,6 +112,9 @@ func setupRun(ai *AppImage) error {
 
 func GetWrapArgs(ai *AppImage) ([]string, error) {
 	uid := strconv.Itoa(os.Getuid())
+	unsetHome()
+	defer restoreHome()
+
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
 		"--setenv", "TMPDIR",              "/tmp",
@@ -126,7 +139,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		"--dir",         filepath.Join("/run/user", uid),
 		"--dev",         "/dev",
 		"--proc",        "/proc",
-		"--bind",        filepath.Join(xdg.Home, ".cache", "appimagekit_" + ai.md5), filepath.Join(xdg.Home, ".cache"),
+		"--bind",        filepath.Join(xdg.CacheHome, "appimagekit_" + ai.md5), filepath.Join(xdg.Home, ".cache"),
 		"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
 		"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
 		"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
@@ -419,4 +432,26 @@ func parseSockets(ai *AppImage) []string {
 	}
 
 	return s
+}
+
+// Unset HOME in case the program using aisap is an AppImage using a portable
+// home. This is done because aisap needs access to the acual XDG directories
+// to share them. Otherwise, an AppImage requesting `xdg-download` would be
+// given the "Download" directory inside of aisap's portable home
+func unsetHome() {
+	home, homeSet = os.LookupEnv("HOME")
+
+	newHome, _ := helpers.RealHome()
+
+	os.Setenv("HOME", newHome)
+	xdg.Reload()
+}
+
+// Return the HOME variable to normal
+func restoreHome() {
+	if homeSet {
+		os.Setenv("HOME", home)
+	}
+
+	xdg.Reload()
 }

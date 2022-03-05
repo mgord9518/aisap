@@ -1,17 +1,22 @@
 package permissions
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 	"strconv"
 
 	helpers     "github.com/mgord9518/aisap/helpers"
 	ini         "gopkg.in/ini.v1"
+	xdg      "github.com/adrg/xdg"
 )
 
-// FromIni attemps to read permissions from a provided *ini.File, if fail, it
-// will return an *AppImagePerms with a `Level` value of -1
+// FromIni attempts to read permissions from a provided *ini.File, if fail, it
+// will return an *AppImagePerms with a `Level` value of -1 and and error
 func FromIni(e *ini.File) (*AppImagePerms, error) {
 	p := &AppImagePerms{}
 
@@ -33,11 +38,38 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 	p.AddFiles(helpers.SplitKey(filePerms))
 	p.AddDevices(helpers.SplitKey(devicePerms))
 	p.AddSockets(helpers.SplitKey(socketPerms))
-//	p.Files   = helpers.CleanFiles(helpers.SplitKey(filePerms))
-//	p.Devices = helpers.CleanDevices(helpers.SplitKey(devicePerms))
-//	p.Sockets = helpers.SplitKey(socketPerms)
 
 	return p, nil
+}
+
+// FromSystem attempts to read permissions from a provided desktop entry at
+// ~/.local/share/aisap/profiles/[ai.Name]
+// This should be the preferred way to get permissions and gives maximum power
+// to the user (provided they use a tool to easily edit these permissions, which
+// I'm also planning on making)
+func FromSystem(name string) (*AppImagePerms, error) {
+	p := &AppImagePerms{}
+	var e string
+
+	fp := filepath.Join(xdg.DataHome, "aisap", "profiles", name)
+	f, err := os.Open(fp)
+	if err != nil {
+		return p, err
+	}
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		e = e + strings.ReplaceAll(scanner.Text(), ";", "；") + "\n"
+	}
+
+	entry, err := ini.Load([]byte(e))
+	if err != nil {
+		return p, err
+	}
+
+	p, err = FromIni(entry)
+
+	return p, err
 }
 
 func FromReader(r io.Reader) (*AppImagePerms, error) {

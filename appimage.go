@@ -43,7 +43,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.3.19-alpha"
+	Version = "0.3.20-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -88,6 +88,8 @@ func NewAppImage(src string) (*AppImage, error) {
 		if err != nil { return nil, err }
 	}
 
+	// Prefer local entry if it exists (located at
+	// ~/.local/share/applications/appimagekit_[ai.md5])
 	ai.Desktop, err = getEntry(ai)
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Version").Value()
@@ -98,10 +100,24 @@ func NewAppImage(src string) (*AppImage, error) {
 		ai.Version = "1.0"
 	}
 
-	// Prefer level from aisap internal library, if none exist, attempt to
-	// retrieve profile from the desktop entry itself. If neither exists,
-	// `ai.Perms.Level` will be set to -1 and should be regarded as invalid
-	ai.Perms, err = profiles.FromName(ai.Name)
+	// If PREFER_AISAP_PROFILE is set, attempt to use it over the AppImage's
+	// suggested permissions. If no profile exists in aisap, fall back on saved
+	// permissions in aisap, and then finally the AppImage's internal desktop
+	// entry
+	// Typically this should be unset unless testing a custom profile against
+	// aisap's
+	_, present := os.LookupEnv("PREFER_AISAP_PROFILE")
+	if present {
+		ai.Perms, err = profiles.FromName(ai.Name)
+		if err != nil {
+			ai.Perms, err = permissions.FromSystem(ai.Name)
+		}
+	} else {
+		ai.Perms, err = permissions.FromSystem(ai.Name)
+		if err != nil {
+			ai.Perms, err = profiles.FromName(ai.Name)
+		}
+	}
 	if err != nil {
 		ai.Perms, _ = permissions.FromIni(ai.Desktop)
 	}

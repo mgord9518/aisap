@@ -2,13 +2,14 @@ package helpers
 
 import (
 	"archive/zip"
+	"bufio"
 	"errors"
 	"io"
 	"path/filepath"
    	"math/rand"
+	"strconv"
    	"strings"
    	"os"
-	"os/user"
 
 	xdg "github.com/adrg/xdg"
 )
@@ -154,6 +155,15 @@ func expandEither(str string, xdgDirs map[string]string) string {
 // user's machine or some generic names to be used to protect the actual path
 // names in case the user has changed them
 func ExpandDir(str string) string {
+	// Reset HOME and reload XDG because these directories NEED to be the
+	// actual system dirs or aisap won't be able to give access to them
+	// otherwise. All of aisap's config files will still be stored in its
+	// portable directory if it exists
+	home, present := os.LookupEnv("HOME")
+	newHome, _ := RealHome()
+	os.Setenv("HOME", newHome)
+	xdg.Reload()
+
 	xdgDirs := map[string]string{
 		"xdg-home":        xdg.Home,
 		"xdg-desktop":     xdg.UserDirs.Desktop,
@@ -170,32 +180,43 @@ func ExpandDir(str string) string {
 		"xdg-state":       xdg.StateHome,
 	}
 
+	if present {
+		os.Setenv("HOME", home)
+	}
+	xdg.Reload()
+
 	return expandEither(str, xdgDirs)
 }
 
 func ExpandGenericDir(str string) string {
-	usr, _ := user.Current()
-	homed  := filepath.Join("/home", usr.Username)
+	home, present := os.LookupEnv("HOME")
+	newHome, _ := RealHome()
+	os.Setenv("HOME", newHome)
+	xdg.Reload()
 
 	xdgDirs := map[string]string{
-		"xdg-home":        homed,
-		"xdg-desktop":     filepath.Join(homed, "Desktop"),
-		"xdg-download":    filepath.Join(homed, "Downloads"),
-		"xdg-documents":   filepath.Join(homed, "Documents"),
-		"xdg-music":       filepath.Join(homed, "Music"),
-		"xdg-pictures":    filepath.Join(homed, "Pictures"),
-		"xdg-videos":      filepath.Join(homed, "Videos"),
-		"xdg-templates":   filepath.Join(homed, "Templates"),
-		"xdg-publicshare": filepath.Join(homed, "Share"),
-		"xdg-config":      filepath.Join(homed, ".config"),
-		"xdg-cache":       filepath.Join(homed, ".cache"),
-		"xdg-data":        filepath.Join(homed, ".local/share"),
-		"xdg-state":       filepath.Join(homed, ".local/state"),
+		"xdg-home":        xdg.Home,
+		"xdg-desktop":     filepath.Join(xdg.Home, "Desktop"),
+		"xdg-download":    filepath.Join(xdg.Home, "Downloads"),
+		"xdg-documents":   filepath.Join(xdg.Home, "Documents"),
+		"xdg-music":       filepath.Join(xdg.Home, "Music"),
+		"xdg-pictures":    filepath.Join(xdg.Home, "Pictures"),
+		"xdg-videos":      filepath.Join(xdg.Home, "Videos"),
+		"xdg-templates":   filepath.Join(xdg.Home, "Templates"),
+		"xdg-publicshare": filepath.Join(xdg.Home, "Share"),
+		"xdg-config":      filepath.Join(xdg.Home, ".config"),
+		"xdg-cache":       filepath.Join(xdg.Home, ".cache"),
+		"xdg-data":        filepath.Join(xdg.Home, ".local/share"),
+		"xdg-state":       filepath.Join(xdg.Home, ".local/state"),
 	}
+
+	if present {
+		os.Setenv("HOME", home)
+	}
+	xdg.Reload()
 
 	return expandEither(str, xdgDirs)
 }
-
 
 func ExtractResource(aiPath string, src string, dest string) error {
 	inF, err := ExtractResourceReader(aiPath, src)
@@ -224,4 +245,26 @@ func ExtractResourceReader(aiPath string, src string) (io.ReadCloser, error) {
 	}
 
 	return nil, errors.New("failed to find `" + src + "` in AppImage resources")
+}
+
+// Get the home directory using `/etc/passwd`, discarding the $HOME variable.
+// This is used in aisap so that its config files can be stored in 
+func RealHome() (string, error) {
+	uid := strconv.Itoa(os.Getuid())
+
+	f, err := os.Open("/etc/passwd")
+	defer f.Close()
+	if err != nil {
+		return "", err
+	}
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		s := strings.Split(scanner.Text(), ":")
+		if s[2] == uid {
+			return s[5], nil
+		}
+	}
+
+	return "", errors.New("failed to find home for uid `" + uid + "`!")
 }
