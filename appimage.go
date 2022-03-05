@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"os"
 	"strings"
-//	"time"
 
 	ini         "gopkg.in/ini.v1"
 	helpers     "github.com/mgord9518/aisap/helpers"
@@ -43,7 +42,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.3.20-alpha"
+	Version = "0.3.21-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -89,7 +88,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	}
 
 	// Prefer local entry if it exists (located at
-	// ~/.local/share/applications/appimagekit_[ai.md5])
+	// ~/.local/share/aisap/[ai.Name])
 	ai.Desktop, err = getEntry(ai)
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Version").Value()
@@ -118,6 +117,7 @@ func NewAppImage(src string) (*AppImage, error) {
 			ai.Perms, err = profiles.FromName(ai.Name)
 		}
 	}
+
 	if err != nil {
 		ai.Perms, _ = permissions.FromIni(ai.Desktop)
 	}

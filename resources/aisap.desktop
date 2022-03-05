@@ -9,5 +9,5 @@ Terminal=true
 Categories=System;Security;
 X-AppImage-Version=
 
-[X-AppImage-Required-Permissions]
+[X-App Permissions]
 Level=0

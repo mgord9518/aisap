@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 73 unique apps currently supported
+// 77 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -76,6 +76,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		                   "~/.bashrc:ro",      "~/.zshrc:ro",
 		                   "~/.viminfo:ro"},
 		Sockets: []string{ "x11", "network" },
+	},
+	"conky": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pid" },
 	},
 	"deemix-gui": {
 		Level: 2,
@@ -235,6 +240,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"newton adventure": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	"nmeasimulator": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -388,11 +398,13 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		// TODO: test gambatte on X11 (borked on XWayland)
 		"gambatte_qt":         "mgba",
 		"hyper":               "cool retro term",
+		"iqpuzzle":            "fractale",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
 		"librewolf":           "firefox",
 		"microsoft edge":      "google chrome",
 		"nx-software-center":  "appimageupdate",
+		"openblok":            "stunt car remake",
 		"play 2048":           "linedancer",
 		"python2.7.18":        "python",
 		"python3":             "python",

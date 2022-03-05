@@ -10,9 +10,9 @@ import (
 	"strings"
 	"strconv"
 
-	helpers     "github.com/mgord9518/aisap/helpers"
-	ini         "gopkg.in/ini.v1"
-	xdg      "github.com/adrg/xdg"
+	helpers "github.com/mgord9518/aisap/helpers"
+	ini     "gopkg.in/ini.v1"
+	xdg     "github.com/adrg/xdg"
 )
 
 // FromIni attempts to read permissions from a provided *ini.File, if fail, it
@@ -21,10 +21,10 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 	p := &AppImagePerms{}
 
 	// Get permissions from keys
-	level       := e.Section("X-AppImage-Required-Permissions").Key("Level").Value()
-	filePerms   := e.Section("X-AppImage-Required-Permissions").Key("Files").Value()
-	devicePerms := e.Section("X-AppImage-Required-Permissions").Key("Devices").Value()
-	socketPerms := e.Section("X-AppImage-Required-Permissions").Key("Sockets").Value()
+	level       := e.Section("X-App Permissions").Key("Level").Value()
+	filePerms   := e.Section("X-App Permissions").Key("Files").Value()
+	devicePerms := e.Section("X-App Permissions").Key("Devices").Value()
+	socketPerms := e.Section("X-App Permissions").Key("Sockets").Value()
 
 	l, err := strconv.Atoi(level)
 	if err != nil || l < 0 || l > 3 {

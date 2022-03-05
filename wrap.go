@@ -15,11 +15,6 @@ import (
 	xdg     "github.com/adrg/xdg"
 )
 
-var (
-	home    string
-	homeSet bool
-)
-
 // Run the AppImage with appropriate sandboxing. If `ai.Perms.Level` == 0, use
 // no sandbox. If > 0, sandbox
 func Run(ai *AppImage, args []string) error {
@@ -37,8 +32,8 @@ func Run(ai *AppImage, args []string) error {
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 func Sandbox(ai *AppImage, args []string) error {
-	unsetHome()
-	defer restoreHome()
+	home, present := unsetHome()
+	defer restoreHome(home, present)
 
 	cmdArgs, err := GetWrapArgs(ai)
 	if err != nil { return err }
@@ -72,8 +67,8 @@ func Sandbox(ai *AppImage, args []string) error {
 }
 
 func setupRun(ai *AppImage) error {
-	unsetHome()
-	defer restoreHome()
+	home, present := unsetHome()
+	defer restoreHome(home, present)
 
 	if ai.dataDir == "" {
 		ai.dataDir = ai.Path + ".home"
@@ -112,8 +107,8 @@ func setupRun(ai *AppImage) error {
 
 func GetWrapArgs(ai *AppImage) ([]string, error) {
 	uid := strconv.Itoa(os.Getuid())
-	unsetHome()
-	defer restoreHome()
+	home, present := unsetHome()
+	defer restoreHome(home, present)
 
 	// Basic arguments to be used at all sandboxing levels
 	cmdArgs := []string{
@@ -204,7 +199,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	// contain no libs), but for some AppImages it may reduce RAM usage, reduce
 	// launch time and significantly speed up execution in emulating a
 	// different architecture (although this isn't a common thing)
-	_, present := os.LookupEnv("PREFER_SYSTEM_LIBRARIES")
+	_, present = os.LookupEnv("PREFER_SYSTEM_LIBRARIES")
 	if present {
 		// Get a list of the system libraries into a string by running ldconfig
 		r := &bytes.Buffer{}
@@ -238,13 +233,13 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 			}
 
 			cmdArgs = append([]string{
-				"--ro-bind", dir, "/tmp/.mount_"+ai.runId+nDir,
+				"--ro-bind", dir, "/tmp/.mount_" + ai.runId+nDir,
 			}, cmdArgs...)
 
 			return nil
 		})
 		cmdArgs = append([]string{
-			"--dir", "/tmp/.mount_"+ai.runId,
+			"--dir", "/tmp/.mount_" + ai.runId,
 		}, cmdArgs...)
 	} else {
 		cmdArgs = append([]string{
@@ -438,18 +433,20 @@ func parseSockets(ai *AppImage) []string {
 // home. This is done because aisap needs access to the acual XDG directories
 // to share them. Otherwise, an AppImage requesting `xdg-download` would be
 // given the "Download" directory inside of aisap's portable home
-func unsetHome() {
-	home, homeSet = os.LookupEnv("HOME")
+func unsetHome() (string, bool) {
+	home, present := os.LookupEnv("HOME")
 
 	newHome, _ := helpers.RealHome()
 
 	os.Setenv("HOME", newHome)
 	xdg.Reload()
+
+	return home, present 
 }
 
 // Return the HOME variable to normal
-func restoreHome() {
-	if homeSet {
+func restoreHome(home string, present bool) {
+	if present {
 		os.Setenv("HOME", home)
 	}
 
