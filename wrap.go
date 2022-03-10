@@ -79,8 +79,8 @@ func setupRun(ai *AppImage) error {
 		if err != nil { return err }
 	}
 
-	if !helpers.DirExists(filepath.Join(xdg.CacheHome, "appimagekit_" + ai.md5)) {
-		err := os.MkdirAll(filepath.Join(xdg.CacheHome, "appimagekit_" + ai.md5), 0744)
+	if !helpers.DirExists(filepath.Join(xdg.CacheHome, "appimage", ai.md5)) {
+		err := os.MkdirAll(filepath.Join(xdg.CacheHome, "appimage", ai.md5), 0744)
 		if err != nil { return err }
 	}
 
@@ -129,7 +129,6 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		"--setenv", "XDG_CACHE_HOME",      filepath.Join(xdg.Home, ".cache"),
 		"--setenv", "XDG_STATE_HOME",      filepath.Join(xdg.Home, ".local/state"),
 		"--die-with-parent",
-		"--new-session",
 		"--perms",       "0700",
 		"--dir",         filepath.Join("/run/user", uid),
 		"--dev",         "/dev",
@@ -354,6 +353,9 @@ func parseSockets(ai *AppImage) []string {
 			"--dev-bind",    "/dev/snd",                "/dev/snd",
 		},
 		"cgroup": {},
+		"dbus": {
+			"--ro-bind-try", "/run/user/"+uid+"/bus", "/run/user/"+uid+"/bus",
+		},
 		"ipc":    {},
 		"network": {
 				"--share-net",
@@ -370,8 +372,9 @@ func parseSockets(ai *AppImage) []string {
 			"--ro-bind-try", "/run/user/"+uid+"/pulse", "/run/user/"+uid+"/pulse",
 			"--ro-bind-try", "/etc/pulse",              "/etc/pulse",
 		},
-		"user": {},
-		"uts":  {},
+		"session": {},
+		"user":    {},
+		"uts":     {},
 		"wayland": {
 			"--ro-bind-try", "/run/user/"+uid+"/"+wDisplay, "/run/user/"+uid+"/wayland-0",
 			"--ro-bind-try", "/usr/share/X11",               "/usr/share/X11",
@@ -406,6 +409,7 @@ func parseSockets(ai *AppImage) []string {
 		"pid":        { "--unshare-pid" },
 		"pipewire":   {},
 		"pulseaudio": {},
+		"session":    { "--new-session" },
 		"user":       { "--unshare-user-try" },
 		"uts":        { "--unshare-uts" },
 		"wayland":    {},

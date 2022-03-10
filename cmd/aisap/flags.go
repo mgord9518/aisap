@@ -52,7 +52,7 @@ func init() {
 
 	flag.Usage = func() {
 		clr.Printf("<yellow>usage</>: <blue>%s</> [<green>OPTIONS</>] [<green>APPIMAGE</>]\n", argv0)
-		clr.Printf("<yellow>description</>: easily sandbox AppImages in BubbleWrap\n")
+		clr.Printf("<yellow>description</>: easily sandbox AppImages in bwrap\n")
 		clr.Printf("\n<yellow>normal options</>:\n")
 		printUsage("help")
 		printUsage("list-perms")
@@ -75,8 +75,9 @@ func init() {
 		clr.Printf("\n<yellow>config</>:\n")
 		clr.Printf("  <cyan>~/.local/share/aisap</>: parent config directory\n")
 		clr.Printf("  <cyan>profiles</>:             location to overwrite AppImage permissions\n")
-
-		clr.Printf("\n<yellow>homepage</>: <https://github.com/mgord9518/aisap> (see for full documentation)\n\n")
+		clr.Printf("\n<yellow>tips</>:\n")
+		clr.Printf("  <cyan>1</>: permissions highlighted in <yellow>yellow</> are potential escape vectors")
+		clr.Printf("\n\n<yellow>homepage</>: <https://github.com/mgord9518/aisap> (see for full documentation)\n\n")
 		clr.Printf("<red>warning</>: THIS SOFTWARE IS PROVIDED WITH NO WARRANTY! USE AT YOUR OWN RISK!\n")
 		os.Exit(0)
 	}

@@ -30,10 +30,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	aisap "github.com/mgord9518/aisap"
-	check "github.com/mgord9518/aisap/spooky"
-	clr   "github.com/gookit/color"
-	flag  "github.com/spf13/pflag"
+	aisap   "github.com/mgord9518/aisap"
+	check   "github.com/mgord9518/aisap/spooky"
+	clr     "github.com/gookit/color"
+	flag    "github.com/spf13/pflag"
+	helpers "github.com/mgord9518/aisap/helpers"
 )
 
 var (
@@ -106,7 +107,7 @@ func main() {
 		prettyList("level", ai.Perms.Level, 11)
 		prettyListFiles("filesystem", ai.Perms.Files, 11)
 		prettyList("devices", ai.Perms.Devices, 11)
-		prettyList("sockets", ai.Perms.Sockets, 11)
+		prettyListSockets("sockets", ai.Perms.Sockets, 11)
 
 		// Warns if the AppImage contains potential escape vectors or suspicious files
 		for _, v := range(ai.Perms.Files) {
@@ -116,8 +117,13 @@ func main() {
 			}
 		}
 
+		if _, present := helpers.Contains(ai.Perms.Sockets, "session"); present {
+			clr.Fprintf(os.Stdout, "<yellow>warning</>: sockets requested by this app can be used to escape the sandbox\n")
+		}
+
 		cleanExit(0)
 	}
+
 
 	// Sandbox only if level is above 0
 	if ai.Perms.Level > 0 {

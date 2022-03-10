@@ -20,7 +20,7 @@ existing GoLang programs to include sandboxing should be fairly painless
 ## Bare bones basics
 In order for aisap to sandbox an AppImage, it requires a profile, which is a
 desktop entry (INI format) containing at least one of the following flags under
-the `[X-AppImage-Required-Permissions]` section:
+the `[X-App Permissions]` section:
 ```
 Files
 Devices
