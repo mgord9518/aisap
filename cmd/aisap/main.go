@@ -108,22 +108,26 @@ func main() {
 		prettyListFiles("filesystem", ai.Perms.Files, 11)
 		prettyList("devices", ai.Perms.Devices, 11)
 		prettyListSockets("sockets", ai.Perms.Sockets, 11)
+		fmt.Println()
 
 		// Warns if the AppImage contains potential escape vectors or suspicious files
 		for _, v := range(ai.Perms.Files) {
 			if check.IsSpooky(v) {
-				clr.Fprintf(os.Stdout, "\n<yellow>warning</>: this app requests files/ directories that can be used to escape sandboxing\n")
+				clr.Fprintf(os.Stdout, "<yellow>warning</>: this app requests files/ directories that can be used to escape sandboxing\n")
 				break
 			}
 		}
 
-		if _, present := helpers.Contains(ai.Perms.Sockets, "session"); present {
+		spookySockets := []string{
+			"session",
+			"x11",
+		}
+		if _, present := helpers.ContainsAny(ai.Perms.Sockets, spookySockets); present {
 			clr.Fprintf(os.Stdout, "<yellow>warning</>: sockets requested by this app can be used to escape the sandbox\n")
 		}
 
 		cleanExit(0)
 	}
-
 
 	// Sandbox only if level is above 0
 	if ai.Perms.Level > 0 {

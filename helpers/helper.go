@@ -83,8 +83,6 @@ func CleanFile(str string) string {
 	var ex string
 	if len(str) >= 3 {
 		ex = str[len(str)-3:]
-	} else {
-		ex = ":ro"
 	}
 
 	str = ExpandDir(str)
