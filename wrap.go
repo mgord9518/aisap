@@ -133,7 +133,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		"--dir",         filepath.Join("/run/user", uid),
 		"--dev",         "/dev",
 		"--proc",        "/proc",
-		"--bind",        filepath.Join(xdg.CacheHome, "appimagekit_" + ai.md5), filepath.Join(xdg.Home, ".cache"),
+		"--bind",        filepath.Join(xdg.CacheHome, "appimage", ai.md5), filepath.Join(xdg.Home, ".cache"),
 		"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
 		"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
 		"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
