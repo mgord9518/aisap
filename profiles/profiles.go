@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 81 unique apps currently supported
+// 82 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -351,6 +351,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"pix": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw", "xdg-download:rw" },
+		Sockets: []string{ "wayland", "x11" },
+	},
 	"pixsrt": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -500,7 +506,6 @@ var profiles = map[string]permissions.AppImagePerms{
 	},
 }
 
-
 func FromName(name string) (*permissions.AppImagePerms, error) {
 	name = strings.ToLower(name)
 
@@ -557,4 +562,8 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 
 	// If both tests fail, return with a level of -1
 	return &permissions.AppImagePerms{ Level: -1 }, errors.New("cannot find permissions for app `" + name + "`")
+}
+
+func Profiles() map[string]permissions.AppImagePerms {
+	return profiles
 }
