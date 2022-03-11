@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 79 unique apps currently supported
+// 81 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -240,6 +240,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"naev": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "wayland", "x11", "pulseaudio" },
+	},
 	"newton adventure": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -418,6 +423,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"supertux 2":          "supertuxkart",
 		"synthein":            "stunt car remake",
 		"stacer":              "minecraft",
+		"stackandconquer":     "fractale",
 		"waterfox":            "firefox",
 		"waterfox classic":    "firefox",
 		"xonotic":             "0 a.d.",
