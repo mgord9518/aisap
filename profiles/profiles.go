@@ -21,10 +21,20 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa", "network" },
 	},
+	"aaaaxy": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	"aranym jit": {
 		Level: 3,
 		Devices: []string{ "dri", "input" },
 		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
+		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"armagetron advanced": {
+		Level: 3,
+		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"appimage pool": {
@@ -52,17 +62,32 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
+	"balenaetcher": {
+		Level: 0,
+	},
 	"blender": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"brave": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
+	},
 	// TODO: Find files responsible for reporting MESA info to increase sandbox
 	"bugdom": {
 		Level: 1,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"chromium": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	// I think it's an interesting idea to have a confined terminal
 	// enviornment although it could also greatly hinder its usefullness
@@ -94,6 +119,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"desmume": {
+		Level: 2,
+		Devices: []string{ "dri", "input" },
+		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	// Network for netplay
 	"dolphin emulator": {
 		Level: 2,
@@ -118,6 +149,14 @@ var profiles = map[string]permissions.AppImagePerms{
 						   "xdg-documents:rw",  "xdg-download:rw",
 					       "xdg-music:rw",      "xdg-videos:rw"},
 		Sockets: []string{ "x11", "audio" },
+	},
+	"edex-ui": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
+		                   "~/.bashrc:ro",      "~/.zshrc:ro",
+		                   "~/.viminfo:ro"},
+		Sockets: []string{ "x11", "network" },
 	},
 	"element": {
 		Level: 2,
@@ -154,17 +193,37 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"gambatte_qt": {
+		Level: 2,
+		Devices: []string{ "dri", "input" },
+		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	"geometrize": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"google chrome": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
+	},
 	"gnu image manipulation program": {
 		Level: 1,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
+	},
+	"hyper": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
+		                   "~/.bashrc:ro",      "~/.zshrc:ro",
+		                   "~/.viminfo:ro"},
+		Sockets: []string{ "x11", "network" },
 	},
 	"imagemagick": {
 		Level: 3,
@@ -175,6 +234,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw" },
+		Sockets: []string{ "x11" },
+	},
+	"iqpuzzle": {
+		Level: 2,
+		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
 	// Network for plugins and syncing
@@ -196,6 +260,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"librewolf": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "pulseaudio", "network", "dbus" },
+	},
 	"linedancer": {
 		Level: 3,
 		Devices: []string{ "dri" },
@@ -207,7 +277,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw", "~/go:rw" },
 		Sockets: []string{ "x11" },
 	},
-	"google chrome": {
+	"microsoft edge": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-download:rw" },
@@ -255,6 +325,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "network" },
 	},
+	"nx-software-center": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "~/Applications:rw" },
+		Sockets: []string{ "x11", "network" },
+	},
 	// Network needed for cloud service, and can run in level 2 if given
 	// `/etc/passwd`
 	// TODO: Provide a fake `/etc/passwd` when running in level 2 or 3
@@ -263,6 +339,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"openblok": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
 	},
 	"photogimp": {
 		Level: 1,
@@ -274,6 +355,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-pictures:rw" },
+		Sockets: []string{ "x11" },
+	},
+	"play 2048": {
+		Level: 3,
+		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
 	"potato presenter": {
@@ -323,6 +409,14 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"stackandconquer": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11" },
+	},
+	"stacer": {
+		Level: 0,
+	},
 	"stallboard": {
 		Level: 1,
 		Devices: []string{ "dri" },
@@ -353,10 +447,20 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"supertux 2": {
+		Level: 3,
+		Devices: []string{ "dri", "input" },
+		Sockets: []string{ "x11", "audio", "network" },
+	},
 	"supertuxkart": {
 		Level: 3,
 		Devices: []string{ "dri", "input" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"synthein": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
 	},
 	// Must be level 1 to get necessary files from /usr
 	"texstudio": {
@@ -377,6 +481,23 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11", "network" },
 	},
+	"waterfox": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "pulseaudio", "network", "dbus" },
+	},
+	"xonotic": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa", "network" },
+	},
+	"yuzu": {
+		Level: 2,
+		Devices: []string{ "dri", "input" },
+		Files:   []string{ "xdg-download:ro", "~/Games:ro", "~/Roms:ro" },
+		Sockets: []string{ "x11", "alsa", "network" },
+	},
 }
 
 
@@ -388,30 +509,28 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		return &p, nil
 	}
 
-	// Load in duplicate permissions based on their names
-	// These may not be the same (or even similar) program, but they share the
-	// same permissions, this is done to (marginally) reduce the size of this
-	// file and memory usage
+	// Load in duplicate permissions based on their names as some of the same
+	// AppImages may be released under different names
 	aliases := map[string]string {
-		"aaaaxy":              "stunt car remake",
+//		"aaaaxy":              "stunt car remake",
 		"aranym mmu":          "aranym jit",
-		"armagetron advanced": "supertuxkart",
-		"balenaetcher":        "minecraft",
-		"brave":               "google chrome",
-		"chromium":            "google chrome",
-		"desmume":             "mgba",
-		"edex-ui":             "cool retro term",
+//		"armagetron advanced": "supertuxkart",
+//		"balenaetcher":        "minecraft",
+//		"brave":               "google chrome",
+//		"chromium":            "google chrome",
+//		"desmume":             "mgba",
+//		"edex-ui":             "cool retro term",
 		// TODO: test gambatte on X11 (borked on XWayland)
-		"gambatte_qt":         "mgba",
-		"hyper":               "cool retro term",
-		"iqpuzzle":            "fractale",
+//		"gambatte_qt":         "mgba",
+//		"hyper":               "cool retro term",
+//		"iqpuzzle":            "fractale",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
-		"librewolf":           "firefox",
-		"microsoft edge":      "google chrome",
-		"nx-software-center":  "appimageupdate",
-		"openblok":            "stunt car remake",
-		"play 2048":           "linedancer",
+//		"librewolf":           "firefox",
+//		"microsoft edge":      "google chrome",
+//		"nx-software-center":  "appimageupdate",
+//		"openblok":            "stunt car remake",
+//		"play 2048":           "linedancer",
 		"python2.7.18":        "python",
 		"python3":             "python",
 		"python3.5.10":        "python",
@@ -420,14 +539,14 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"python3.8.12":        "python",
 		"python3.9.9":         "python",
 		"python3.10.1":        "python",
-		"supertux 2":          "supertuxkart",
-		"synthein":            "stunt car remake",
-		"stacer":              "minecraft",
-		"stackandconquer":     "fractale",
-		"waterfox":            "firefox",
-		"waterfox classic":    "firefox",
-		"xonotic":             "0 a.d.",
-		"yuzu":                "dolphin emulator",
+//		"supertux 2":          "supertuxkart",
+//		"synthein":            "stunt car remake",
+//		"stacer":              "minecraft",
+//		"stackandconquer":     "fractale",
+//		"waterfox":            "firefox",
+		"waterfox classic":    "waterfox",
+//		"xonotic":             "0 a.d.",
+//		"yuzu":                "dolphin emulator",
 	}
 
 	if a, present := aliases[name]; present {
