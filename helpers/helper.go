@@ -279,12 +279,12 @@ func GetWorkDir() (string, error) {
 
 // Returns full path of command and true if in PATH or working directory
 func CommandExists(str string) (string, bool) {
-	cmd, err := exec.LookPath(str)
-	if err != nil {
-		wd, err := GetWorkDir()
-		if err != nil { return "", false }
+	wd, err := GetWorkDir()
+	if err != nil { return "", false }
 
-		cmd, err = exec.LookPath(filepath.Join(wd, str))
+	cmd, err := exec.LookPath(filepath.Join(wd, str))
+	if err != nil {
+		cmd, err = exec.LookPath(str)
 		if err != nil { return "", false }
 	}
 

@@ -42,7 +42,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.4.7-alpha"
+	Version = "0.4.8-alpha"
 )
 
 // Create a new AppImage object from a path
