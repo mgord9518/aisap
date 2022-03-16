@@ -83,6 +83,11 @@ wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly
 chmod +x 'AppDir/usr/bin/squashfuse'
 [ $? -ne 0 ] && exit $?
 
+# Download bwrap binary
+wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap.$ARCH" -O 'AppDir/usr/bin/bwrap'
+chmod +x 'AppDir/usr/bin/bwrap'
+[ $? -ne 0 ] && exit $?
+
 # Download excludelist
 wget 'https://raw.githubusercontent.com/AppImage/pkg2appimage/master/excludelist' -O \
 	'excludelist'
@@ -117,17 +122,31 @@ go mod tidy
 CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
 cd ../..
 ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
-wget "https://github.com/mgord9518/portable_squashfuse/releases/download/manual/squashfuse_lz4.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
+
+# Download squashfuse binary
+wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 chmod +x 'AppDir/usr.aarch64/bin/squashfuse'
+[ $? -ne 0 ] && exit $?
+
+# Download bwrap binary
+wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap.$ARCH" -O 'AppDir/usr.aarch64/bin/bwrap'
+chmod +x 'AppDir/usr.aarch64/bin/bwrap'
+[ $? -ne 0 ] && exit $?
+
+# Build SquashFS image
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
+[ $? -ne 0 ] && exit $?
+
+# Download shImg runtime
 wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64"
 [ $? -ne 0 ] && exit $?
+
 cat runtime-lz4-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
 chmod +x "aisap-$VERSION-x86_64_aarch64.shImg"
 
 # Append desktop integration info
 wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
 [ $? -ne 0 ] && exit $?
-sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync"
+sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*-x86_64_aarch64.shImg.zsync"
 
 exit 0

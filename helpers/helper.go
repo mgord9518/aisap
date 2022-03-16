@@ -7,9 +7,11 @@ import (
 	"io"
 	"path/filepath"
    	"math/rand"
+	"path"
 	"strconv"
    	"strings"
    	"os"
+   	"os/exec"
 
 	xdg "github.com/adrg/xdg"
 )
@@ -265,4 +267,26 @@ func RealHome() (string, error) {
 	}
 
 	return "", errors.New("failed to find home for uid `" + uid + "`!")
+}
+
+// Finds full path of running executable
+func GetWorkDir() (string, error) {
+	e, err := os.Executable()
+	if err != nil { return "", err }
+
+	return path.Dir(e), nil
+}
+
+// Returns full path of command and true if in PATH or working directory
+func CommandExists(str string) (string, bool) {
+	cmd, err := exec.LookPath(str)
+	if err != nil {
+		wd, err := GetWorkDir()
+		if err != nil { return "", false }
+
+		cmd, err = exec.LookPath(filepath.Join(wd, str))
+		if err != nil { return "", false }
+	}
+
+	return cmd, true
 }

@@ -51,14 +51,15 @@ func Sandbox(ai *AppImage, args []string) error {
 		"/tmp/.mount_"+ai.runId+"/AppRun",
 	)
 
-	if _, err = exec.LookPath("bwrap"); err != nil {
-		return errors.New("bubblewrap not found! It's required to use sandboxing")
+	bwrapStr, present := helpers.CommandExists("bwrap")
+	if !present {
+		return errors.New("failed to find bwrap! unable to sandbox application")
 	}
 
 	// Append console arguments provided by the user
 	cmdArgs = append(cmdArgs, args...)
 
-	bwrap := exec.Command("bwrap", cmdArgs...)
+	bwrap := exec.Command(bwrapStr, cmdArgs...)
 	bwrap.Stdout = os.Stdout
 	bwrap.Stderr = os.Stderr
 	bwrap.Stdin  = os.Stdin

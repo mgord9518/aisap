@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"errors"
-	"path"
-	"path/filepath"
+
+	helpers "github.com/mgord9518/aisap/helpers"
 )
 
 // mount mounts the requested AppImage (src) to the destination
@@ -16,19 +16,9 @@ import (
 // Quick, hacky implementation, ideally this should be redone using the
 // squashfuse library
 func mount(src string, dest string, offset int) error {
-	var squashfuse string
-
-	e, err := os.Executable()
-	if err != nil {
-		return errors.New("failed to find executable! this shouldn't happen")
-	}
-
-	// Make sure squashfuse exists
-	if squashfuse, err = exec.LookPath("squashfuse"); err != nil {
-		squashfuse, err = exec.LookPath(filepath.Join(path.Dir(e), "squashfuse"))
-		if err != nil {
-			return errors.New("failed to find squashfuse binary! cannot mount AppImage")
-		}
+	squashfuse, present := helpers.CommandExists("squashfuse")
+	if !present {
+		return errors.New("failed to find squashfuse binary! cannot mount AppImage")
 	}
 
 	// Convert the offset to a string and mount using squashfuse
