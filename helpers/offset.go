@@ -19,8 +19,10 @@ func GetOffset(src string) (int, error) {
 
 	if format == -2 {
 		return getShappImageSize(src)
-	} else if format == 2 || format == 0 {
+	} else if format == 2 {
 		return getElfSize(src)
+	} else if format == 0 {
+		return -1, errors.New("AppImage missing `AI\\0x02` magic at offset 0x08!")
 	}
 
 	return -1, errors.New("unsupported AppImage type")

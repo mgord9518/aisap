@@ -11,10 +11,11 @@ import (
 	helpers "github.com/mgord9518/aisap/helpers"
 )
 
-// mount mounts the requested AppImage (src) to the destination
-// directory (dest)
+// mount mounts the requested AppImage `src` to `dest`
 // Quick, hacky implementation, ideally this should be redone using the
 // squashfuse library
+// Also planning on not requiring AppImages to be mounted unless they're being
+// sandboxed
 func mount(src string, dest string, offset int) error {
 	squashfuse, present := helpers.CommandExists("squashfuse")
 	if !present {
@@ -29,8 +30,8 @@ func mount(src string, dest string, offset int) error {
 }
 
 // Unmounts an AppImage
-func Unmount(ai *AppImage) error {
-	if (ai == nil) {
+func (ai *AppImage) Unmount() error {
+	if ai == nil {
 		return errors.New("AppImage is nil")
 	} else if ai.Path == "" {
 		return errors.New("AppImage contains no path")
@@ -55,7 +56,7 @@ func unmountDir(mntPt string) error {
 		umount = exec.Command("umount", "-l", mntPt)
 	}
 
-	// Run unmount command, returning the stdout if failed
+	// Run unmount command, returning the stdout+stderr if fail
 	out, err := umount.CombinedOutput()
 	if err != nil {
 		err = errors.New(string(out))

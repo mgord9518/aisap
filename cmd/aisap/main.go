@@ -19,7 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
-// This software is in APLHA,  it isn't recommended to  run it for any  reasons
+// This software is in ALPHA,  it isn't recommended to  run it for any  reasons
 // besides testing!
 
 package main
@@ -44,23 +44,22 @@ var (
 
 // Process flags
 func main() {
-	var err error
-
-	if len(flag.Args()) >= 1 {
-		ai, err = aisap.NewAppImage(flag.Args()[0])
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to open AppImage:", err)
-			cleanExit(1)
-		}
-	} else {
+	if len(flag.Args()) < 1 {
 		flag.Usage()
 	}
 
+	ai, err := aisap.NewAppImage(flag.Args()[0])
+	defer ai.Unmount()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to open AppImage:", err)
+		return
+	}
+
 	if *profile != "" {
-		err = ai.Perms.SetPerms(*profile)
+		err := ai.Perms.SetPerms(*profile)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "failed to get permissions from file:", err)
-			cleanExit(1)
+			return
 		}
 	}
 
@@ -76,7 +75,7 @@ func main() {
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
-		err = ai.Perms.SetLevel(*level)
+		err := ai.Perms.SetLevel(*level)
 		if err != nil {
 			clr.Fprintln(os.Stderr, "<red>error</> (this shouldn't happen!): failed to set permissions level:", err)
 		}
@@ -95,9 +94,9 @@ func main() {
 		prettyList("devices", "ALL", 11)
 		prettyList("sockets", "ALL", 11)
 
-		clr.Printf("\n<yellow>warning</>: this app requests to be unsandboxed\n")
+		clr.Printf("\n<lightYellow>warning</>: this app requests to be unsandboxed\n")
 		clr.Println("use the command line flag <cyan>--level</> [<green>1</>-<green>3</>] to try to sandbox it anyway\n")
-		cleanExit(0)
+		return
 	}
 
 	// Give basic info on the permissions the AppImage requests
@@ -113,7 +112,7 @@ func main() {
 		// Warns if the AppImage contains potential escape vectors or suspicious files
 		for _, v := range(ai.Perms.Files) {
 			if check.IsSpooky(v) {
-				clr.Fprintf(os.Stdout, "<yellow>warning</>: this app requests files/ directories that can be used to escape sandboxing\n")
+				clr.Fprintf(os.Stdout, "<lightYellow>warning</>: this app requests files/ directories that can be used to escape sandboxing\n")
 				break
 			}
 		}
@@ -123,30 +122,19 @@ func main() {
 			"x11",
 		}
 		if _, present := helpers.ContainsAny(ai.Perms.Sockets, spookySockets); present {
-			clr.Fprintf(os.Stdout, "<yellow>warning</>: sockets requested by this app can be used to escape the sandbox\n")
+			clr.Fprintf(os.Stdout, "<lightYellow>warning</>: sockets requested by this app can be used to escape the sandbox\n")
 		}
 
-		cleanExit(0)
+		return
 	}
 
 	// Sandbox only if level is above 0
-	if ai.Perms.Level > 0 {
-		err = aisap.Sandbox(ai, flag.Args()[1:])
-	} else {
-		err = aisap.Run(ai, flag.Args()[1:])
-	}
+	err = ai.Run(flag.Args()[1:])
 
 	if err != nil {
 		fmt.Fprintln(os.Stdout, "exited non-zero status:", err)
-		cleanExit(1)
+		return
 	}
-
-	cleanExit(0)
-}
-
-func cleanExit(exitCode int) {
-	aisap.Unmount(ai)
-	os.Exit(exitCode)
 }
 
 func handleCtrlC() {
@@ -155,6 +143,6 @@ func handleCtrlC() {
 
 	go func() {
 		<-c
-		cleanExit(0)
+		ai.Unmount()
 	}()
 }

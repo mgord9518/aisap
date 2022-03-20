@@ -14,7 +14,6 @@ import (
 
 	check   "github.com/mgord9518/aisap/spooky"
 	clr     "github.com/gookit/color"
-//	helpers "github.com/mgord9518/aisap/helpers"
 	xdg     "github.com/adrg/xdg"
 )
 
@@ -94,7 +93,7 @@ func prettyListFiles(a ...interface{}) {
 				v[i] = strings.Replace(v[i], xdg.Home, "~", 1)
 
 				if check.IsSpooky(v[i]) {
-					clr.Printf("<yellow>%s</>", v[i])
+					clr.Printf("<lightYellow>%s</>", v[i])
 				} else {
 					clr.Printf("<green>%s</>", v[i])
 				}
@@ -134,7 +133,7 @@ func prettyListSockets(a ...interface{}) {
 				v[i] = strings.Replace(v[i], xdg.Home, "~", 1)
 
 				if v[i] == "session" || v[i] == "x11" {
-					clr.Printf("<yellow>%s</>", v[i])
+					clr.Printf("<lightYellow>%s</>", v[i])
 				} else {
 					clr.Printf("<green>%s</>", v[i])
 				}

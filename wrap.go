@@ -17,8 +17,14 @@ import (
 
 // Run the AppImage with appropriate sandboxing. If `ai.Perms.Level` == 0, use
 // no sandbox. If > 0, sandbox
-func Run(ai *AppImage, args []string) error {
-	err := setupRun(ai)
+func (ai *AppImage) Run(args []string) error {
+	if ai.Perms.Level > 0 {
+		return ai.Sandbox(args)
+	} else if ai.Perms.Level < 0 {
+		return errors.New("invalid permissions level!")
+	}
+
+	err := ai.setupRun()
 	if err != nil { return err }
 
 	cmd := exec.Command(filepath.Join(ai.mountDir, "AppRun"), args...)
@@ -31,14 +37,14 @@ func Run(ai *AppImage, args []string) error {
 }
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
-func Sandbox(ai *AppImage, args []string) error {
+func (ai *AppImage) Sandbox(args []string) error {
 	home, present := unsetHome()
 	defer restoreHome(home, present)
 
-	cmdArgs, err := GetWrapArgs(ai)
+	cmdArgs, err := ai.WrapArgs()
 	if err != nil { return err }
 
-	err = setupRun(ai)
+	err = ai.setupRun()
 	if err != nil { return err }
 
 	// Bind the fake `~` and `/tmp` dirs
@@ -67,7 +73,7 @@ func Sandbox(ai *AppImage, args []string) error {
 	return bwrap.Run()
 }
 
-func setupRun(ai *AppImage) error {
+func (ai *AppImage) setupRun() error {
 	home, present := unsetHome()
 	defer restoreHome(home, present)
 
@@ -106,7 +112,7 @@ func setupRun(ai *AppImage) error {
 	return err
 }
 
-func GetWrapArgs(ai *AppImage) ([]string, error) {
+func (ai *AppImage) WrapArgs() ([]string, error) {
 	uid := strconv.Itoa(os.Getuid())
 	home, present := unsetHome()
 	defer restoreHome(home, present)
@@ -135,17 +141,17 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		"--dev",         "/dev",
 		"--proc",        "/proc",
 		"--bind",        filepath.Join(xdg.CacheHome, "appimage", ai.md5), filepath.Join(xdg.Home, ".cache"),
-		"--ro-bind",     aiRoot(ai, "opt"),       "/opt",
-		"--ro-bind",     aiRoot(ai, "bin"),       "/bin",
-		"--ro-bind",     aiRoot(ai, "sbin"),      "/sbin",
-		"--ro-bind",     aiRoot(ai, "lib"),       "/lib",
-		"--ro-bind-try", aiRoot(ai, "lib32"),     "/lib32",
-		"--ro-bind-try", aiRoot(ai, "lib64"),     "/lib64",
-		"--ro-bind",     aiRoot(ai, "usr/bin"),   "/usr/bin",
-		"--ro-bind",     aiRoot(ai, "usr/sbin"),  "/usr/sbin",
-		"--ro-bind",     aiRoot(ai, "usr/lib"),   "/usr/lib",
-		"--ro-bind-try", aiRoot(ai, "usr/lib32"), "/usr/lib32",
-		"--ro-bind-try", aiRoot(ai, "usr/lib64"), "/usr/lib64",
+		"--ro-bind",     ai.resolve("opt"),       "/opt",
+		"--ro-bind",     ai.resolve("bin"),       "/bin",
+		"--ro-bind",     ai.resolve("sbin"),      "/sbin",
+		"--ro-bind",     ai.resolve("lib"),       "/lib",
+		"--ro-bind-try", ai.resolve("lib32"),     "/lib32",
+		"--ro-bind-try", ai.resolve("lib64"),     "/lib64",
+		"--ro-bind",     ai.resolve("usr/bin"),   "/usr/bin",
+		"--ro-bind",     ai.resolve("usr/sbin"),  "/usr/sbin",
+		"--ro-bind",     ai.resolve("usr/lib"),   "/usr/lib",
+		"--ro-bind-try", ai.resolve("usr/lib32"), "/usr/lib32",
+		"--ro-bind-try", ai.resolve("usr/lib64"), "/usr/lib64",
 		"--dir",         "/app",
 		"--bind",        ai.Path, filepath.Join("/app", path.Base(ai.Path)),
 	}
@@ -155,8 +161,8 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 		cmdArgs = append(cmdArgs, []string{
 			"--dev-bind",    "/dev", "/dev",
 			"--ro-bind",     "/sys", "/sys",
-			"--ro-bind",     aiRoot(ai, "usr"), "/usr",
-			"--ro-bind-try", aiRoot(ai, "etc"), "/etc",
+			"--ro-bind",     ai.resolve("usr"), "/usr",
+			"--ro-bind-try", ai.resolve("etc"), "/etc",
 			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(xdg.Home, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(xdg.Home, ".config/gtk-3.0"),
@@ -167,20 +173,20 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 	// This should be the standard level for GUI profiles
 	} else if ai.Perms.Level == 2 {
 		cmdArgs = append(cmdArgs, []string{
-			"--ro-bind-try", aiRoot(ai, "etc/fonts"),              "/etc/fonts",
-			"--ro-bind-try", aiRoot(ai, "etc/ld.so.cache"),        "/etc/ld.so.cache",
-			"--ro-bind-try", aiRoot(ai, "etc/mime.types"),         "/etc/mime.types",
-			"--ro-bind-try", aiRoot(ai, "etc/xdg"),                "/etc/xdg",
-			"--ro-bind-try", aiRoot(ai, "usr/share/fontconfig"),   "/usr/share/fontconfig",
-			"--ro-bind-try", aiRoot(ai, "usr/share/fonts"),        "/usr/share/fonts",
-			"--ro-bind-try", aiRoot(ai, "usr/share/icons"),        "/usr/share/icons",
-			"--ro-bind-try", aiRoot(ai, "usr/share/themes"),       "/usr/share/themes",
-			"--ro-bind-try", aiRoot(ai, "usr/share/applications"), "/usr/share/applications",
-			"--ro-bind-try", aiRoot(ai, "usr/share/mime"),         "/usr/share/mime",
-			"--ro-bind-try", aiRoot(ai, "usr/share/libdrm"),       "/usr/share/librdm",
-			"--ro-bind-try", aiRoot(ai, "usr/share/glvnd"),        "/usr/share/glvnd",
-			"--ro-bind-try", aiRoot(ai, "usr/share/glib-2.0"),     "/usr/share/glib-2.0",
-			"--ro-bind-try", aiRoot(ai, "usr/share/terminfo"),     "/usr/share/terminfo",
+			"--ro-bind-try", ai.resolve("etc/fonts"),              "/etc/fonts",
+			"--ro-bind-try", ai.resolve("etc/ld.so.cache"),        "/etc/ld.so.cache",
+			"--ro-bind-try", ai.resolve("etc/mime.types"),         "/etc/mime.types",
+			"--ro-bind-try", ai.resolve("etc/xdg"),                "/etc/xdg",
+			"--ro-bind-try", ai.resolve("usr/share/fontconfig"),   "/usr/share/fontconfig",
+			"--ro-bind-try", ai.resolve("usr/share/fonts"),        "/usr/share/fonts",
+			"--ro-bind-try", ai.resolve("usr/share/icons"),        "/usr/share/icons",
+			"--ro-bind-try", ai.resolve("usr/share/themes"),       "/usr/share/themes",
+			"--ro-bind-try", ai.resolve("usr/share/applications"), "/usr/share/applications",
+			"--ro-bind-try", ai.resolve("usr/share/mime"),         "/usr/share/mime",
+			"--ro-bind-try", ai.resolve("usr/share/libdrm"),       "/usr/share/librdm",
+			"--ro-bind-try", ai.resolve("usr/share/glvnd"),        "/usr/share/glvnd",
+			"--ro-bind-try", ai.resolve("usr/share/glib-2.0"),     "/usr/share/glib-2.0",
+			"--ro-bind-try", ai.resolve("usr/share/terminfo"),     "/usr/share/terminfo",
 			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(xdg.Home, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config/fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(xdg.Home, ".config/gtk-3.0"),
@@ -253,7 +259,7 @@ func GetWrapArgs(ai *AppImage) ([]string, error) {
 // Returns the location of the requested directory on the host filesystem with
 // symlinks resolved. This should solve systems like GoboLinux, where
 // traditionally named directories are symlinks to something unconventional.
-func aiRoot(ai *AppImage, src string) string {
+func (ai *AppImage) resolve(src string) string {
 	s, _ := filepath.EvalSymlinks(filepath.Join(ai.rootDir, src))
 
 	if s == "" {
@@ -281,6 +287,7 @@ func parseFiles(ai *AppImage) []string {
 
 	return s
 }
+
 // Give all requried flags to add the devices
 func parseDevices(ai *AppImage) []string {
 	var d []string
@@ -302,7 +309,7 @@ func parseDevices(ai *AppImage) []string {
 			"--dev-bind-try", "/dev/nvidiactl",          "/dev/nvidiactl",
 			"--dev-bind-try", "/dev/nvidia0",            "/dev/nvidia0",
 			"--dev-bind-try", "/dev/nvidia-modeset",     "/dev/nvidia-modeset",
-			"--ro-bind-try",  aiRoot(ai, "usr/share/glvnd"), "/usr/share/glvnd",
+			"--ro-bind-try",  ai.resolve("usr/share/glvnd"), "/usr/share/glvnd",
 		},
 		"input": {
 			"--ro-bind", "/sys/class/input", "/sys/class/input",
