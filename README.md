@@ -1,7 +1,6 @@
 # aisap
 
 <p align="center"><img src="resources/aisap.svg" width=256 height="256"/></p>
-<!-- TODO: Update API guide -->
 
 AppImage SAndboxing Project (pronounced /eɪsæp/): a Go library to help sandbox
 AppImages through bwrap

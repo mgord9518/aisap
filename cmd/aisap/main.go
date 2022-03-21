@@ -28,13 +28,15 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	aisap   "github.com/mgord9518/aisap"
+	cli     "github.com/mgord9518/cli"
 	check   "github.com/mgord9518/aisap/spooky"
-	clr     "github.com/gookit/color"
 	flag    "github.com/spf13/pflag"
 	helpers "github.com/mgord9518/aisap/helpers"
+	xdg     "github.com/adrg/xdg"
 )
 
 var (
@@ -51,19 +53,22 @@ func main() {
 	ai, err := aisap.NewAppImage(flag.Args()[0])
 	defer ai.Unmount()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to open AppImage:", err)
+		cli.Fatal("failed to open AppImage:", err)
 		return
+	}
+	if *verbose {
+		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())
 	}
 
 	if *profile != "" {
 		err := ai.Perms.SetPerms(*profile)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to get permissions from file:", err)
+			cli.Fatal("failed to get permissions from profile:", err)
 			return
 		}
 	}
 
-	// Add (and remove) permissions as passed from flags. eg: `--file`
+	// Add (and remove) permissions as passed from flags. eg: `--add-file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
 	ai.Perms.RemoveFiles(rmFile)
@@ -77,42 +82,39 @@ func main() {
 	if *level > -1 && *level <= 3 {
 		err := ai.Perms.SetLevel(*level)
 		if err != nil {
-			clr.Fprintln(os.Stderr, "<red>error</> (this shouldn't happen!): failed to set permissions level:", err)
+			cli.Fatal("failed to set permissions level (this shouldn't happen!):", err)
+			return
 		}
 	}
 
+	noProfile := false
+
 	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
-		clr.Println("<yellow>info</>: this app has no profile! defaulting to level 3")
-		clr.Println("use the command line flag <cyan>--level</> [<green>1</>-<green>3</>] to try to sandbox it anyway\n")
 		ai.Perms.SetLevel(3)
-	}
-
-	if *listPerms && ai.Perms.Level == 0 {
-		clr.Println("<yellow>permissions</>:")
-		prettyList("level", 0, 11)
-		prettyList("filesystem", "ALL", 11)
-		prettyList("devices", "ALL", 11)
-		prettyList("sockets", "ALL", 11)
-
-		clr.Printf("\n<lightYellow>warning</>: this app requests to be unsandboxed\n")
-		clr.Println("use the command line flag <cyan>--level</> [<green>1</>-<green>3</>] to try to sandbox it anyway\n")
-		return
+		noProfile = true
 	}
 
 	// Give basic info on the permissions the AppImage requests
 	if *listPerms {
-		clr.Println("<yellow>permissions</>:")
+		cli.ListPerms(ai.Perms)
 
-		prettyList("level", ai.Perms.Level, 11)
-		prettyListFiles("filesystem", ai.Perms.Files, 11)
-		prettyList("devices", ai.Perms.Devices, 11)
-		prettyListSockets("sockets", ai.Perms.Sockets, 11)
 		fmt.Println()
+
+		if ai.Perms.Level == 0 {
+			cli.Warning("this app requests to be unsandboxed!")
+			cli.Warning("use the CLI flag <cyan>--level</> <gray>[</><green>1</><gray>..</><green>3</><gray>]</> to try to sandbox it anyway")
+			return
+		}
+
+		if noProfile {
+			cli.Notify("this app has no profile! defaulting to level 3")
+			cli.Notify("use the CLI flag <cyan>--level</> <gray>[</><green>1</><gray>..</><green>3</><gray>]</> to try to sandbox it anyway")
+		}
 
 		// Warns if the AppImage contains potential escape vectors or suspicious files
 		for _, v := range(ai.Perms.Files) {
 			if check.IsSpooky(v) {
-				clr.Fprintf(os.Stdout, "<lightYellow>warning</>: this app requests files/ directories that can be used to escape sandboxing\n")
+				cli.Warning("this app requests files/ directories that could be used to escape sandboxing")
 				break
 			}
 		}
@@ -122,12 +124,17 @@ func main() {
 			"x11",
 		}
 		if _, present := helpers.ContainsAny(ai.Perms.Sockets, spookySockets); present {
-			clr.Fprintf(os.Stdout, "<lightYellow>warning</>: sockets requested by this app can be used to escape the sandbox\n")
+			cli.Warning("sockets used by this app could be used to escape the sandbox")
 		}
 
 		return
 	}
 
+	if *verbose {
+		wrapArg, _ := ai.WrapArgs([]string{})
+		cli.Notify("running with sandbox base level" + ai.Perms.Level)
+		cli.Notify("bwrap flags:", wrapArg)
+	}
 	// Sandbox only if level is above 0
 	err = ai.Run(flag.Args()[1:])
 
@@ -143,6 +150,10 @@ func handleCtrlC() {
 
 	go func() {
 		<-c
+		if *verbose {
+			fmt.Println()
+			cli.Notify("quitting because <gray>[</><green>ctrl</><gray>]+</><green>c</> was hit!")
+		}
 		ai.Unmount()
 	}()
 }

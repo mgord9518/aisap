@@ -38,32 +38,14 @@ func (ai *AppImage) Run(args []string) error {
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 func (ai *AppImage) Sandbox(args []string) error {
-	home, present := unsetHome()
-	defer restoreHome(home, present)
 
-	cmdArgs, err := ai.WrapArgs()
+	cmdArgs, err := ai.WrapArgs(args)
 	if err != nil { return err }
-
-	err = ai.setupRun()
-	if err != nil { return err }
-
-	// Bind the fake `~` and `/tmp` dirs
-	cmdArgs = append([]string{
-		"--bind",   ai.dataDir, xdg.Home,
-		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
-	}, cmdArgs...)
-
-	cmdArgs = append(cmdArgs, "--",
-		"/tmp/.mount_"+ai.runId+"/AppRun",
-	)
 
 	bwrapStr, present := helpers.CommandExists("bwrap")
 	if !present {
 		return errors.New("failed to find bwrap! unable to sandbox application")
 	}
-
-	// Append console arguments provided by the user
-	cmdArgs = append(cmdArgs, args...)
 
 	bwrap := exec.Command(bwrapStr, cmdArgs...)
 	bwrap.Stdout = os.Stdout
@@ -74,8 +56,6 @@ func (ai *AppImage) Sandbox(args []string) error {
 }
 
 func (ai *AppImage) setupRun() error {
-	home, present := unsetHome()
-	defer restoreHome(home, present)
 
 	if ai.dataDir == "" {
 		ai.dataDir = ai.Path + ".home"
@@ -107,12 +87,37 @@ func (ai *AppImage) setupRun() error {
 	os.Setenv("APPDIR",         ai.mountDir)
 	os.Setenv("APPIMAGE",       ai.Path)
 	os.Setenv("ARGV0",          ai.Path)
-	os.Setenv("XDG_CACHE_HOME", ai.Path)
+	os.Setenv("XDG_CACHE_HOME", filepath.Join(xdg.CacheHome, "appimage", ai.md5))
 
 	return err
 }
 
-func (ai *AppImage) WrapArgs() ([]string, error) {
+// Returns the bwrap arguments to sandbox the AppImage
+func (ai *AppImage) WrapArgs(args []string) ([]string, error) {
+	home, present := unsetHome()
+	defer restoreHome(home, present)
+
+	if ai.Perms.Level == 0 { return args, nil }
+
+	cmdArgs := ai.mainWrapArgs()
+
+	err := ai.setupRun()
+	if err != nil { return []string{}, err }
+
+	cmdArgs = append([]string{
+		"--bind",   ai.dataDir, xdg.Home,
+		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
+	}, cmdArgs...)
+
+	cmdArgs = append(cmdArgs, "--",
+		"/tmp/.mount_"+ai.runId+"/AppRun",
+	)
+
+	// Append console arguments provided by the user
+	return append(cmdArgs, args...), nil
+}
+
+func (ai *AppImage) mainWrapArgs() []string {
 	uid := strconv.Itoa(os.Getuid())
 	home, present := unsetHome()
 	defer restoreHome(home, present)
@@ -193,7 +198,7 @@ func (ai *AppImage) WrapArgs() ([]string, error) {
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config/kdeglobals"),
 		}...)
 	} else if ai.Perms.Level > 3 || ai.Perms.Level < 1 {
-		return []string{}, errors.New("AppImage permissions level does not allow sandboxing")
+		return []string{}
 	}
 
 	cmdArgs = append(cmdArgs, parseFiles(ai)...)
@@ -253,7 +258,7 @@ func (ai *AppImage) WrapArgs() ([]string, error) {
 		}, cmdArgs...)
 	}
 
-	return cmdArgs, nil
+	return cmdArgs
 }
 
 // Returns the location of the requested directory on the host filesystem with
