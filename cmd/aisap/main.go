@@ -132,7 +132,7 @@ func main() {
 
 	if *verbose {
 		wrapArg, _ := ai.WrapArgs([]string{})
-		cli.Notify("running with sandbox base level" + ai.Perms.Level)
+		cli.Notify("running with sandbox base level", ai.Perms.Level)
 		cli.Notify("bwrap flags:", wrapArg)
 	}
 	// Sandbox only if level is above 0

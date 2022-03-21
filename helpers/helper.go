@@ -66,7 +66,6 @@ func RandString(seed int, length int) string {
 
 func DirExists(path string) bool {
 	info, err := os.Stat(path)
-	if err != nil { return false }
 
 	if os.IsNotExist(err) { return false }
 
