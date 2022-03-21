@@ -8,6 +8,6 @@
 mkdir tmp
 
 ./*.AppImage --help
-TMPDIR='./tmp' [ $? -ne 0 ] && exit 1
+TMPDIR=$(realpath tmp) [ $? -ne 0 ] && exit 1
 
 exit 0
