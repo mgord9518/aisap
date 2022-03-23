@@ -26,12 +26,14 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
 	aisap   "github.com/mgord9518/aisap"
+	permissions "github.com/mgord9518/aisap/permissions"
 	cli     "github.com/mgord9518/cli"
 	check   "github.com/mgord9518/aisap/spooky"
 	flag    "github.com/spf13/pflag"
@@ -56,12 +58,77 @@ func main() {
 		cli.Fatal("failed to open AppImage:", err)
 		return
 	}
-	if *verbose {
+	// Currently only shImgs (type -2) don't need to be mounted to extract
+	// desktop integration info but I'll soon fix this for type 2 AppImages
+	// and eventually add support for type 1 (low priority as they're getting
+	// less and less common) but as of now type 2s are automatically mounted
+	// regardless of being sandboxed or not
+	if *verbose && ai.Type() != -2 {
 		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())
 	}
 
+	if *extractIcon != "" {
+		if *verbose {
+			cli.Notify("extracting icon to", *extractIcon)
+		}
+
+		icon, _, err := ai.Icon()
+		defer icon.Close()
+		if err != nil {
+			cli.Fatal("failed to extract icon:", err)
+			return
+		}
+
+		f, err := os.Create(*extractIcon)
+		if err != nil {
+			cli.Fatal("failed to extract icon:", err)
+			return
+		}
+
+		_, err = io.Copy(f, icon)
+		if err != nil {
+			cli.Fatal("failed to extract icon:", err)
+		}
+		return
+	}
+
+	if *extractThumbnail != "" {
+		if *verbose {
+			cli.Notify("extracting thumbnail preview to", *extractThumbnail)
+		}
+
+		thumbnail, err := ai.Thumbnail()
+		if err != nil {
+			cli.Fatal("failed to extract thumbnail:", err)
+			return
+		}
+
+		f, err := os.Create(*extractThumbnail)
+		if err != nil {
+			cli.Fatal("failed to extract thumbnail:", err)
+			return
+		}
+
+		_, err = io.Copy(f, thumbnail)
+		if err != nil {
+			cli.Fatal("failed to extract thumbnail:", err)
+		}
+		return
+	}
+
 	if *profile != "" {
-		err := ai.Perms.SetPerms(*profile)
+		f, err := os.Open(*profile)
+		if err != nil {
+			cli.Fatal("failed to get permissions from profile:", err)
+			return
+		}
+
+		ai.Perms, err = permissions.FromReader(f)
+		if err != nil {
+			cli.Fatal("failed to get permissions from profile:", err)
+			return
+		}
+
 		if err != nil {
 			cli.Fatal("failed to get permissions from profile:", err)
 			return
@@ -130,11 +197,18 @@ func main() {
 		return
 	}
 
+	ai.Mount()
+
+	if *verbose && ai.Type() == -2 {
+		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())
+	}
+
 	if *verbose {
 		wrapArg, _ := ai.WrapArgs([]string{})
 		cli.Notify("running with sandbox base level", ai.Perms.Level)
 		cli.Notify("bwrap flags:", wrapArg)
 	}
+
 	// Sandbox only if level is above 0
 	err = ai.Run(flag.Args()[1:])
 

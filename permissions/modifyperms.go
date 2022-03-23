@@ -1,13 +1,9 @@
 package permissions
 
 import (
-	"bytes"
 	"errors"
-	"io/ioutil"
-	"os"
 	"strings"
 
-	ini     "gopkg.in/ini.v1"
 	helpers "github.com/mgord9518/aisap/helpers"
 )
 
@@ -90,25 +86,6 @@ func (p *AppImagePerms) RemoveSockets(s []string) {
 	for i := range(s) {
 		p.RemoveSocket(s[i])
 	}
-}
-
-// DEPRICATED, use permissions.FromReader()
-func (p *AppImagePerms) SetPerms(entryFile string) error {
-	r, err := os.Open(entryFile)
-	if err != nil { return err }
-
-	e, err := ioutil.ReadAll(r)
-	if err != nil { return err }
-
-	e = bytes.ReplaceAll(e, []byte(";"), []byte("；"))
-
-	entry, err := ini.Load(e)
-	if err != nil { return err }
-
-	p2, err := FromIni(entry)
-	*p = *p2
-
-	return err
 }
 
 // Set sandbox base permission level

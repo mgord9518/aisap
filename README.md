@@ -103,66 +103,78 @@ profile. It gives access to common system files like fonts and themes,
 ```
 NewAppImage(src string) (*AppImage, error)
 ```
-Re-implementation from go-appimage. The main differences being that this mounts
-the AppImage instead of extracting its files (because it needs to be mounted in
-order to sandbox anyway)
+Re-implementation from go-appimage, creates an AppImage struct
 
-### Unmount
+### (\*AppImage) Mount
 ```
-Unmount(ai *AppImage) error
+(ai *AppImage) Mount(dest ...string) error
 ```
-Unmount (shockingly) unmounts the requested AppImage. Note that this is an
-AppImage struct, which is created by the `NewAppImage()` function. This
-function needs to be used before using `os.Exit()` or /tmp will be trashed
+Takes an optional argument to mount at a specific location, if none given,
+mount at a temporary directory under `$XDG_RUNTIME_DIR/aisap`
+
+### (\*AppImage) Unmount
+```
+(ai *AppImage) Unmount() error
+```
+Unmount (shockingly) unmounts the requested AppImage. If \*AppImage.Mount()
+is called, this function must be used before quitting or /tmp will be trashed
 with mounted AppImages
 
-### Run
+### (\*AppImage) Run
 ```
-Run(ai *AppImage, args []string) error
+(ai *AppImage) Run(args []string) error
 ```
-Run executes the AppImage without any sandboxing. However, it still
-automatically creates a private home directory for the AppImage
+If \*AppImage.Perms.Level > 0, Run() will sandbox the AppImage. Otherwise, it
+will run normally (besides being mounted at a different location and
+automatically getting a private $HOME directory). AppImage must be mounted in
+order to use
 
-### Sandbox
+### (\*AppImage) Sandbox
 ```
-Sandbox(ai *AppImage, args []string) error
+(ai *AppImage) Sandbox(args []string) error
 ```
-Sandbox takes an AppImage and sandboxes it using the permissions offered.
+Sandbox takes an AppImage and sandboxes it using the permissions offered,
+failing if \*AppImage.Perms.Level == 0. AppImage must be mounted in order to
+use
 
-### GetWrapArgs
+### (\*AppImage) WrapArgs
 ```
-GetWrapArgs(ai *AppImage) []string
+(ai *AppImage) WrapArgs() ([]string, error)
 ```
-GetWrapArgs takes aisap permissions and translates them into bwrap command line
-flags. This can be used on its own to see what an AppImage *would* launch with,
-or to manually launch it
+Takes aisap permissions and translates them into bwrap command line flags. This
+can be used on its own to see what an AppImage *would* launch with, or to
+manually launch it. AppImage must be mounted in order to use
 
 ### (AppImage) ExtractFile
 ```
-(ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
+(ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
 ```
-Extract a file from the AppImage to `dest`. If `resolveSymlinks` is set to
-false, the raw symlink will be extracted instead of its target
+Re-implementation from go-appimage, extract a file from the AppImage to `dest`.
+If `resolveSymlinks` is set to false, the raw symlink will be extracted instead
+of its target
 
 ### (AppImage) ExtractFileReader
 ```
-(ai AppImage) ExtractFileRead(path string) (io.ReadCloser, error)
+(ai AppImage) ExtractFileReader(path string) (io.ReadCloser, error)
 ```
-Return a reader of the requested file
+Re-implementation from go-appimage, like \*AppImage.ExtractFile(), but returns
+a reader instead of automatically creating it
 
 ### (AppImage) Thumbnail
 ```
 (ai AppImage) Thumbnail() (io.Reader, error)
 ```
-Attempts to extract a thumbnail from the AppImage if available. If provided in
-a format other than PNG (eg: SVG, XPM) it attempts to convert it to PNG before
-serving
+Re-implementation from go-appimage, attempts to extract a thumbnail from the
+AppImage if available. If provided in a format other than PNG (eg: SVG, XPM) it
+attempts to convert it to PNG before serving
 
 ### (AppImage) Type
 ```
 (ai AppImage) Type() int
 ```
-Return the type of AppImage. Only supports type 2 currently
+Return the type of AppImage. Currently supports `2` (standard type 2) and `-2`
+(non-standard shell-based AppImage, shImg). Plans on supporting type 1 in the
+future, and type 3 whenever it is released
 
 ### (AppImage) TempDir
 ```
@@ -175,48 +187,46 @@ Returns the AppImage's temporary directory. By default, it will be
 ```
 (ai AppImage) MountDir() string
 ```
-Returns the AppImage's mountpoint. With aisap, all AppImage structs will be
-mounted on creation
+Returns the AppImage's mountpoint. If not mounted, returns an empty string
 
-### (AppImage) AddFile
+### (\*AppImagePerms) AddFile
 ```
-(ai AppImage) AddFile(str string)
+(p *AppImagePerms) AddFile(str string)
 ```
 Add a single file or directory to the sandbox, appending `:rw` to the filename
 will give it write access. To prevent writing to the file or directory, either
 append nothing, or `:ro`
 
-### (AppImage) AddFiles
+### (\*AppImagePerms) AddFiles
 ```
-(ai AppImage) AddFiles(s []string)
+(p *AppImagePerms) AddFiles(s []string)
 ```
 Like `AddFile()` but operates on a list of files or directories
 
-### (AppImage) AddDevice
+### (\*AppImagePerms) AddDevice
 ```
-(ai AppImage) AddDevice(s string)
+(p *AppImagePerms) AddDevice(str string)
 ```
 Give the sandbox access to a device file (eg: `dri`, `input`). Specifying the
 full path (eg: `/dev/dri`, `/dev/input`) is not necessary and advised against
 
-### (AppImage) AddDevices
+### (\*AppImagePerms) AddDevices
 ```
-(ai AppImage) AddDevices(s []string)
+(p *AppImagePerms) AddDevices(s []string)
 ```
 Allow the sandbox to access more device files
 
-### (AppImage) AddSockets
+### (\*AppImagePerms) AddSocket
+```
+(ai AppImage) AddSockets(str string)
+```
+Share a socket with the sandbox(eg: x11, pulseaudio)
+
+### (\*AppImagePerms) AddSockets
 ```
 (ai AppImage) AddSockets(s []string)
 ```
-Share sockets with the sandbox (eg: x11, pulseaudio)
-
-### (AppImage) SetPerms
-```
-(ai AppImage) SetPerms(entryFile string) error
-```
-Set permissions for an AppImage using a desktop entry containing permissions
-flags
+Share multiple sockets with the sandbox
 
 ### (AppImage) SetRootDir
 ```
@@ -224,14 +234,14 @@ flags
 ```
 Change the directoy that the sandbox grabs system files from. This is useful
 if you want to hide your real system files or utilize another Linux distro's
-libraries for compatibility
+libraries for compatibility (NOT TESTED YET)
 
 ### (AppImage) SetDataDir
 ```
 (ai AppImage) SetDataDir(d string)
 ```
 Change the `HOME` directory of the AppImage. By default, this is
-`[APPIMAGE NAME].home` in the same directory
+`[APPIMAGE NAME].home` in the same directory (NOT TESTED YET)
 
 ### (AppImage) SetLevel
 ```

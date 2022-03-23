@@ -2,6 +2,8 @@ package aisap
 
 import (
 	"bufio"
+	"path"
+	"path/filepath"
 	"os"
 	"os/exec"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 	"errors"
 
 	helpers "github.com/mgord9518/aisap/helpers"
+	xdg     "github.com/adrg/xdg"
 )
 
 // mount mounts the requested AppImage `src` to `dest`
@@ -29,13 +32,65 @@ func mount(src string, dest string, offset int) error {
 	return mnt.Run()
 }
 
+// Takes an optional argument to mount at a specific location (failing if it
+// doesn't exist or more than one arg given. If none given, automatically
+// create a temporary directory and mount to it
+func (ai *AppImage) Mount(dest ...string) error {
+	var err error
+
+	// If arg given
+	if len(dest) > 1 {
+		return errors.New("only one argument allowed with *AppImage.Mount()!")
+	} else if len(dest) == 1 {
+		if !helpers.DirExists(dest[0]) {
+			return errors.New("mount point `" + dest[0] + "` does not exist!")
+		}
+
+		if !isMountPoint(ai.mountDir) {
+			return mount(ai.Path, ai.mountDir, ai.Offset)
+		}
+
+		return nil
+	}
+
+	pfx := path.Base(ai.Path)
+	if len(pfx) > 6 {
+		pfx = pfx[0:6]
+	}
+
+	// Generate a seed based on the AppImage URI MD5sum. This shouldn't cause
+	// any issues as AppImages will have a different path given a different
+	// version
+	seed, _ := strconv.ParseInt(ai.md5[0:15], 16, 64)
+	ai.runId = pfx + helpers.RandString(int(seed), 6)
+
+	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
+	if err != nil { return err }
+
+	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_" + ai.runId)
+	if err != nil { return err }
+
+	// Only mount if no previous instances (launched of the same version) are
+	// already mounted there. This is to reuse their libraries, save on RAM and
+	// to spam the mount list as little as possible
+	if !isMountPoint(ai.mountDir) {
+		err = mount(ai.Path, ai.mountDir, ai.Offset)
+	}
+
+	return err
+}
+
 // Unmounts an AppImage
 func (ai *AppImage) Unmount() error {
 	if ai == nil {
 		return errors.New("AppImage is nil")
 	} else if ai.Path == "" {
 		return errors.New("AppImage contains no path")
+	} else if !ai.IsMounted() {
+		return errors.New("AppImage not mounted")
 	}
+
+	ai.mountDir = ""
 
 	err := unmountDir(ai.MountDir())
 	if err != nil { return err }
@@ -44,6 +99,14 @@ func (ai *AppImage) Unmount() error {
 	err = os.RemoveAll(ai.TempDir())
 
 	return err
+}
+
+func (ai *AppImage) IsMounted() bool {
+	if ai.mountDir == "" {
+		return false
+	}
+
+	return true
 }
 
 // Unmounts a directory (lazily in case the process is finishing up)

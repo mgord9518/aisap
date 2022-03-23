@@ -20,7 +20,6 @@ import (
 	profiles    "github.com/mgord9518/aisap/profiles"
 	permissions "github.com/mgord9518/aisap/permissions"
 	imgconv     "github.com/mgord9518/imgconv"
-	xdg         "github.com/adrg/xdg"
 )
 
 type AppImage struct {
@@ -42,7 +41,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.5.2-alpha"
+	Version = "0.5.3-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -63,27 +62,16 @@ func NewAppImage(src string) (*AppImage, error) {
 		pfx = pfx[0:6]
 	}
 
-	// Now use a chunk of the MD5sum as seed instead of date
-	seed := int(b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + b[7] + b[8])
-	ai.runId = pfx + helpers.RandString(seed, 6)
-
 	ai.imageType, err = helpers.GetAppImageType(ai.Path)
 	if err != nil { return nil, err }
 
-	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
-	if err != nil { return nil, err }
 	ai.rootDir = "/"
-
-	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_" + ai.runId)
 
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
-
-	// Only mount if no previous instances (launced the same day) are already
-	// mounted there. This is to reuse their libraries, save on RAM and to spam
-	// the mount list as little as possible
-	if !isMountPoint(ai.mountDir) {
-		err = mount(src, ai.mountDir, ai.Offset)
+	
+	if ai.imageType != -2 {
+		err = ai.Mount()
 		if err != nil { return nil, err }
 	}
 

@@ -38,7 +38,6 @@ func (ai *AppImage) Run(args []string) error {
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 func (ai *AppImage) Sandbox(args []string) error {
-
 	cmdArgs, err := ai.WrapArgs(args)
 	if err != nil { return err }
 
@@ -56,6 +55,9 @@ func (ai *AppImage) Sandbox(args []string) error {
 }
 
 func (ai *AppImage) setupRun() error {
+	if !ai.IsMounted() {
+		return errors.New("AppImage must be mounted before running! call *AppImage.Mount() first")
+	}
 
 	if ai.dataDir == "" {
 		ai.dataDir = ai.Path + ".home"
@@ -86,14 +88,18 @@ func (ai *AppImage) setupRun() error {
 	os.Setenv("HOME",           ai.dataDir)
 	os.Setenv("APPDIR",         ai.mountDir)
 	os.Setenv("APPIMAGE",       ai.Path)
-	os.Setenv("ARGV0",          ai.Path)
+	os.Setenv("ARGV0",          path.Base(ai.Path))
 	os.Setenv("XDG_CACHE_HOME", filepath.Join(xdg.CacheHome, "appimage", ai.md5))
 
 	return err
 }
 
 // Returns the bwrap arguments to sandbox the AppImage
-func (ai *AppImage) WrapArgs(args []string) ([]string, error) {
+func (ai AppImage) WrapArgs(args []string) ([]string, error) {
+	if !ai.IsMounted() {
+		return []string{}, errors.New("AppImage must be mounted before getting its wrap arguments! call *AppImage.Mount() first")
+	}
+
 	home, present := unsetHome()
 	defer restoreHome(home, present)
 
@@ -127,7 +133,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 		"--setenv", "TMPDIR",              "/tmp",
 		"--setenv", "HOME",                xdg.Home,
 		"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
-		"--setenv", "ARGV0",               filepath.Join("/app", path.Base(ai.Path)),
+		"--setenv", "ARGV0",               filepath.Join(path.Base(ai.Path)),
 		"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(xdg.Home, "Desktop"),
 		"--setenv", "XDG_DOWNLOAD_DIR",    filepath.Join(xdg.Home, "Downloads"),
 		"--setenv", "XDG_DOCUMENTS_DIR",   filepath.Join(xdg.Home, "Documents"),

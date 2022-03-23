@@ -23,6 +23,8 @@ var (
 	version = flag.Bool("version", false, "show the version and quit")
 	profile = flag.String("profile", "",  "use a profile from a desktop entry")
 	level   = flag.Int("level",   -1,     "change the permissions level")
+	extractIcon      = flag.String("extract-icon",      "", "extract the AppImage's icon")
+	extractThumbnail = flag.String("extract-thumbnail", "", "extract the AppImage's thumbnail preview")
 
 	// Flags that can be called multiple times
 	addFile   arrayFlags
@@ -31,6 +33,7 @@ var (
 	rmFile    arrayFlags
 	rmDevice  arrayFlags
 	rmSocket  arrayFlags
+//	extract   arrayFlags // Extract an arbitrary file from the AppImage
 )
 
 // Initialization of global variables and help menu
