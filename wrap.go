@@ -146,6 +146,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 		"--setenv", "XDG_CONFIG_HOME",     filepath.Join(xdg.Home, ".config"),
 		"--setenv", "XDG_CACHE_HOME",      filepath.Join(xdg.Home, ".cache"),
 		"--setenv", "XDG_STATE_HOME",      filepath.Join(xdg.Home, ".local/state"),
+		"--setenv", "XDG_RUNTIME_DIR",     filepath.Join("/run/user", uid),
 		"--die-with-parent",
 		"--perms",       "0700",
 		"--dir",         filepath.Join("/run/user", uid),
@@ -363,7 +364,7 @@ func parseSockets(ai *AppImage) []string {
 			"--dev-bind",    "/dev/snd",        "/dev/snd",
 		},
 		"audio": {
-			"--ro-bind-try", "/run/user/"+uid+"/pulse", "/run/user/"+uid+"/pulse",
+			"--ro-bind-try", filepath.Join(xdg.RuntimeDir, "pulse"), "/run/user/"+uid+"/pulse",
 			"--ro-bind-try", "/usr/share/alsa",         "/usr/share/alsa",
 			"--ro-bind-try", "/usr/share/pulseaudio",   "/usr/share/pulseaudio",
 			"--ro-bind-try", "/etc/alsa",               "/etc/alsa",
@@ -373,7 +374,7 @@ func parseSockets(ai *AppImage) []string {
 		},
 		"cgroup": {},
 		"dbus": {
-			"--ro-bind-try", "/run/user/"+uid+"/bus", "/run/user/"+uid+"/bus",
+			"--ro-bind-try", filepath.Join(xdg.RuntimeDir, "bus"), "/run/user/"+uid+"/bus",
 		},
 		"ipc":    {},
 		"network": {
@@ -385,17 +386,17 @@ func parseSockets(ai *AppImage) []string {
 		},
 		"pid": {},
 		"pipewire": {
-			"--ro-bind-try", "/run/user/"+uid+"/pipewire-0", "/run/user/"+uid+"/pipewire-0",
+			"--ro-bind-try", filepath.Join(xdg.RuntimeDir, "pipewire-0"), "/run/user/"+uid+"/pipewire-0",
 		},
 		"pulseaudio": {
-			"--ro-bind-try", "/run/user/"+uid+"/pulse", "/run/user/"+uid+"/pulse",
+			"--ro-bind-try", filepath.Join(xdg.RuntimeDir, "pulse"), "/run/user/"+uid+"/pulse",
 			"--ro-bind-try", "/etc/pulse",              "/etc/pulse",
 		},
 		"session": {},
 		"user":    {},
 		"uts":     {},
 		"wayland": {
-			"--ro-bind-try", "/run/user/"+uid+"/"+wDisplay, "/run/user/"+uid+"/wayland-0",
+			"--ro-bind-try", filepath.Join(xdg.RuntimeDir, wDisplay), "/run/user/"+uid+"/wayland-0",
 			"--ro-bind-try", "/usr/share/X11",               "/usr/share/X11",
 			// TODO: Add more enviornment variables for app compatability
 			// maybe theres a better way to do this?

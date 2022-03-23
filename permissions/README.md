@@ -1,5 +1,5 @@
 # aisap permissions
-Simplified permissions and what actual bwrap flags they corrispond to
+Simplified permissions and what actual bwrap flags they correspond to
 
 ## Base levels
 As you can see, level 1 gives access to a wide range of system files, but personal [HOME] files are still restricted. Level 1 is intended to allow some sandboxing of apps that refuse to with higher levels
@@ -65,17 +65,56 @@ Level 3:
 For further security or to run an AppImage designed for another distro, you can use `(AppImage) SetRootDir()` to change where it pulls system files from
 
 ## Sockets
-x11:
- * `  [HOME]/.Xauthority`
- * `[TMPDIR]/.X11-unix/X[DISPLAY]`
+alsa:
+ * `/usr/share/alsa`
+ * `/etc/alsa`
+ * `/etc/group`
+ * `/dev/snd`
+
+audio:
+pulseaudio and alsa combined
+
+cgroup:
+same as not using `--unshare-cgroup-try` in bwrap
+
+dbus:
+ * `$XDG_RUNTIME_DIR/bus`
+
+ipc:
+same as not using `--unshare-ipc` in bwrap
 
 network:
  * `/etc/ca-certificates`
  * `/etc/resolv.conf`
  * `/etc/ssl`
+ * `/usr/share/ca-certificates`
 
- pulseaudio:
- * `/run/user/[UID]/pulse`
+pid:
+same as not using `--unshare-pid` in bwrap
+
+pipewire:
+ * `$XDG_RUNTIME_DIR/pipewire-0`
+
+pulseaudio:
+ * `$XDG_RUNTIME_DIR/pulse`
+ * `/etc/pulse`
+
+session:
+same as not using `--new-session` in bwrap
+
+user:
+same as not using `--unshare-user-try` in bwrap
+
+uts:
+same as not using `--unshare-uts` in bwrap
+
+wayland:
+ * `$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY`
+ * `/usr/share/x11`
+
+x11:
+ * `$XAUTHORITY`
+ * `$TMPDIR/.X11-unix/X[DISPLAY]`
 
 ## Devices
 dri:
