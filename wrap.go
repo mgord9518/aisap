@@ -37,6 +37,7 @@ func (ai *AppImage) Run(args []string) error {
 }
 
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
+// Also automatically creates a portable home
 func (ai *AppImage) Sandbox(args []string) error {
 	cmdArgs, err := ai.WrapArgs(args)
 	if err != nil { return err }
@@ -45,6 +46,24 @@ func (ai *AppImage) Sandbox(args []string) error {
 	if !present {
 		return errors.New("failed to find bwrap! unable to sandbox application")
 	}
+
+	if ai.dataDir == "" {
+		ai.dataDir = ai.Path + ".home"
+	}
+
+	if !helpers.DirExists(ai.dataDir) {
+		err := os.MkdirAll(ai.dataDir, 0744)
+		if err != nil { return err }
+	}
+
+	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
+		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
+		if err != nil { return err }
+	}
+
+	// Tell AppImages not to ask for integration
+	noIntegrate, err := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
+	noIntegrate.Close()
 
 	bwrap := exec.Command(bwrapStr, cmdArgs...)
 	bwrap.Stdout = os.Stdout
@@ -59,39 +78,20 @@ func (ai *AppImage) setupRun() error {
 		return errors.New("AppImage must be mounted before running! call *AppImage.Mount() first")
 	}
 
-	if ai.dataDir == "" {
-		ai.dataDir = ai.Path + ".home"
-	}
-
-	if !helpers.DirExists(ai.dataDir) {
-		err := os.MkdirAll(ai.dataDir, 0744)
-		if err != nil { return err }
-	}
-
 	if !helpers.DirExists(filepath.Join(xdg.CacheHome, "appimage", ai.md5)) {
 		err := os.MkdirAll(filepath.Join(xdg.CacheHome, "appimage", ai.md5), 0744)
 		if err != nil { return err }
 	}
 
-	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
-		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
-		if err != nil { return err }
-	}
-
-	// Tell AppImages not to ask for integration
-	noIntegrate, err := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
-	noIntegrate.Close()
-
 	// Set required vars to correctly mount our target AppImage
 	// If sandboxed, these values will be overwritten
 	os.Setenv("TMPDIR",         ai.tempDir)
-	os.Setenv("HOME",           ai.dataDir)
 	os.Setenv("APPDIR",         ai.mountDir)
 	os.Setenv("APPIMAGE",       ai.Path)
 	os.Setenv("ARGV0",          path.Base(ai.Path))
 	os.Setenv("XDG_CACHE_HOME", filepath.Join(xdg.CacheHome, "appimage", ai.md5))
 
-	return err
+	return nil
 }
 
 // Returns the bwrap arguments to sandbox the AppImage

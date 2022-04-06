@@ -41,7 +41,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.5.4-alpha"
+	Version = "0.5.5-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -56,12 +56,6 @@ func NewAppImage(src string) (*AppImage, error) {
 	b := md5.Sum([]byte("file://" + ai.Path))
 	ai.md5 = fmt.Sprintf("%x", b)
 
-	// Set the runId, tempDir and rootDir of the AppImage
-	pfx := path.Base(ai.Path)
-	if len(pfx) > 6 {
-		pfx = pfx[0:6]
-	}
-
 	ai.imageType, err = helpers.GetAppImageType(ai.Path)
 	if err != nil { return nil, err }
 
@@ -69,15 +63,14 @@ func NewAppImage(src string) (*AppImage, error) {
 
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
-	
+
 	if ai.imageType != -2 {
 		err = ai.Mount()
 		if err != nil { return nil, err }
 	}
 
-	// Prefer local entry if it exists (located at
-	// ~/.local/share/aisap/[ai.Name])
-	ai.Desktop, err = getEntry(ai)
+	// Prefer local entry if it exists (located at $XDG_DATA_HOME/aisap/[ai.Name])
+	ai.Desktop, err = ai.getEntry()
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Version").Value()
 
@@ -93,8 +86,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	// entry
 	// Typically this should be unset unless testing a custom profile against
 	// aisap's
-	_, present := os.LookupEnv("PREFER_AISAP_PROFILE")
-	if present {
+	if _, present := os.LookupEnv("PREFER_AISAP_PROFILE"); present {
 		ai.Perms, err = profiles.FromName(ai.Name)
 		if err != nil {
 			ai.Perms, err = permissions.FromSystem(ai.Name)
@@ -115,7 +107,7 @@ func NewAppImage(src string) (*AppImage, error) {
 
 // Return a reader for the `.DirIcon` file of the AppImage, converting it to
 // PNG if it's in SVG or XPM format
-func (ai AppImage) Thumbnail() (io.Reader, error) {
+func (ai *AppImage) Thumbnail() (io.Reader, error) {
 	// Try to extract from zip, continue to SquashFS if it fails
 	if ai.imageType == -2 {
 		r, err := helpers.ExtractResourceReader(ai.Path, "icon/256.png")
@@ -138,46 +130,46 @@ func (ai AppImage) Thumbnail() (io.Reader, error) {
 	return f, err
 }
 
-func (ai AppImage) Md5() string {
+func (ai *AppImage) Md5() string {
 	return ai.md5
 }
 
-func (ai AppImage) TempDir() string {
+func (ai *AppImage) TempDir() string {
 	return ai.tempDir
 }
 
-func (ai AppImage) MountDir() string {
+func (ai *AppImage) MountDir() string {
 	return ai.mountDir
 }
 
-func (ai AppImage) RunId() string {
+func (ai *AppImage) RunId() string {
 	return ai.runId
 }
 
 // Set the directory the sandbox pulls system files from
-func (ai AppImage) SetRootDir(d string) {
+func (ai *AppImage) SetRootDir(d string) {
 	ai.rootDir = d
 }
 
 // Set the directory for the sandboxed AppImage's `HOME`
-func (ai AppImage) SetDataDir(d string) {
+func (ai *AppImage) SetDataDir(d string) {
 	ai.dataDir = d
 }
 
 // Set the directory for the sandboxed AppImage's `TMPDIR`
-func (ai AppImage) SetTempDir(d string) {
+func (ai *AppImage) SetTempDir(d string) {
 	ai.tempDir = d
 }
 
 // Return type of AppImage
-func (ai AppImage) Type() int {
+func (ai *AppImage) Type() int {
 	t, _ := helpers.GetAppImageType(ai.Path)
 
 	return t
 }
 
 // Extract a file from the AppImage's interal SquashFS image
-func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
+func (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
 	path = filepath.Join(ai.mountDir, path)
 
 	// Remove file if it already exists
@@ -212,14 +204,14 @@ func (ai AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) e
 }
 
 // Like `ExtractFile()` but gives access to the reader instead of extracting
-func (ai AppImage) ExtractFileReader(path string) (io.ReadCloser, error) {
+func (ai *AppImage) ExtractFileReader(path string) (io.ReadCloser, error) {
 	path = filepath.Join(ai.mountDir, path)
 
 	return os.Open(path)
 }
 
 // Returns the icon reader of the AppImage, valid formats are SVG and PNG
-func (ai AppImage) Icon() (io.ReadCloser, string, error) {
+func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 	if ai.imageType == -2 {
 		r, err := helpers.ExtractResourceReader(ai.Path, "icon/default.svg")
 		// Didn't really know what to put in the string here as the name inside
@@ -262,7 +254,7 @@ func (ai AppImage) Icon() (io.ReadCloser, string, error) {
 }
 
 // Extract the desktop file from the AppImage
-func getEntry(ai *AppImage) (*ini.File, error) {
+func (ai *AppImage) getEntry() (*ini.File, error) {
 	var err error
 	var f   io.ReadCloser
 	var e   string

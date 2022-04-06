@@ -36,8 +36,6 @@ func mount(src string, dest string, offset int) error {
 // doesn't exist or more than one arg given. If none given, automatically
 // create a temporary directory and mount to it
 func (ai *AppImage) Mount(dest ...string) error {
-	var err error
-
 	// If arg given
 	if len(dest) > 1 {
 		return errors.New("only one argument allowed with *AppImage.Mount()!")
@@ -61,7 +59,7 @@ func (ai *AppImage) Mount(dest ...string) error {
 	// Generate a seed based on the AppImage URI MD5sum. This shouldn't cause
 	// any issues as AppImages will have a different path given a different
 	// version
-	seed, _ := strconv.ParseInt(ai.md5[0:15], 16, 64)
+	seed, err := strconv.ParseInt(ai.md5[0:15], 16, 64)
 	ai.runId = pfx + helpers.RandString(int(seed), 6)
 
 	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
@@ -80,8 +78,13 @@ func (ai *AppImage) Mount(dest ...string) error {
 	return err
 }
 
-// Unmounts an AppImage
+// Deprecated: Close() should be used instead
 func (ai *AppImage) Unmount() error {
+	return ai.Close()
+}
+
+// Unmounts an AppImage
+func (ai *AppImage) Close() error {
 	if ai == nil {
 		return errors.New("AppImage is nil")
 	} else if ai.Path == "" {
@@ -90,10 +93,10 @@ func (ai *AppImage) Unmount() error {
 		return errors.New("AppImage not mounted")
 	}
 
-	ai.mountDir = ""
-
 	err := unmountDir(ai.MountDir())
 	if err != nil { return err }
+
+	ai.mountDir = ""
 
 	// Clean up
 	err = os.RemoveAll(ai.TempDir())

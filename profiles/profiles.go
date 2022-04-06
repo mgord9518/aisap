@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 82 unique apps currently supported
+// 83 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -168,6 +168,13 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-templates:rw", "xdg-documents:rw" },
 		Sockets: []string{ "x11", "alsa" },
+	},
+	// Currently doesn't work at higher sandboxing levels "requires graphical
+	// enviornment to run" error
+	"eternal lands (appimage)": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "audio", "network" },
 	},
 	"firefox": {
 		Level: 2,
