@@ -39,16 +39,16 @@ func (ai *AppImage) Run(args []string) error {
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 // Also automatically creates a portable home
 func (ai *AppImage) Sandbox(args []string) error {
+	if ai.dataDir == "" {
+		ai.dataDir = ai.Path + ".home"
+	}
+
 	cmdArgs, err := ai.WrapArgs(args)
 	if err != nil { return err }
 
 	bwrapStr, present := helpers.CommandExists("bwrap")
 	if !present {
 		return errors.New("failed to find bwrap! unable to sandbox application")
-	}
-
-	if ai.dataDir == "" {
-		ai.dataDir = ai.Path + ".home"
 	}
 
 	if !helpers.DirExists(ai.dataDir) {

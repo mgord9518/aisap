@@ -78,13 +78,13 @@ func (ai *AppImage) Mount(dest ...string) error {
 	return err
 }
 
-// Deprecated: Close() should be used instead
+// Deprecated: *AppImage.Delete() should be used instead
 func (ai *AppImage) Unmount() error {
-	return ai.Close()
+	return ai.Destroy()
 }
 
 // Unmounts an AppImage
-func (ai *AppImage) Close() error {
+func (ai *AppImage) Destroy() error {
 	if ai == nil {
 		return errors.New("AppImage is nil")
 	} else if ai.Path == "" {

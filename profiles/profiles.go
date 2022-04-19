@@ -524,25 +524,9 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 	// Load in duplicate permissions based on their names as some of the same
 	// AppImages may be released under different names
 	aliases := map[string]string {
-//		"aaaaxy":              "stunt car remake",
 		"aranym mmu":          "aranym jit",
-//		"armagetron advanced": "supertuxkart",
-//		"balenaetcher":        "minecraft",
-//		"brave":               "google chrome",
-//		"chromium":            "google chrome",
-//		"desmume":             "mgba",
-//		"edex-ui":             "cool retro term",
-		// TODO: test gambatte on X11 (borked on XWayland)
-//		"gambatte_qt":         "mgba",
-//		"hyper":               "cool retro term",
-//		"iqpuzzle":            "fractale",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
-//		"librewolf":           "firefox",
-//		"microsoft edge":      "google chrome",
-//		"nx-software-center":  "appimageupdate",
-//		"openblok":            "stunt car remake",
-//		"play 2048":           "linedancer",
 		"python2.7.18":        "python",
 		"python3":             "python",
 		"python3.5.10":        "python",
@@ -551,14 +535,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"python3.8.12":        "python",
 		"python3.9.9":         "python",
 		"python3.10.1":        "python",
-//		"supertux 2":          "supertuxkart",
-//		"synthein":            "stunt car remake",
-//		"stacer":              "minecraft",
-//		"stackandconquer":     "fractale",
-//		"waterfox":            "firefox",
 		"waterfox classic":    "waterfox",
-//		"xonotic":             "0 a.d.",
-//		"yuzu":                "dolphin emulator",
 	}
 
 	if a, present := aliases[name]; present {

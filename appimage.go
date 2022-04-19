@@ -41,7 +41,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.5.5-alpha"
+	Version = "0.5.7-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -71,6 +71,7 @@ func NewAppImage(src string) (*AppImage, error) {
 
 	// Prefer local entry if it exists (located at $XDG_DATA_HOME/aisap/[ai.Name])
 	ai.Desktop, err = ai.getEntry()
+	if err != nil { return ai, err }
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Version").Value()
 
@@ -268,9 +269,12 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 		// Return all `.desktop` files. A vadid AppImage should only have one
 		var fp []string
 		fp, err = filepath.Glob(ai.mountDir + "/*.desktop")
-		if err != nil { return nil, err }
+		if len(fp) < 1 {
+			return nil, errors.New("destop entry not found in AppImage")
+		}
 		f, err = os.Open(fp[0])
 		defer f.Close()
+		if err != nil { return nil, err }
 	}
 
 	// Replace normal semicolons with fullwidth semicolons so that it doen't
