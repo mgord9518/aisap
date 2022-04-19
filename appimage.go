@@ -41,7 +41,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.5.7-alpha"
+	Version = "0.5.8-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -268,10 +268,14 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 	if ai.imageType == 2 || err != nil {
 		// Return all `.desktop` files. A vadid AppImage should only have one
 		var fp []string
+
+		// Mount (in case of shImg)
+		ai.Mount()
 		fp, err = filepath.Glob(ai.mountDir + "/*.desktop")
 		if len(fp) < 1 {
 			return nil, errors.New("destop entry not found in AppImage")
 		}
+
 		f, err = os.Open(fp[0])
 		defer f.Close()
 		if err != nil { return nil, err }

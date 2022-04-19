@@ -79,7 +79,7 @@ wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 [ $? -ne 0 ] && exit $?
 
 # Download squashfuse binary
-wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd.$ARCH" -O 'AppDir/usr/bin/squashfuse'
+wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd-static.$ARCH" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
 [ $? -ne 0 ] && exit $?
 
@@ -124,12 +124,12 @@ cd ../..
 ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
 
 # Download squashfuse binary
-wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
+wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd-static.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 chmod +x 'AppDir/usr.aarch64/bin/squashfuse'
 [ $? -ne 0 ] && exit $?
 
 # Download bwrap binary
-wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap.$ARCH" -O 'AppDir/usr.aarch64/bin/bwrap'
+wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr.aarch64/bin/bwrap'
 chmod +x 'AppDir/usr.aarch64/bin/bwrap'
 [ $? -ne 0 ] && exit $?
 
@@ -138,7 +138,7 @@ mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 [ $? -ne 0 ] && exit $?
 
 # Download shImg runtime
-wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64"
+wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-static-x86_64-aarch64"
 [ $? -ne 0 ] && exit $?
 
 cat runtime-lz4-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"

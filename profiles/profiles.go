@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 83 unique apps currently supported
+// 85 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -212,6 +212,10 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"go": {
+		Level: 3,
+		Files:   []string{ "xdg-documents:rw" },
+	},
 	"google chrome": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -330,6 +334,12 @@ var profiles = map[string]permissions.AppImagePerms{
 	"nmeasimulator": {
 		Level: 2,
 		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "network" },
+	},
+	"notepad next": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw", "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11", "network" },
 	},
 	"nx-software-center": {
