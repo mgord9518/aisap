@@ -32,13 +32,13 @@ import (
 	"strings"
 	"syscall"
 
-	aisap   "github.com/mgord9518/aisap"
+	aisap       "github.com/mgord9518/aisap"
 	permissions "github.com/mgord9518/aisap/permissions"
-	cli     "github.com/mgord9518/cli"
-	check   "github.com/mgord9518/aisap/spooky"
-	flag    "github.com/spf13/pflag"
-	helpers "github.com/mgord9518/aisap/helpers"
-	xdg     "github.com/adrg/xdg"
+	cli         "github.com/mgord9518/cli"
+	check       "github.com/mgord9518/aisap/spooky"
+	flag        "github.com/spf13/pflag"
+	helpers     "github.com/mgord9518/aisap/helpers"
+	xdg         "github.com/adrg/xdg"
 )
 
 var (
@@ -54,10 +54,12 @@ func main() {
 
 	ai, err := aisap.NewAppImage(flag.Args()[0])
 	defer ai.Unmount()
+
 	if err != nil {
 		cli.Fatal("failed to open AppImage:", err)
 		return
 	}
+
 	// Currently only shImgs (type -2) don't need to be mounted to extract
 	// desktop integration info but I'll soon fix this for type 2 AppImages
 	// and eventually add support for type 1 (low priority as they're getting
@@ -198,6 +200,10 @@ func main() {
 	}
 
 	ai.Mount()
+
+	if *setRoot != "" {
+		ai.SetRootDir(*setRoot)
+	}
 
 	if *verbose && ai.Type() == -2 {
 		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())

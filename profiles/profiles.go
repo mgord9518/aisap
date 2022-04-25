@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 85 unique apps currently supported
+// 86 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -227,6 +227,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
+	},
+	"hearts": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "network", "alsa" },
 	},
 	"hyper": {
 		Level: 2,

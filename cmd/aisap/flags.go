@@ -25,6 +25,7 @@ var (
 	level   = flag.Int("level",   -1,     "change the permissions level")
 	extractIcon      = flag.String("extract-icon",      "", "extract the AppImage's icon")
 	extractThumbnail = flag.String("extract-thumbnail", "", "extract the AppImage's thumbnail preview")
+	setRoot = flag.String("set-root", "", "use a different filesystem root for system files")
 
 	// Flags that can be called multiple times
 	addFile   arrayFlags
@@ -63,6 +64,7 @@ func init() {
 		clr.Printf("\n<yellow>long-only options</>:\n")
 		printUsage("example")
 		printUsage("level")
+		printUsage("set-root")
 		printUsage("add-file")
 		printUsage("add-device")
 		printUsage("add-socket")
