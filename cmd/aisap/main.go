@@ -201,8 +201,12 @@ func main() {
 
 	ai.Mount()
 
-	if *setRoot != "" {
-		ai.SetRootDir(*setRoot)
+	if *rootDir != "" {
+		ai.SetRootDir(*rootDir)
+	}
+
+	if *dataDir != "" {
+		ai.SetDataDir(*dataDir)
 	}
 
 	if *verbose && ai.Type() == -2 {
