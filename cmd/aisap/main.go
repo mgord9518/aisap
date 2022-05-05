@@ -209,6 +209,11 @@ func main() {
 		ai.SetDataDir(*dataDir)
 	}
 
+	if *noDataDir {
+		ai.Perms.NoDataDir = true
+
+	}
+
 	if *verbose && ai.Type() == -2 {
 		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())
 	}

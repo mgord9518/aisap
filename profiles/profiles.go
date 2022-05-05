@@ -286,6 +286,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 3,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
+		NoDataDir: true,
 	},
 	"liteide": {
 		Level: 2,

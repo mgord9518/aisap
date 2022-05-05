@@ -27,6 +27,12 @@ func (ai *AppImage) Run(args []string) error {
 	err := ai.setupRun()
 	if err != nil { return err }
 
+	os.Setenv("TMPDIR",         ai.tempDir)
+	os.Setenv("APPDIR",         ai.mountDir)
+	os.Setenv("APPIMAGE",       ai.Path)
+	os.Setenv("ARGV0",          path.Base(ai.Path))
+	os.Setenv("XDG_CACHE_HOME", filepath.Join(xdg.CacheHome, "appimage", ai.md5))
+
 	cmd := exec.Command(filepath.Join(ai.mountDir, "AppRun"), args...)
 
 	cmd.Stdout = os.Stdout
@@ -39,7 +45,7 @@ func (ai *AppImage) Run(args []string) error {
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 // Also automatically creates a portable home
 func (ai *AppImage) Sandbox(args []string) error {
-	if ai.dataDir == "" {
+	if ai.dataDir == "" && !ai.Perms.NoDataDir {
 		ai.dataDir = ai.Path + ".home"
 	}
 
@@ -51,19 +57,16 @@ func (ai *AppImage) Sandbox(args []string) error {
 		return errors.New("failed to find bwrap! unable to sandbox application")
 	}
 
-	if !helpers.DirExists(ai.dataDir) {
-		err := os.MkdirAll(ai.dataDir, 0744)
-		if err != nil { return err }
-	}
-
-	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
+	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) && !ai.Perms.NoDataDir {
 		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
 		if err != nil { return err }
 	}
 
 	// Tell AppImages not to ask for integration
-	noIntegrate, err := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
-	noIntegrate.Close()
+	if !ai.Perms.NoDataDir {
+		noIntegrate, _ := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
+		noIntegrate.Close()
+	}
 
 	bwrap := exec.Command(bwrapStr, cmdArgs...)
 	bwrap.Stdout = os.Stdout
@@ -83,14 +86,6 @@ func (ai *AppImage) setupRun() error {
 		if err != nil { return err }
 	}
 
-	// Set required vars to correctly mount our target AppImage
-	// If sandboxed, these values will be overwritten
-	os.Setenv("TMPDIR",         ai.tempDir)
-	os.Setenv("APPDIR",         ai.mountDir)
-	os.Setenv("APPIMAGE",       ai.Path)
-	os.Setenv("ARGV0",          path.Base(ai.Path))
-	os.Setenv("XDG_CACHE_HOME", filepath.Join(xdg.CacheHome, "appimage", ai.md5))
-
 	return nil
 }
 
@@ -105,19 +100,10 @@ func (ai AppImage) WrapArgs(args []string) ([]string, error) {
 
 	if ai.Perms.Level == 0 { return args, nil }
 
+	err := ai.setupRun()
 	cmdArgs := ai.mainWrapArgs()
 
-	err := ai.setupRun()
 	if err != nil { return []string{}, err }
-
-	cmdArgs = append([]string{
-		"--bind",   ai.dataDir, xdg.Home,
-		"--setenv", "APPDIR",   "/tmp/.mount_"+ai.runId,
-	}, cmdArgs...)
-
-	cmdArgs = append(cmdArgs, "--",
-		"/tmp/.mount_"+ai.runId+"/AppRun",
-	)
 
 	// Append console arguments provided by the user
 	return append(cmdArgs, args...), nil
@@ -132,6 +118,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 	cmdArgs := []string{
 		"--setenv", "TMPDIR",              "/tmp",
 		"--setenv", "HOME",                xdg.Home,
+		"--setenv", "APPDIR",              "/tmp/.mount_"+ai.runId,
 		"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
 		"--setenv", "ARGV0",               filepath.Join(path.Base(ai.Path)),
 		"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(xdg.Home, "Desktop"),
@@ -211,6 +198,17 @@ func (ai *AppImage) mainWrapArgs() []string {
 	cmdArgs = append(cmdArgs, parseFiles(ai)...)
 	cmdArgs = append(cmdArgs, parseSockets(ai)...)
 	cmdArgs = append(cmdArgs, parseDevices(ai)...)
+	cmdArgs = append(cmdArgs, "--", "/tmp/.mount_"+ai.runId+"/AppRun")
+
+	if ai.Perms.NoDataDir {
+		cmdArgs = append([]string{
+			"--tmpfs", xdg.Home,
+		}, cmdArgs...)
+	} else {
+		cmdArgs = append([]string{
+			"--bind", ai.dataDir, xdg.Home,
+		}, cmdArgs...)
+	}
 
 	// Only supply libraries that aren't present on the host system to the
 	// sandbox. This needs more work (eg: move whole directories over if they
@@ -380,7 +378,7 @@ func parseSockets(ai *AppImage) []string {
 		"network": {
 				"--share-net",
 				"--ro-bind-try", ai.resolve("/etc/ca-certificates"),       "/etc/ca-certificates",
-				"--ro-bind",     ai.resolve("/etc/resolv.conf"),           "/etc/resolv.conf",
+				"--ro-bind",     "/etc/resolv.conf",                       "/etc/resolv.conf",
 				"--ro-bind-try", ai.resolve("/etc/ssl"),                   "/etc/ssl",
 				"--ro-bind-try", ai.resolve("/usr/share/ca-certificates"), "/usr/share/ca-certificates",
 		},

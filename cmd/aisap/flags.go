@@ -25,6 +25,7 @@ var (
 	level   = flag.Int("level",      -1,    "change the permissions level")
 	rootDir = flag.String("root-dir", "",   "use a different filesystem root for system files")
 	dataDir = flag.String("data-dir", "",   "change the AppImage's sandbox home location")
+	noDataDir = flag.Bool("no-data-dir",     false,  "force AppImage's HOME to be a tmpfs (default false)")
 	extractIcon      = flag.String("extract-icon",      "", "extract the AppImage's icon")
 	extractThumbnail = flag.String("extract-thumbnail", "", "extract the AppImage's thumbnail preview")
 
@@ -67,6 +68,7 @@ func init() {
 		printUsage("level")
 		printUsage("root-dir")
 		printUsage("data-dir")
+		printUsage("no-data-dir")
 		printUsage("add-file")
 		printUsage("add-device")
 		printUsage("add-socket")
