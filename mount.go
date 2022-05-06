@@ -2,6 +2,7 @@ package aisap
 
 import (
 	"bufio"
+	"bytes"
 	"path"
 	"path/filepath"
 	"os"
@@ -25,11 +26,19 @@ func mount(src string, dest string, offset int) error {
 		return errors.New("failed to find squashfuse binary! cannot mount AppImage")
 	}
 
+	// Store the error message in a string
+	errBuf := &bytes.Buffer{}
+
 	// Convert the offset to a string and mount using squashfuse
 	o := strconv.Itoa(offset)
 	mnt := exec.Command(squashfuse, "-o", "offset=" + o, src, dest)
+	mnt.Stderr = errBuf
 
-	return mnt.Run()
+	if mnt.Run() != nil {
+		return errors.New(errBuf.String())
+	}
+
+	return nil
 }
 
 // Takes an optional argument to mount at a specific location (failing if it
