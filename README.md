@@ -19,14 +19,15 @@ existing GoLang programs to include sandboxing should be fairly painless
 
 ## Bare bones basics
 In order for aisap to sandbox an AppImage, it requires a profile, which is a
-desktop entry (INI format) containing at least one of the following flags under
-the `[X-App Permissions]` section:
+desktop entry (INI format) containing at minimum the `Level` flag under the
+`[X-App Permissions]` section, along with the following optional flags:
 ```
 Files
 Devices
 Sockets
 Share
 ```
+
 These flags can be included in the AppImage's internal desktop file, another
 desktop entry by use of the `--profile` command flag with aisap-bin, or aisap's
 internal profile library, which is simply an arrary of permissions based on
@@ -45,6 +46,9 @@ I fully intend to create a proper binding of squashfuse for Golang, which would
 certainly benefit more than this project (unless someone else wants to knock
 that part out 😉)
 
+For additional information on the permionnions system, see
+[here](permissions/README.md)
+
 ## Usage of the aisap CLI tool
 aisap CLI tool is a simple wrapper around the library to mainly serve as a
 demonstration. It does *not* offer any desktop integration, but it should be
@@ -53,50 +57,36 @@ I use it daily on my system and it generally works well, but there is no
 guarantee everything will work as intended yet. If something isn't working,
 send a bug report! I'll try to fix it ASAP
 
-If a program is supported by aisap's internal library, or if the AppImage has
-provided its own requirement for permissions, aisap CLI will run and sandbox
-the requested AppImage using the simple syntax:
+If an app is supported as listed [above](#bare-bones-basics), sandboxing it is
+as simple as:
 ```
 aisap f.appimage
 ```
 
-It also includes several command line flags:
+It also includes these flags, which of course can be listed with `--help`:
 ```
 normal options:
   -h, --help:        display this help menu
   -l, --list-perms:  print all permissions to be granted to the app
+  -v, --verbose:     make output more verbose
 
 long-only options:
-  --level:       change the permissions level
-  --add-file:    give the sandbox access to a filesystem object
-  --add-device:  add a device to the sandbox (eg dri)
-  --add-socket:  allow the sandbox to access another socket (eg x11)
-  --rm-file:     revoke a file from the sandbox
-  --rm-device:   remove access to a device
-  --rm-socket:   disable a socket
-  --profile:     use a profile from a desktop entry
-  --version:     show the version and quit
+  --example:            print out examples
+  --level:              change the permissions level
+  --root-dir:           use a different filesystem root for system files
+  --data-dir:           change the AppImage's sandbox home location
+  --no-data-dir:        force AppImage's HOME to be a tmpfs (default false)
+  --add-file:           give the sandbox access to a filesystem object
+  --add-device:         add a device to the sandbox (eg dri)
+  --add-socket:         allow the sandbox to access another socket (eg x11)
+  --rm-file:            revoke a file from the sandbox
+  --rm-device:          remove access to a device
+  --rm-socket:          disable a socket
+  --extract-icon:       extract the AppImage's icon
+  --extract-thumbnail:  extract the AppImage's thumbnail preview
+  --profile:            use a profile from a desktop entry
+  --version:            show the version and quit
 ```
-
-## Sandboxing levels
-Sandboxing levels allow for a base configuration of system files to grant by
-default. For AppImages that lack an internal profile with aisap, the default
-is 3 (which will likely cause the app not to work at all, so it is reccomended
-to launch using the command line flags to grant access to required permissions
-or to create a profile).
-
-`Level 0` lacks sandboxing entirely, it does the exact same thing as simply
-launching the AppImage directly
-
-`Level 1` is the most lenient sandbox, it gives access to almost all system and
-device files but still restricts home files
-
-`Level 2` is intended to be the target for most GUI apps when creating a
-profile. It gives access to common system files like fonts and themes,
-*some* `/etc` files and restricts device files and home files
-
-`Level 3` is the most strict. It only grants access to very basic system files
-(binaries and libraries). It should mainly be used for console applications
 
 ## API:
 ### NewAppImage
@@ -145,7 +135,7 @@ Takes aisap permissions and translates them into bwrap command line flags. This
 can be used on its own to see what an AppImage *would* launch with, or to
 manually launch it. AppImage must be mounted in order to use
 
-### (AppImage) ExtractFile
+### (\*AppImage) ExtractFile
 ```
 (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error
 ```
@@ -153,14 +143,14 @@ Re-implementation from go-appimage, extract a file from the AppImage to `dest`.
 If `resolveSymlinks` is set to false, the raw symlink will be extracted instead
 of its target
 
-### (AppImage) ExtractFileReader
+### (\*AppImage) ExtractFileReader
 ```
 (ai AppImage) ExtractFileReader(path string) (io.ReadCloser, error)
 ```
 Re-implementation from go-appimage, like \*AppImage.ExtractFile(), but returns
 a reader instead of automatically creating it
 
-### (AppImage) Thumbnail
+### (\*AppImage) Thumbnail
 ```
 (ai AppImage) Thumbnail() (io.Reader, error)
 ```
@@ -168,7 +158,7 @@ Re-implementation from go-appimage, attempts to extract a thumbnail from the
 AppImage if available. If provided in a format other than PNG (eg: SVG, XPM) it
 attempts to convert it to PNG before serving
 
-### (AppImage) Type
+### (\*AppImage) Type
 ```
 (ai AppImage) Type() int
 ```
@@ -176,14 +166,14 @@ Return the type of AppImage. Currently supports `2` (standard type 2) and `-2`
 (non-standard shell-based AppImage, shImg). Plans on supporting type 1 in the
 future, and type 3 whenever it is released
 
-### (AppImage) TempDir
+### (\*AppImage) TempDir
 ```
 (ai AppImage) TempDir() string
 ```
 Returns the AppImage's temporary directory. By default, it will be
 `$XDG_RUNTIME_DIR/aisap/...`
 
-### (AppImage) MountDir
+### (\*AppImage) MountDir
 ```
 (ai AppImage) MountDir() string
 ```
@@ -228,7 +218,7 @@ Share a socket with the sandbox(eg: x11, pulseaudio)
 ```
 Share multiple sockets with the sandbox
 
-### (AppImage) SetRootDir
+### (\*AppImage) SetRootDir
 ```
 (ai AppImage) SetRootDir(d string)
 ```
@@ -236,14 +226,14 @@ Change the directoy that the sandbox grabs system files from. This is useful
 if you want to hide your real system files or utilize another Linux distro's
 libraries for compatibility (NOT TESTED YET)
 
-### (AppImage) SetDataDir
+### (\*AppImage) SetDataDir
 ```
 (ai AppImage) SetDataDir(d string)
 ```
 Change the `HOME` directory of the AppImage. By default, this is
 `[APPIMAGE NAME].home` in the same directory (NOT TESTED YET)
 
-### (AppImage) SetLevel
+### (\*AppImage) SetLevel
 ```
 (ai AppImage) SetLevel(l int)
 ```

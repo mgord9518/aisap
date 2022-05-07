@@ -131,7 +131,7 @@ func printUsage(name string) {
 	} else {
 		clr.Printf("  <cyan>--%s</>:", fg.Name)
 
-		for i := len(fg.Name); i < 12; i++ {
+		for i := len(fg.Name); i < 19; i++ {
 			fmt.Print(" ")
 		}
 	}
