@@ -53,7 +53,7 @@ func main() {
 	}
 
 	ai, err := aisap.NewAppImage(flag.Args()[0])
-	defer ai.Unmount()
+	defer ai.Destroy()
 
 	if err != nil {
 		cli.Fatal("failed to open AppImage:", err)
@@ -211,7 +211,6 @@ func main() {
 
 	if *noDataDir {
 		ai.Perms.NoDataDir = true
-
 	}
 
 	if *verbose && ai.Type() == -2 {
