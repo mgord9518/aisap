@@ -162,10 +162,11 @@ func (ai *AppImage) mainWrapArgs() []string {
 			"--ro-bind",     "/sys", "/sys",
 			"--ro-bind-try", ai.resolve("usr"), "/usr",
 			"--ro-bind-try", ai.resolve("etc"), "/etc",
-			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(xdg.Home, ".fonts"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config/fontconfig"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(xdg.Home, ".config/gtk-3.0"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config/kdeglobals"),
+			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),            filepath.Join(xdg.Home, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"),        filepath.Join(xdg.Home, ".config", "fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),           filepath.Join(xdg.Home, ".config", "gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"),        filepath.Join(xdg.Home, ".config", "kdeglobals"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "lxde", "lxde.conf"), filepath.Join(xdg.Home, ".config", "lxde", "lxde.conf"),
 		}...)
 	// Level 2 grants access to fewer system files, and all themes
 	// Likely to add more files here for compatability.
@@ -186,10 +187,11 @@ func (ai *AppImage) mainWrapArgs() []string {
 			"--ro-bind-try", ai.resolve("usr/share/glvnd"),        "/usr/share/glvnd",
 			"--ro-bind-try", ai.resolve("usr/share/glib-2.0"),     "/usr/share/glib-2.0",
 			"--ro-bind-try", ai.resolve("usr/share/terminfo"),     "/usr/share/terminfo",
-			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),     filepath.Join(xdg.Home, ".fonts"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config/fontconfig"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),    filepath.Join(xdg.Home, ".config/gtk-3.0"),
-			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config/kdeglobals"),
+			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),            filepath.Join(xdg.Home, ".fonts"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"),        filepath.Join(xdg.Home, ".config", "fontconfig"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),           filepath.Join(xdg.Home, ".config", "gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"),        filepath.Join(xdg.Home, ".config", "kdeglobals"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "lxde", "lxde.conf"), filepath.Join(xdg.Home, ".config", "lxde", "lxde.conf"),
 		}...)
 	} else if ai.Perms.Level > 3 || ai.Perms.Level < 1 {
 		return []string{}

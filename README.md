@@ -85,6 +85,7 @@ long-only options:
   --extract-icon:       extract the AppImage's icon
   --extract-thumbnail:  extract the AppImage's thumbnail preview
   --profile:            use a profile from a desktop entry
+  --fallback-profile:   set profile to fallback on if one isn't found
   --version:            show the version and quit
 ```
 

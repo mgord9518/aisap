@@ -14,28 +14,29 @@ type arrayFlags []string
 var (
 	// Normal flags
 	help      = flag.BoolP("help",       "h", false, "display this help menu")
-	verbose   = flag.BoolP("verbose",    "v", false, "make output more verbose")
 	listPerms = flag.BoolP("list-perms", "l", false, "print all permissions to be granted to the app")
+	verbose   = flag.BoolP("verbose",    "v", false, "make output more verbose")
 
 	// Long-only flags
-	color     = flag.Bool("color",           true,  "whether to show color (default true)")
-	example   = flag.Bool("example",         false, "print out examples")
-	version   = flag.Bool("version",         false, "show the version and quit")
-	profile   = flag.String("profile",       "",    "use a profile from a desktop entry")
-	level     = flag.Int("level",            -1,    "change the permissions level")
-	rootDir   = flag.String("root-dir",      "",    "use a different filesystem root for system files")
-	dataDir   = flag.String("data-dir",      "",    "change the AppImage's sandbox home location")
-	noDataDir = flag.Bool("no-data-dir",     false, "force AppImage's HOME to be a tmpfs (default false)")
+	color            = flag.Bool("color",              true,  "whether to show color (default true)")
+	example          = flag.Bool("example",            false, "print out examples")
+	level            = flag.Int("level",               -1,    "change the permissions level")
+	rootDir          = flag.String("root-dir",         "",    "use a different filesystem root for system files")
+	dataDir          = flag.String("data-dir",         "",    "change the AppImage's sandbox home location")
+	noDataDir        = flag.Bool("no-data-dir",        false, "force AppImage's HOME to be a tmpfs (default false)")
 	extractIcon      = flag.String("extract-icon",      "", "extract the AppImage's icon")
 	extractThumbnail = flag.String("extract-thumbnail", "", "extract the AppImage's thumbnail preview")
+	profile          = flag.String("profile",          "",    "use a profile from a desktop entry")
+	fallbackProfile  = flag.String("fallback-profile", "",    "set profile to fallback on if one isn't found")
+	version          = flag.Bool("version",            false, "show the version and quit")
 
-	// Flags that can be called multiple times
 	addFile   arrayFlags
 	addDevice arrayFlags
 	addSocket arrayFlags
 	rmFile    arrayFlags
 	rmDevice  arrayFlags
 	rmSocket  arrayFlags
+	// Flags that can be called multiple times
 //	extract   arrayFlags // Extract an arbitrary file from the AppImage
 )
 
@@ -78,6 +79,7 @@ func init() {
 		printUsage("extract-icon")
 		printUsage("extract-thumbnail")
 		printUsage("profile")
+		printUsage("fallback-profile")
 		printUsage("version")
 		clr.Printf("\n<yellow>enviornment variables</>:\n")
 		clr.Printf("  <cyan>NO_COLOR</>:                disable color\n")

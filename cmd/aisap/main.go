@@ -38,6 +38,7 @@ import (
 	check       "github.com/mgord9518/aisap/spooky"
 	flag        "github.com/spf13/pflag"
 	helpers     "github.com/mgord9518/aisap/helpers"
+	ini         "gopkg.in/ini.v1"
 	xdg         "github.com/adrg/xdg"
 )
 
@@ -158,8 +159,19 @@ func main() {
 
 	noProfile := false
 
+	// Fallback on `--fallback-profile` if set, otherwise just set base level to 3
 	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
-		ai.Perms.SetLevel(3)
+		if *fallbackProfile != "" {
+			f, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, *fallbackProfile)
+			if err != nil {
+				cli.Fatal("failed to set fallback profile:", err)
+				return
+			}
+			ai.Perms, err = permissions.FromIni(f)
+		} else {
+			ai.Perms.Level = 3
+		}
+
 		noProfile = true
 	}
 
@@ -176,8 +188,7 @@ func main() {
 		}
 
 		if noProfile {
-			cli.Notify("this app has no profile! defaulting to level 3")
-			cli.Notify("use the CLI flag <cyan>--level</> <gray>[</><green>1</><gray>..</><green>3</><gray>]</> to try to sandbox it anyway")
+			cli.Notify("this app has no profile! falling back to default")
 		}
 
 		// Warns if the AppImage contains potential escape vectors or suspicious files
@@ -223,7 +234,6 @@ func main() {
 		cli.Notify("bwrap flags:", wrapArg)
 	}
 
-	// Sandbox only if level is above 0
 	err = ai.Run(flag.Args()[1:])
 
 	if err != nil {
