@@ -41,16 +41,21 @@ func mount(src string, dest string, offset int) error {
 	return nil
 }
 
+// Experimental mounting through Go squashfuse implementaion
+//func mountNoBin(src string, dest string, offset int) error (
+	
+//)
+
 // Takes an optional argument to mount at a specific location (failing if it
 // doesn't exist or more than one arg given. If none given, automatically
 // create a temporary directory and mount to it
 func (ai *AppImage) Mount(dest ...string) error {
 	// If arg given
 	if len(dest) > 1 {
-		return errors.New("only one argument allowed with *AppImage.Mount()!")
+		panic("only one argument allowed with *AppImage.Mount()!")
 	} else if len(dest) == 1 {
 		if !helpers.DirExists(dest[0]) {
-			return errors.New("mount point `" + dest[0] + "` does not exist!")
+			return NoMountPoint
 		}
 
 		if !isMountPoint(ai.mountDir) {
@@ -80,14 +85,20 @@ func (ai *AppImage) Mount(dest ...string) error {
 	// Only mount if no previous instances (launched of the same version) are
 	// already mounted there. This is to reuse their libraries, save on RAM and
 	// to spam the mount list as little as possible
-	if !isMountPoint(ai.mountDir) {
-		err = mount(ai.Path, ai.mountDir, ai.Offset)
-	}
+	//if _, present := os.LookupEnv("AISAP_EXPERIMENTAL"); present {
+	//	if !isMountPoint(ai.mountDir) {
+	//		err = mountNoBin(ai.Path, ai.mountDir, ai.Offset)
+	//	}
+	//} else {
+		if !isMountPoint(ai.mountDir) {
+			err = mount(ai.Path, ai.mountDir, ai.Offset)
+		}
+	//}
 
 	return err
 }
 
-// Deprecated: *AppImage.Delete() should be used instead
+// Deprecated: *AppImage.Destroy() should be used instead
 func (ai *AppImage) Unmount() error {
 	return ai.Destroy()
 }
@@ -95,11 +106,11 @@ func (ai *AppImage) Unmount() error {
 // Unmounts an AppImage
 func (ai *AppImage) Destroy() error {
 	if ai == nil {
-		return errors.New("AppImage is nil")
+		return NilAppImage
 	} else if ai.Path == "" {
-		return errors.New("AppImage contains no path")
+		return NoPath
 	} else if !ai.IsMounted() {
-		return errors.New("AppImage not mounted")
+		return NotMounted
 	}
 
 	err := unmountDir(ai.MountDir())

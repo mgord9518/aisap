@@ -5,7 +5,6 @@
 package aisap
 
 import (
-	"bufio"
 	"crypto/md5"
 	"fmt"
 	"errors"
@@ -41,7 +40,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.6.7-alpha"
+	Version = "0.6.8-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -169,7 +168,7 @@ func (ai *AppImage) Type() int {
 	return t
 }
 
-// Extract a file from the AppImage's interal SquashFS image
+// Extract a file from the AppImage's interal filesystem image
 func (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
 	path = filepath.Join(ai.mountDir, path)
 
@@ -224,13 +223,13 @@ func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 	}
 
 	if ai.Desktop == nil {
-		return nil, "", errors.New("desktop file wasn't parsed")
+		return nil, "", InvalidDesktopFile
 	}
 
 	// Return error if desktop file has no icon
 	iconf := ai.Desktop.Section("Desktop Entry").Key("Icon").Value()
 	if iconf == "" {
-		return nil, "", errors.New("desktop file doesn't specify an icon")
+		return nil, "", NoIcon
 	}
 
 	// If the desktop entry specifies an extension, use it
@@ -251,14 +250,13 @@ func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 		}
 	}
 
-	return nil, "", errors.New("unable to find icon with valid extension (.png, .svg) inside AppImage")
+	return nil, "", InvalidIconExtension
 }
 
 // Extract the desktop file from the AppImage
 func (ai *AppImage) getEntry() (*ini.File, error) {
 	var err error
 	var f   io.ReadCloser
-	var e   string
 
 	if ai.imageType == -2 {
 		f, err = helpers.ExtractResourceReader(ai.Path, "desktop_entry")
@@ -273,7 +271,7 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 		ai.Mount()
 		fp, err = filepath.Glob(ai.mountDir + "/*.desktop")
 		if len(fp) < 1 {
-			return nil, errors.New("destop entry not found in AppImage")
+			return nil, NoDesktopFile
 		}
 
 		f, err = os.Open(fp[0])
@@ -281,12 +279,5 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 		if err != nil { return nil, err }
 	}
 
-	// Replace normal semicolons with fullwidth semicolons so that it doen't
-	// interfere with the INI parsing
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		e = e + strings.ReplaceAll(scanner.Text(), ";", "；") + "\n"
-	}
-
-	return ini.Load([]byte(e))
+	return ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, f)
 }

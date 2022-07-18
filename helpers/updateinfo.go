@@ -1,7 +1,6 @@
 package helpers
 
 import (
-//	"os"
 	"bufio"
 	"strings"
 	"bytes"
