@@ -25,11 +25,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	aisap       "github.com/mgord9518/aisap"
@@ -39,12 +39,18 @@ import (
 	flag        "github.com/spf13/pflag"
 	helpers     "github.com/mgord9518/aisap/helpers"
 	ini         "gopkg.in/ini.v1"
-	xdg         "github.com/adrg/xdg"
 )
 
 var (
 	ai   *aisap.AppImage
 	argv0 string
+
+	invalidBundle          = errors.New("failed to open bundle:")
+	invalidIcon            = errors.New("failed to extract icon:")
+	invalidThumbnail       = errors.New("failed to extract thumbnail preview:")
+	invalidPerms           = errors.New("failed to get permissions from profile:")
+	invalidPermLevel       = errors.New("failed to set permissions level (this shouldn't happen!):")
+	invalidFallbackProfile = errors.New("failed to set fallback profile:")
 )
 
 // Process flags
@@ -57,17 +63,8 @@ func main() {
 	defer ai.Destroy()
 
 	if err != nil {
-		cli.Fatal("failed to open AppImage:", err)
+		cli.Fatal(invalidBundle, err)
 		return
-	}
-
-	// Currently only shImgs (type -2) don't need to be mounted to extract
-	// desktop integration info but I'll soon fix this for type 2 AppImages
-	// and eventually add support for type 1 (low priority as they're getting
-	// less and less common) but as of now type 2s are automatically mounted
-	// regardless of being sandboxed or not
-	if *verbose && ai.Type() != -2 {
-		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())
 	}
 
 	if *extractIcon != "" {
@@ -78,20 +75,21 @@ func main() {
 		icon, _, err := ai.Icon()
 		defer icon.Close()
 		if err != nil {
-			cli.Fatal("failed to extract icon:", err)
+			cli.Fatal(invalidIcon, err)
 			return
 		}
 
 		f, err := os.Create(*extractIcon)
 		if err != nil {
-			cli.Fatal("failed to extract icon:", err)
+			cli.Fatal(invalidIcon, err)
 			return
 		}
 
 		_, err = io.Copy(f, icon)
 		if err != nil {
-			cli.Fatal("failed to extract icon:", err)
+			cli.Fatal(invalidIcon, err)
 		}
+
 		return
 	}
 
@@ -102,38 +100,39 @@ func main() {
 
 		thumbnail, err := ai.Thumbnail()
 		if err != nil {
-			cli.Fatal("failed to extract thumbnail:", err)
+			cli.Fatal(invalidThumbnail, err)
 			return
 		}
 
 		f, err := os.Create(*extractThumbnail)
 		if err != nil {
-			cli.Fatal("failed to extract thumbnail:", err)
+			cli.Fatal(invalidThumbnail, err)
 			return
 		}
 
 		_, err = io.Copy(f, thumbnail)
 		if err != nil {
-			cli.Fatal("failed to extract thumbnail:", err)
+			cli.Fatal(invalidThumbnail, err)
 		}
+
 		return
 	}
 
 	if *profile != "" {
 		f, err := os.Open(*profile)
 		if err != nil {
-			cli.Fatal("failed to get permissions from profile:", err)
+			cli.Fatal(invalidPerms, err)
 			return
 		}
 
 		ai.Perms, err = permissions.FromReader(f)
 		if err != nil {
-			cli.Fatal("failed to get permissions from profile:", err)
+			cli.Fatal(invalidPerms, err)
 			return
 		}
 
 		if err != nil {
-			cli.Fatal("failed to get permissions from profile:", err)
+			cli.Fatal(invalidPerms, err)
 			return
 		}
 	}
@@ -152,7 +151,7 @@ func main() {
 	if *level > -1 && *level <= 3 {
 		err := ai.Perms.SetLevel(*level)
 		if err != nil {
-			cli.Fatal("failed to set permissions level (this shouldn't happen!):", err)
+			cli.Fatal(invalidPermLevel, err)
 			return
 		}
 	}
@@ -162,11 +161,15 @@ func main() {
 	// Fallback on `--fallback-profile` if set, otherwise just set base level to 3
 	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
 		if *fallbackProfile != "" {
-			f, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, *fallbackProfile)
+			f, err := ini.LoadSources(ini.LoadOptions{
+				IgnoreInlineComment: true,
+			}, *fallbackProfile)
+
 			if err != nil {
-				cli.Fatal("failed to set fallback profile:", err)
+				cli.Fatal(invalidFallbackProfile, err)
 				return
 			}
+
 			ai.Perms, err = permissions.FromIni(f)
 		} else {
 			ai.Perms.Level = 3
@@ -183,7 +186,7 @@ func main() {
 
 		if ai.Perms.Level == 0 {
 			cli.Warning("this app requests to be unsandboxed!")
-			cli.Warning("use the CLI flag <cyan>--level</> <gray>[</><green>1</><gray>..</><green>3</><gray>]</> to try to sandbox it anyway")
+			cli.Warning("use the CLI flag <cyan>--level</> <gray>[</><green>1</><gray>..</><green>3</><gray>]</> to sandbox it anyway")
 			return
 		}
 
@@ -194,6 +197,7 @@ func main() {
 		// Warns if the AppImage contains potential escape vectors or suspicious files
 		for _, v := range(ai.Perms.Files) {
 			if check.IsSpooky(v) {
+
 				cli.Warning("this app requests files/ directories that could be used to escape sandboxing")
 				break
 			}
@@ -222,10 +226,6 @@ func main() {
 
 	if *noDataDir {
 		ai.Perms.NoDataDir = true
-	}
-
-	if *verbose && ai.Type() == -2 {
-		cli.Notify("<blue>" + strings.Replace(ai.Path, xdg.Home, "~", 1) + " </>mounted at", ai.MountDir())
 	}
 
 	if *verbose {

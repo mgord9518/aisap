@@ -118,6 +118,8 @@ func (ai *AppImage) Destroy() error {
 
 	ai.mountDir = ""
 
+	ai.file.Close()
+
 	// Clean up
 	err = os.RemoveAll(ai.TempDir())
 

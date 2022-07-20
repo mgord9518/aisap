@@ -12,7 +12,7 @@ var (
 	NotMounted  = errors.New("AppImage is not mounted")
 
 	InvalidDesktopFile   = errors.New("desktop file wasn't parsed")
-	NoDesktopFile        = errors.New("no desktop entry was found inside bundle")
+	NoDesktopFile        = errors.New("no (or >1) desktop entry was found inside bundle")
 	NoIcon               = errors.New("bundle doesn't specify an icon")
 	InvalidIconExtension = errors.New("no valid icon extensions (svg, png) found inside bundle")
 

@@ -18,7 +18,7 @@ import (
 	helpers     "github.com/mgord9518/aisap/helpers"
 	profiles    "github.com/mgord9518/aisap/profiles"
 	permissions "github.com/mgord9518/aisap/permissions"
-	imgconv     "github.com/mgord9518/imgconv"
+	squashfs    "github.com/CalebQ42/squashfs"
 )
 
 type AppImage struct {
@@ -35,12 +35,14 @@ type AppImage struct {
 	Version      string // Version of the AppImage
 	UpdateInfo   string // Update information
 	Offset       int    // Offset of SquashFS image
-	imageType    int    // Type of AppImage (either 1 or 2)
+	imageType    int    // Type of AppImage (1=ISO 9660 ELF, 2=squashfs ELF, -2=shImg shell)
+	reader      *squashfs.Reader
+	file        *os.File
 }
 
 // Current version of aisap
 const (
-	Version = "0.6.8-alpha"
+	Version = "0.7.0-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -63,14 +65,22 @@ func NewAppImage(src string) (*AppImage, error) {
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
 
-	if ai.imageType != -2 {
-		err = ai.Mount()
+	if ai.imageType == -2 || ai.imageType == 2 {
+		ai.file, err = os.Open(ai.Path)
+		if err != nil { return nil, err }
+
+		info, _ := ai.file.Stat()
+		off64 := int64(ai.Offset)
+		r := io.NewSectionReader(ai.file, off64, info.Size()-off64)
+
+		ai.reader, err = squashfs.NewSquashfsReader(r)
 		if err != nil { return nil, err }
 	}
 
 	// Prefer local entry if it exists (located at $XDG_DATA_HOME/aisap/[ai.Name])
 	ai.Desktop, err = ai.getEntry()
 	if err != nil { return ai, err }
+
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
 	ai.Version = ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Version").Value()
 
@@ -105,8 +115,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	return ai, nil
 }
 
-// Return a reader for the `.DirIcon` file of the AppImage, converting it to
-// PNG if it's in SVG or XPM format
+// Return a reader for the `.DirIcon` file of the AppImage
 func (ai *AppImage) Thumbnail() (io.Reader, error) {
 	// Try to extract from zip, continue to SquashFS if it fails
 	if ai.imageType == -2 {
@@ -114,20 +123,7 @@ func (ai *AppImage) Thumbnail() (io.Reader, error) {
 		if err == nil { return r, nil }
 	}
 
-	f, err := os.Open(filepath.Join(ai.mountDir, ".DirIcon"))
-	if err != nil { return nil, err }
-
-	// Convert `.DirIcon` to PNG format if it isn't already
-	// Note: the only other officially supported formats for AppImage are XPM
-	// and SVG
-	if !helpers.HasMagic(f, "\x89PNG", 0) {
-		f.Seek(0, io.SeekStart)
-		return imgconv.ConvertWithAspect(f, 256, "png")
-	}
-
-	f.Seek(0, io.SeekStart)
-
-	return f, err
+	return ai.ExtractFileReader(".DirIcon")
 }
 
 func (ai *AppImage) Md5() string {
@@ -170,8 +166,6 @@ func (ai *AppImage) Type() int {
 
 // Extract a file from the AppImage's interal filesystem image
 func (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
-	path = filepath.Join(ai.mountDir, path)
-
 	// Remove file if it already exists
 	os.Remove(filepath.Join(dest))
 	info, err := os.Lstat(path)
@@ -182,7 +176,7 @@ func (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) 
 		target, _ := os.Readlink(path)
 		err = os.Symlink(target, dest)
 	} else {
-		inF, err := os.Open(path)
+		inF, err := ai.ExtractFileReader(path)
 		defer inF.Close()
 		if err != nil { return err }
 
@@ -205,21 +199,28 @@ func (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) 
 
 // Like `ExtractFile()` but gives access to the reader instead of extracting
 func (ai *AppImage) ExtractFileReader(path string) (io.ReadCloser, error) {
-	path = filepath.Join(ai.mountDir, path)
+	f, err := ai.reader.Open(path)
+	if err != nil {
+		return f, err
+	}
 
-	return os.Open(path)
+	r := f.(*squashfs.File)
+
+	if r.IsSymlink() {
+		r = r.GetSymlinkFile()
+	}
+
+	return r, err
 }
 
 // Returns the icon reader of the AppImage, valid formats are SVG and PNG
 func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 	if ai.imageType == -2 {
 		r, err := helpers.ExtractResourceReader(ai.Path, "icon/default.svg")
-		// Didn't really know what to put in the string here as the name inside
-		// the zip is always `default`, so just decided to use the extension
-		if err == nil { return r, ".svg", nil }
+		if err == nil { return r, "icon/default.svg", nil }
 
 		r, err  = helpers.ExtractResourceReader(ai.Path, "icon/default.png")
-		if err == nil { return r, ".png", nil }
+		if err == nil { return r, "icon/default.png", nil }
 	}
 
 	if ai.Desktop == nil {
@@ -234,19 +235,21 @@ func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 
 	// If the desktop entry specifies an extension, use it
 	if strings.HasSuffix(iconf, ".png") || strings.HasSuffix(iconf, ".svg") {
-		r, err := os.Open(filepath.Join(ai.mountDir, iconf))
+		r, err := ai.ExtractFileReader(iconf)
 		return r, iconf, err
 	}
 
-	// If not, iterate through all AppImage specified formats
-	fp, err := filepath.Glob(filepath.Join(ai.mountDir, iconf) + "*")
-	if err != nil { return nil, "", err }
+	// If not, iterate through all AppImage specified image formats
+	extensions := []string{
+		".png",
+		".svg",
+	}
 
-	for _, v := range(fp) {
-		if strings.HasSuffix(v, ".png") || strings.HasSuffix(v, ".svg") {
-			r, err := os.Open(v)
+	for _, ext := range(extensions) {
+		r, err := ai.ExtractFileReader(iconf + ext)
 
-			return r, path.Base(v), err
+		if err == nil {
+			return r, path.Base(iconf + ext), err
 		}
 	}
 
@@ -256,10 +259,10 @@ func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 // Extract the desktop file from the AppImage
 func (ai *AppImage) getEntry() (*ini.File, error) {
 	var err error
-	var f   io.ReadCloser
+	var r io.ReadCloser
 
 	if ai.imageType == -2 {
-		f, err = helpers.ExtractResourceReader(ai.Path, "desktop_entry")
+		r, err = helpers.ExtractResourceReader(ai.Path, "desktop_entry")
 	}
 
 	// Extract from SquashFS if type 2 or zip fails
@@ -267,17 +270,17 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 		// Return all `.desktop` files. A vadid AppImage should only have one
 		var fp []string
 
-		// Mount (in case of shImg)
-		ai.Mount()
-		fp, err = filepath.Glob(ai.mountDir + "/*.desktop")
-		if len(fp) < 1 {
+		fp, err = ai.reader.Glob("*.desktop")
+		if len(fp) != 1 {
 			return nil, NoDesktopFile
 		}
 
-		f, err = os.Open(fp[0])
-		defer f.Close()
+		r, err = ai.reader.Open(fp[0])
+		defer r.Close()
 		if err != nil { return nil, err }
 	}
 
-	return ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, f)
+	return ini.LoadSources(ini.LoadOptions{
+		IgnoreInlineComment: true,
+	}, r)
 }
