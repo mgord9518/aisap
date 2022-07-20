@@ -9,12 +9,12 @@ import (
 )
 
 // List of all profiles supported by aisap out of the box.
-// Most of these have only been tested on my (Manjaro and Arch) systems, so
+// Most of these have only been tested on my (Arch and Nix) systems, so
 // they may not work correctly on yours. If that is the case, please report the
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 86 unique apps currently supported
+// 90 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -82,6 +82,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 1,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "audio", "network" },
+	},
+	"calibre": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-documents:ro" },
+		Sockets: []string{ "x11" },
 	},
 	"chromium": {
 		Level: 2,
@@ -368,6 +374,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"passy": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11" },
+	},
 	"photogimp": {
 		Level: 1,
 		Devices: []string{ "dri" },
@@ -438,6 +449,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+	"space cadet pinball": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa", "dbus" },
+	},
 	"stackandconquer": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -497,6 +513,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
+	},
+	"thorium browser": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "pulseaudio", "network" },
 	},
 	"tiled": {
 		Level: 2,
