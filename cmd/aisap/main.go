@@ -39,6 +39,7 @@ import (
 	flag        "github.com/spf13/pflag"
 	helpers     "github.com/mgord9518/aisap/helpers"
 	ini         "gopkg.in/ini.v1"
+	clr         "github.com/gookit/color"
 )
 
 var (
@@ -178,8 +179,30 @@ func main() {
 		noProfile = true
 	}
 
-	// Give basic info on the permissions the AppImage requests
+	// Give basic info and the permissions the AppImage requests
 	if *listPerms {
+		if *verbose {
+			a := ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Architecture").Value()
+			s := helpers.SplitKey(a)
+
+			ts := ""
+			switch ai.Type() {
+			case -2:
+				ts = "shImg (SquashFS)"
+			case 1:
+				ts = "AppImage (ISO 9660)"
+			case 2:
+				ts = "AppImage (SquashFS)"
+			}
+			clr.Println("<yellow>bundle info</>:")
+			cli.List("name", ai.Name, 11)
+			cli.List("type", ts, 11)
+			cli.List("version", ai.Version, 11)
+			cli.List("update info", ai.UpdateInfo, 11)
+			cli.List("arch", s, 11)
+			fmt.Println()
+		}
+
 		cli.ListPerms(ai.Perms)
 
 		fmt.Println()
