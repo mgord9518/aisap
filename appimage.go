@@ -6,6 +6,7 @@ package aisap
 
 import (
 	"crypto/md5"
+	"debug/elf"
 	"fmt"
 	"errors"
 	"io"
@@ -22,27 +23,28 @@ import (
 )
 
 type AppImage struct {
-	Desktop     *ini.File                  // INI of internal desktop entry
-	Perms       *permissions.AppImagePerms // Permissions
-	Path         string // Location of AppImage
-	dataDir      string // The AppImage's `~` directory
-	rootDir      string // Can be used to give the AppImage fake system files
-	tempDir      string // The AppImage's `/tmp` directory
-	mountDir     string // The location the AppImage is mounted at
-	md5          string // MD5 of AppImage's URI
-	runId        string // Random string associated with this specific run instance
-	Name         string // AppImage name from the desktop entry 
-	Version      string // Version of the AppImage
-	UpdateInfo   string // Update information
-	Offset       int    // Offset of SquashFS image
-	imageType    int    // Type of AppImage (1=ISO 9660 ELF, 2=squashfs ELF, -2=shImg shell)
-	reader      *squashfs.Reader
-	file        *os.File
+	Desktop       *ini.File                  // INI of internal desktop entry
+	Perms         *permissions.AppImagePerms // Permissions
+	Path           string // Location of AppImage
+	dataDir        string // The AppImage's `~` directory
+	rootDir        string // Can be used to give the AppImage fake system files
+	tempDir        string // The AppImage's `/tmp` directory
+	mountDir       string // The location the AppImage is mounted at
+	md5            string // MD5 of AppImage's URI
+	runId          string // Random string associated with this specific run instance
+	Name           string // AppImage name from the desktop entry
+	Version        string // Version of the AppImage
+	UpdateInfo     string // Update information
+	Offset         int    // Offset of SquashFS image
+	imageType      int    // Type of AppImage (1=ISO 9660 ELF, 2=squashfs ELF, -2=shImg shell)
+	architecture []string // List of CPU architectures supported by the bundle
+	reader        *squashfs.Reader
+	file          *os.File
 }
 
 // Current version of aisap
 const (
-	Version = "0.7.2-alpha"
+	Version = "0.7.3-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -164,6 +166,12 @@ func (ai *AppImage) Type() int {
 	return t
 }
 
+func (ai *AppImage) Architectures() []string {
+	s, _ := ai.getArchitectures()
+
+	return s
+}
+
 // Extract a file from the AppImage's interal filesystem image
 func (ai *AppImage) ExtractFile(path string, dest string, resolveSymlinks bool) error {
 	// Remove file if it already exists
@@ -283,4 +291,39 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 	return ini.LoadSources(ini.LoadOptions{
 		IgnoreInlineComment: true,
 	}, r)
+}
+
+// Determine what architectures a bundle supports
+func (ai *AppImage) getArchitectures() ([]string, error) {
+	a := ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Architecture").Value()
+	s := helpers.SplitKey(a)
+
+	if len(s) > 0 {
+		return s, nil
+	}
+
+	// If undefined in the desktop entry, assume arch via ELF AppImage runtime
+	if ai.Type() >= 0 {
+		e, err := elf.NewFile(ai.file)
+		if err != nil {return s, err}
+
+		switch e.Machine {
+			case elf.EM_386:
+				return []string{"i386"},    nil
+			case elf.EM_X86_64:
+				return []string{"x86_64"},  nil
+			case elf.EM_ARM:
+				return []string{"armhf"},   nil
+			case elf.EM_AARCH64:
+				return []string{"aarch64"}, nil
+		}
+	}
+
+	// Assume arch via shImg runtime
+	// TODO: implement
+	//if ai.Type() < -1 {
+
+	//}
+
+	return s, errors.New("failed to determine arch")
 }

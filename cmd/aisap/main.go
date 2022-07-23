@@ -182,9 +182,6 @@ func main() {
 	// Give basic info and the permissions the AppImage requests
 	if *listPerms {
 		if *verbose {
-			a := ai.Desktop.Section("Desktop Entry").Key("X-AppImage-Architecture").Value()
-			s := helpers.SplitKey(a)
-
 			ts := ""
 			switch ai.Type() {
 			case -2:
@@ -199,7 +196,7 @@ func main() {
 			cli.List("type", ts, 11)
 			cli.List("version", ai.Version, 11)
 			cli.List("update info", ai.UpdateInfo, 11)
-			cli.List("arch", s, 11)
+			cli.List("arch", ai.Architectures(), 11)
 			fmt.Println()
 		}
 

@@ -100,6 +100,8 @@ ln -s './usr/bin/aisap' 'AppDir/AppRun'
 export ARCH="$ARCH"
 export VERSION=$('AppDir/usr/bin/aisap' --version)
 
+sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64/' 'AppDir/io.github.mgord9518.aisap.desktop'
+
 aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 [ $? -ne 0 ] && exit $?
 
@@ -132,6 +134,9 @@ chmod +x 'AppDir/usr.aarch64/bin/squashfuse'
 wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr.aarch64/bin/bwrap'
 chmod +x 'AppDir/usr.aarch64/bin/bwrap'
 [ $? -ne 0 ] && exit $?
+
+
+sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64;aarch64/' 'AppDir/io.github.mgord9518.aisap.desktop'
 
 # Build SquashFS image
 mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
