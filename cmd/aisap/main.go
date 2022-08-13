@@ -141,12 +141,12 @@ func main() {
 	// Add (and remove) permissions as passed from flags. eg: `--add-file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
-	ai.Perms.RemoveFiles(rmFile)
-	ai.Perms.RemoveDevices(rmDevice)
-	ai.Perms.RemoveSockets(rmSocket)
-	ai.Perms.AddFiles(addFile)
-	ai.Perms.AddDevices(addDevice)
-	ai.Perms.AddSockets(addSocket)
+	ai.Perms.RemoveFiles(rmFile...)
+	ai.Perms.RemoveDevices(rmDevice...)
+	ai.Perms.RemoveSockets(rmSocket...)
+	ai.Perms.AddFiles(addFile...)
+	ai.Perms.AddDevices(addDevice...)
+	ai.Perms.AddSockets(addSocket...)
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {

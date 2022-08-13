@@ -41,9 +41,9 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 	}
 
 	// Split string into slices and clean up the names
-	p.AddFiles(helpers.SplitKey(filePerms))
-	p.AddDevices(helpers.SplitKey(devicePerms))
-	p.AddSockets(helpers.SplitKey(socketPerms))
+	p.AddFiles(helpers.SplitKey(filePerms)...)
+	p.AddDevices(helpers.SplitKey(devicePerms)...)
+	p.AddSockets(helpers.SplitKey(socketPerms)...)
 
 	return p, nil
 }

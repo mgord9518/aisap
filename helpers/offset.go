@@ -69,8 +69,8 @@ func getElfSize(src string) (int, error) {
 	sr := io.NewSectionReader(f, 0, 1<<63-1)
 	var shoff, shentsize, shnum int
 
-	switch e.Class.String() {
-	case "ELFCLASS64":
+	switch e.Class {
+	case elf.ELFCLASS64:
 		hdr := new(elf.Header64)
 
 		_, err = sr.Seek(0, 0)
@@ -81,7 +81,7 @@ func getElfSize(src string) (int, error) {
 		shoff	  = int(hdr.Shoff)
 		shnum	  = int(hdr.Shnum)
 		shentsize = int(hdr.Shentsize)
-	case "ELFCLASS32":
+	case elf.ELFCLASS32:
 		hdr := new(elf.Header32)
 
 		_, err = sr.Seek(0, 0)

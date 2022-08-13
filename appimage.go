@@ -5,6 +5,7 @@
 package aisap
 
 import (
+	"bufio"
 	"crypto/md5"
 	"debug/elf"
 	"fmt"
@@ -20,6 +21,7 @@ import (
 	profiles    "github.com/mgord9518/aisap/profiles"
 	permissions "github.com/mgord9518/aisap/permissions"
 	squashfs    "github.com/CalebQ42/squashfs"
+	xdg         "github.com/adrg/xdg"
 )
 
 type AppImage struct {
@@ -44,7 +46,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.7.3-alpha"
+	Version = "0.7.5-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -63,7 +65,6 @@ func NewAppImage(src string) (*AppImage, error) {
 	if err != nil { return nil, err }
 
 	ai.rootDir = "/"
-
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
 
@@ -80,7 +81,12 @@ func NewAppImage(src string) (*AppImage, error) {
 	}
 
 	// Prefer local entry if it exists (located at $XDG_DATA_HOME/aisap/[ai.Name])
-	ai.Desktop, err = ai.getEntry()
+	desktopReader, err := ai.getEntry()
+	if err != nil { return ai, err }
+
+	ai.Desktop, err = ini.LoadSources(ini.LoadOptions{
+		IgnoreInlineComment: true,
+	}, desktopReader)
 	if err != nil { return ai, err }
 
 	ai.Name    = ai.Desktop.Section("Desktop Entry").Key("Name").Value()
@@ -91,6 +97,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	if ai.Version == "" {
 		ai.Version = "1.0"
 	}
+
 
 	// If PREFER_AISAP_PROFILE is set, attempt to use it over the AppImage's
 	// suggested permissions. If no profile exists in aisap, fall back on saved
@@ -110,8 +117,25 @@ func NewAppImage(src string) (*AppImage, error) {
 		}
 	}
 
+	// Fall back to permissions inside AppImage if all else fails
 	if err != nil {
 		ai.Perms, _ = permissions.FromIni(ai.Desktop)
+
+		// Copy AppImage permissions to system to prevent an AppImage from
+		// modifying its own permissions through an update. This also gives
+		// users a good template to customize their permissions on a per-app
+		// basis.
+		aisapConfig := filepath.Join(xdg.DataHome, "aisap", "profiles")
+		if !helpers.DirExists(aisapConfig) {
+			os.MkdirAll(aisapConfig, 0744)
+		}
+
+		filePath := filepath.Join(aisapConfig, ai.Name)
+		if !helpers.FileExists(filePath) {
+			desktopReader, _ = ai.getEntry()
+			permFile, _ := os.Create(filePath)
+			io.Copy(permFile, desktopReader)
+		}
 	}
 
 	return ai, nil
@@ -265,9 +289,9 @@ func (ai *AppImage) Icon() (io.ReadCloser, string, error) {
 }
 
 // Extract the desktop file from the AppImage
-func (ai *AppImage) getEntry() (*ini.File, error) {
+func (ai *AppImage) getEntry() (io.Reader, error) {
+	var r   io.Reader
 	var err error
-	var r io.ReadCloser
 
 	if ai.imageType == -2 {
 		r, err = helpers.ExtractResourceReader(ai.Path, "desktop_entry")
@@ -283,14 +307,10 @@ func (ai *AppImage) getEntry() (*ini.File, error) {
 			return nil, NoDesktopFile
 		}
 
-		r, err = ai.reader.Open(fp[0])
-		defer r.Close()
-		if err != nil { return nil, err }
+		return ai.reader.Open(fp[0])
 	}
 
-	return ini.LoadSources(ini.LoadOptions{
-		IgnoreInlineComment: true,
-	}, r)
+	return r, err
 }
 
 // Determine what architectures a bundle supports
@@ -320,10 +340,28 @@ func (ai *AppImage) getArchitectures() ([]string, error) {
 	}
 
 	// Assume arch via shImg runtime
-	// TODO: implement
-	//if ai.Type() < -1 {
+	if ai.Type() < -1 {
+		scanner  := bufio.NewScanner(ai.file)
+		arches := []string{}
 
-	//}
+		counter := 0
+		for scanner.Scan() {
+			counter++
+			if strings.HasPrefix(scanner.Text(), "arch='") {
+				str   := scanner.Text()
+				str    = strings.ReplaceAll(str, "arch='", "")
+				str    = strings.ReplaceAll(str, "'",      "")
+				arches = helpers.SplitKey(str)
+				return arches, nil
+			}
+
+			// All shImg info should be at the top of the file, 50 is more than
+			// enough
+			if counter >= 50 {
+				break
+			}
+		}
+	}
 
 	return s, errors.New("failed to determine arch")
 }

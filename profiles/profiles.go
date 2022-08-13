@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 90 unique apps currently supported
+// 92 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -113,6 +113,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "pid" },
 	},
+	"cro-mag rally": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	"deemix-gui": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -153,7 +158,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw", "xdg-publicshare:rw",
 		                   "xdg-templates:rw",  "xdg-desktop:rw",
 						   "xdg-documents:rw",  "xdg-download:rw",
-					       "xdg-music:rw",      "xdg-videos:rw"},
+					       "xdg-music:rw",      "xdg-videos:rw" },
 		Sockets: []string{ "x11", "audio" },
 	},
 	"edex-ui": {
@@ -161,8 +166,8 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
 		                   "~/.bashrc:ro",      "~/.zshrc:ro",
-		                   "~/.viminfo:ro"},
-		Sockets: []string{ "x11", "network" },
+		                   "~/.viminfo:ro" },
+		Sockets: []string{ "x11", "network", "alsa" },
 	},
 	"element": {
 		Level: 2,
@@ -374,6 +379,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"open-typer": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11" },
+	},
 	"passy": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -565,6 +575,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"aranym mmu":          "aranym jit",
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
+		"freecad weekly":      "freecad conda",
 		"python2.7.18":        "python",
 		"python3":             "python",
 		"python3.5.10":        "python",

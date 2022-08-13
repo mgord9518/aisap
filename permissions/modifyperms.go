@@ -14,9 +14,9 @@ func (p *AppImagePerms) AddFile(str string) {
 	p.Files = append(p.Files, helpers.CleanFile(str))
 }
 
-func (p *AppImagePerms) AddFiles(s []string) {
+func (p *AppImagePerms) AddFiles(s ...string) {
 	// Remove previous files of the same name if they exist
-	p.RemoveFiles(s)
+	p.RemoveFiles(s...)
 
 	p.Files = append(p.Files, helpers.CleanFiles(s)...)
 }
@@ -27,8 +27,8 @@ func (p *AppImagePerms) AddDevice(str string) {
 	p.Devices = append(p.Devices, helpers.CleanDevice(str))
 }
 
-func (p *AppImagePerms) AddDevices(s []string) {
-	p.RemoveDevices(s)
+func (p *AppImagePerms) AddDevices(s ...string) {
+	p.RemoveDevices(s...)
 
 	p.Devices = append(p.Devices, helpers.CleanDevices(s)...)
 }
@@ -39,8 +39,8 @@ func (p *AppImagePerms) AddSocket(str string) {
 	p.Sockets = append(p.Sockets, str)
 }
 
-func (p *AppImagePerms) AddSockets(s []string) {
-	p.RemoveSockets(s)
+func (p *AppImagePerms) AddSockets(s ...string) {
+	p.RemoveSockets(s...)
 
 	p.Sockets = append(p.Sockets, s...)
 }
@@ -58,7 +58,7 @@ func (p *AppImagePerms) RemoveFile(str string) {
 	}
 }
 
-func (p *AppImagePerms) RemoveFiles(s []string) {
+func (p *AppImagePerms) RemoveFiles(s ...string) {
 	for i := range(s) {
 		p.RemoveFile(s[i])
 	}
@@ -70,7 +70,7 @@ func (p *AppImagePerms) RemoveDevice(str string) {
 	}
 }
 
-func (p *AppImagePerms) RemoveDevices(s []string) {
+func (p *AppImagePerms) RemoveDevices(s ...string) {
 	for i := range(s) {
 		p.RemoveDevice(s[i])
 	}
@@ -82,7 +82,7 @@ func (p *AppImagePerms) RemoveSocket(str string) {
 	}
 }
 
-func (p *AppImagePerms) RemoveSockets(s []string) {
+func (p *AppImagePerms) RemoveSockets(s ...string) {
 	for i := range(s) {
 		p.RemoveSocket(s[i])
 	}
