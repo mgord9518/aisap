@@ -72,7 +72,7 @@ export VERSION=$('AppDir/usr/bin/aisap' --version)
 # Set arch
 sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64/' 'AppDir/io.github.mgord9518.aisap.desktop'
 
-aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
+ai_tool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 [ $? -ne 0 ] && exit $?
 
 # Build for ARM
@@ -86,7 +86,7 @@ aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zs
 #chmod +x 'AppDir/usr/bin/squashfuse'
 #
 #export ARCH="armhf"
-#aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
+#ai_tool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
 # Experimental multi-arch shImg build (x86_64, aarch64)
 mkdir -p 'AppDir/usr.aarch64/bin'
