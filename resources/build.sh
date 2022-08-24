@@ -4,7 +4,8 @@
 [ -z "$ARCH" ] && ARCH=$(uname -m)
 
 # Get mkappimage
-curl -s 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh' | sh
+wget 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh'
+. ./get_mkappimage.sh
 
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
