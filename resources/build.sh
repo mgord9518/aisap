@@ -3,36 +3,8 @@
 
 [ -z "$ARCH" ] && ARCH=$(uname -m)
 
-if command -v 'mkappimage.AppImage'; then
-	aitool() {
-		'mkappimage.AppImage' "$@"
-	}
-elif command -v "mkappimage-$ARCH.AppImage"; then
-	aitool() {
-		"mkappimage-$ARCH.AppImage" "$@"
-	}
-elif command -v "mkappimage-649-$ARCH.AppImage"; then
-	aitool() {
-		"mkappimage-649-$ARCH.AppImage" "$@"
-	}
-elif command -v 'mkappimage'; then
-	aitool() {
-		'mkappimage' "$@"
-	}
-elif command -v "$PWD/mkappimage"; then
-	aitool() {
-		"$PWD/mkappimage" "$@"
-	}
-else
-	# Hacky one-liner to get the URL to download the latest mkappimage
-	mkAppImageUrl=$(curl -q https://api.github.com/repos/probonopd/go-appimage/releases | grep $(uname -m) | grep mkappimage | grep browser_download_url | cut -d'"' -f4 | head -n1)
-	echo 'Downloading `mkappimage`'
-	wget "$mkAppImageUrl" -O 'mkappimage'
-	chmod +x 'mkappimage'
-	aitool() {
-		"$PWD/mkappimage" "$@"
-	}
-fi
+# Get mkappimage
+curl -s 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh' | sh
 
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
@@ -46,25 +18,22 @@ mkdir -p 'AppDir/usr/bin' \
          'AppDir/usr/share/metainfo' \
          'AppDir/usr/share/icons/hicolor/scalable/apps'
 
-# Compile the binary into the AppDir
-#CGO_ENABLED=0 GOBIN="$PWD/AppDir/usr/bin" go install -ldflags '-s -w' \
-#	"$aisapUrl/aisap-bin@latest"
-cd cmd/aisap
+cd 'cmd/aisap'
 
+# Use local files for building
 echo 'replace github.com/mgord9518/aisap => ../../
 replace github.com/mgord9518/aisap/permissions => ../../permissions
 replace github.com/mgord9518/aisap/profiles => ../../profiles
 replace github.com/mgord9518/aisap/spooky => ../../spooky
 replace github.com/mgord9518/aisap/helpers => ../../helpers
 ' >> go.mod
-
 go mod tidy
 
 CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
 [ $? -ne 0 ] && exit $?
 cd ../..
 
-# Download icon
+# Download icongo mod tidy
 wget "$aisapRawUrl/resources/aisap.svg" -O \
 	'AppDir/usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg'
 [ $? -ne 0 ] && exit $?
@@ -100,12 +69,14 @@ ln -s './usr/bin/aisap' 'AppDir/AppRun'
 export ARCH="$ARCH"
 export VERSION=$('AppDir/usr/bin/aisap' --version)
 
+# Set arch
 sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64/' 'AppDir/io.github.mgord9518.aisap.desktop'
 
 aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 [ $? -ne 0 ] && exit $?
 
 # Build for ARM
+# Currently disabled because mkappimage doesn't yet allow cross-building
 #cd aisap-bin
 #CGO_ENABLED=0 GOARCH=arm GOARM=5 go build -ldflags '-s -w' -o '../AppDir/usr/bin'
 #cd ..
@@ -117,7 +88,7 @@ aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zs
 #export ARCH="armhf"
 #aitool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
-# Experimental multi-arch shImg build
+# Experimental multi-arch shImg build (x86_64, aarch64)
 mkdir -p 'AppDir/usr.aarch64/bin'
 cd cmd/aisap
 go mod tidy
@@ -135,7 +106,7 @@ wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwra
 chmod +x 'AppDir/usr.aarch64/bin/bwrap'
 [ $? -ne 0 ] && exit $?
 
-
+# Set arch
 sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64;aarch64/' 'AppDir/io.github.mgord9518.aisap.desktop'
 
 # Build SquashFS image
@@ -143,15 +114,23 @@ mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 [ $? -ne 0 ] && exit $?
 
 # Download shImg runtime
-wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-static-x86_64-aarch64"
+wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-static-x86_64-aarch64" -O runtime
 [ $? -ne 0 ] && exit $?
 
-cat runtime-lz4-static-x86_64-aarch64 sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
+cat runtime sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
 chmod +x "aisap-$VERSION-x86_64_aarch64.shImg"
 
 # Append desktop integration info
 wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
 [ $? -ne 0 ] && exit $?
-sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*-x86_64_aarch64.shImg.zsync"
+sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" 'AppDir' "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*-x86_64_aarch64.shImg.zsync"
+
+# Generate profile JSON database
+cd cmd/profilegen
+echo 'replace github.com/mgord9518/aisap/permissions => ../../permissions
+replace github.com/mgord9518/aisap/profiles => ../../profiles
+' >> go.mod
+go mod tidy
+go run main.go > ../../profile_database.json
 
 exit 0

@@ -18,17 +18,17 @@ var (
 	verbose   = flag.BoolP("verbose",    "v", false, "make output more verbose")
 
 	// Long-only flags
-	color            = flag.Bool("color",              true,  "whether to show color (default true)")
-	example          = flag.Bool("example",            false, "print out examples")
-	level            = flag.Int("level",               -1,    "change the permissions level")
-	rootDir          = flag.String("root-dir",         "",    "use a different filesystem root for system files")
-	dataDir          = flag.String("data-dir",         "",    "change the AppImage's sandbox home location")
-	noDataDir        = flag.Bool("no-data-dir",        false, "force AppImage's HOME to be a tmpfs (default false)")
-	extractIcon      = flag.String("extract-icon",      "", "extract the AppImage's icon")
-	extractThumbnail = flag.String("extract-thumbnail", "", "extract the AppImage's thumbnail preview")
-	profile          = flag.String("profile",          "",    "use a profile from a desktop entry")
-	fallbackProfile  = flag.String("fallback-profile", "",    "set profile to fallback on if one isn't found")
-	version          = flag.Bool("version",            false, "show the version and quit")
+	color            = flag.Bool  ("color",             true,  "whether to show color (default true)")
+	example          = flag.Bool  ("example",           false, "print out examples")
+	level            = flag.Int   ("level",             -1,    "change the permissions level")
+	rootDir          = flag.String("root-dir",          "",    "use a different filesystem root for system files")
+	dataDir          = flag.String("data-dir",          "",    "change the AppImage's sandbox home location")
+	noDataDir        = flag.Bool  ("no-data-dir",       false, "force AppImage's HOME to be a tmpfs (default false)")
+	extractIcon      = flag.String("extract-icon",      "",    "extract the AppImage's icon")
+	extractThumbnail = flag.String("extract-thumbnail", "",    "extract the AppImage's thumbnail preview")
+	profile          = flag.String("profile",           "",    "use a profile from a desktop entry")
+	fallbackProfile  = flag.String("fallback-profile",  "",    "set profile to fallback on if one isn't found")
+	version          = flag.Bool  ("version",           false, "show the version and quit")
 
 	addFile   arrayFlags
 	addDevice arrayFlags
@@ -106,7 +106,7 @@ func init() {
 		clr.Printf("<yellow>examples</>:\n")
 		clr.Printf("  <blue>%s</> <cyan>--profile</>=./f.desktop ./f.app\n", argv0)
 		clr.Printf("    sandbox `f.app` using permissions from `f.desktop`\n\n")
-		clr.Printf("  <blue>%s</> <cyan>--level 2</>./f.app\n", argv0)
+		clr.Printf("  <blue>%s</> <cyan>--level 2</> ./f.app\n", argv0)
 		fmt.Printf("    change `f.app` sandbox base to level 2\n\n")
 		clr.Printf("  <blue>%s</> <cyan>--add-file</> other.bin ./f.app <green>--add-file</>=./f.txt\n", argv0)
 		fmt.Printf("    allow sandbox to access files `f.txt` and `other.bin`\n\n")
