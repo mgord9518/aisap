@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 92 unique apps currently supported
+// 95 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -99,7 +99,6 @@ var profiles = map[string]permissions.AppImagePerms{
 	// enviornment although it could also greatly hinder its usefullness
 	// so I'd like to hear feedback
 	// TODO: add more files but keep it isolated from the host system
-	// Untested with real equipment but launches
 	"cool retro term": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -464,6 +463,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa", "dbus" },
 	},
+	"speed dreams": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "alsa" },
+	},
 	"stackandconquer": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -490,6 +494,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
 	},
+	// Untested with real equipment but launches
 	// TODO: Properly test Subsurface
 	"subsurface": {
 		Level: 1,
@@ -517,6 +522,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"tapecalc": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11" },
+	},
 	// Must be level 1 to get necessary files from /usr
 	"texstudio": {
 		Level: 1,
@@ -536,7 +546,13 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw", "xdg-pictures:rw", "xdg-templates:rw" },
 		Sockets: []string{ "x11" },
 	},
-	"visual studio code": {
+	// TODO: figure out why it only detects GPU on `level 1`
+	"upscayl": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-pictures:rw" },
+		Sockets: []string{ "x11" },
+	},	"visual studio code": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw" },
