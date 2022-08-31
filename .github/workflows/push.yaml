@@ -12,6 +12,7 @@ jobs:
 
     - name: Grab Go shImg
       run: |
+        mkdir -p ~/.local/bin
         wget -O ~/.local/bin/go $(curl -q https://api.github.com/repos/mgord9518/go.AppImage/releases | grep $(uname -m) | grep Go | grep shImg | grep browser_download_url | cut -d'"' -f4 | head -n1)
         chmod +x ~/.local/bin/go
 
