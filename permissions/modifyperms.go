@@ -7,6 +7,20 @@ import (
 	helpers "github.com/mgord9518/aisap/helpers"
 )
 
+var (
+    InvalidSocket = errors.New("socket invalid")
+)
+
+func IsSocketValid(socket string) bool {
+    _, present := helpers.Contains(ValidSockets(), socket)
+
+    return present
+}
+
+func ValidSockets() []string {
+    return []string{ "x11", "alsa", "audio", "pulseaudio", "wayland", "dbus", "cgroup", "network", "pid", "pipewire", "session", "user", "uts" }
+}
+
 func (p *AppImagePerms) AddFile(str string) {
 	// Clear out previous file if it already exists
 	p.RemoveFile(str)
@@ -33,16 +47,28 @@ func (p *AppImagePerms) AddDevices(s ...string) {
 	p.Devices = append(p.Devices, helpers.CleanDevices(s)...)
 }
 
-func (p *AppImagePerms) AddSocket(str string) {
+func (p *AppImagePerms) AddSocket(str string) error {
 	p.RemoveSocket(str)
 
-	p.Sockets = append(p.Sockets, str)
+    if IsSocketValid(str) {
+        p.Sockets = append(p.Sockets, str)
+        return nil
+    }
+
+    return InvalidSocket
 }
 
-func (p *AppImagePerms) AddSockets(s ...string) {
+func (p *AppImagePerms) AddSockets(s ...string) error {
 	p.RemoveSockets(s...)
 
-	p.Sockets = append(p.Sockets, s...)
+	for i := range(s) {
+		err := p.AddSocket(s[i])
+        if err != nil {
+            return err
+        }
+	}
+
+	return nil
 }
 
 func (p *AppImagePerms) RemoveFile(str string) {
