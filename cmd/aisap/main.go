@@ -52,6 +52,7 @@ var (
 	invalidPerms           = errors.New("failed to get permissions from profile:")
 	invalidPermLevel       = errors.New("failed to set permissions level (this shouldn't happen!):")
 	invalidFallbackProfile = errors.New("failed to set fallback profile:")
+    invalidSocketSet       = errors.New("failed to set socket:")
 )
 
 // Process flags
@@ -146,7 +147,16 @@ func main() {
 	ai.Perms.RemoveSockets(rmSocket...)
 	ai.Perms.AddFiles(addFile...)
 	ai.Perms.AddDevices(addDevice...)
-	ai.Perms.AddSockets(addSocket...)
+	err = ai.Perms.AddSockets(addSocket...)
+
+    // Fail if socket is invalid
+    if err != nil {
+        clr.Println("<yellow>notice</>:")
+        cli.List("valid sockets are", permissions.ValidSockets(), 18)
+        fmt.Println()
+        cli.Fatal(invalidSocketSet, err)
+        return
+    }
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
