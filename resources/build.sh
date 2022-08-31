@@ -13,6 +13,8 @@ fi
 wget 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh'
 . ./get_mkappimage.sh
 
+echo test
+
 aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
 
