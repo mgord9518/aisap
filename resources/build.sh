@@ -2,15 +2,16 @@
 # Quick and dirty shell script to build aisap AppDir from source
 
 [ -z "$ARCH" ] && ARCH=$(uname -m)
-
-# Get mkappimage
-wget 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh'
-. ./get_mkappimage.sh
+PATH="$PATH:$HOME/.local/bin"
 
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
 	exit 1
 fi
+
+# Get mkappimage
+wget 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh'
+. ./get_mkappimage.sh
 
 aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
