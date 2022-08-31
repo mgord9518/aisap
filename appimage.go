@@ -76,7 +76,7 @@ func NewAppImage(src string) (*AppImage, error) {
 		off64 := int64(ai.Offset)
 		r := io.NewSectionReader(ai.file, off64, info.Size()-off64)
 
-		ai.reader, err = squashfs.NewSquashfsReader(r)
+		ai.reader, err = squashfs.NewReader(r)
 		if err != nil { return nil, err }
 	}
 
