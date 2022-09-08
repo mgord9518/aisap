@@ -458,8 +458,10 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
+    // TODO: Create fake `/etc/machine-id` and `/etc/passwd` to allow runnting
+    // bundles that require them at a higher sandbox level
 	"space cadet pinball": {
-		Level: 3,
+		Level: 1,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa", "dbus" },
 	},
@@ -552,7 +554,8 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-pictures:rw" },
 		Sockets: []string{ "x11" },
-	},	"visual studio code": {
+	},
+	"visual studio code": {
 		Level: 2,
 		Devices: []string{ "dri" },
 		Files:   []string{ "xdg-documents:rw" },
@@ -601,6 +604,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"python3.9.9":         "python",
 		"python3.10.1":        "python",
 		"waterfox classic":    "waterfox",
+		"vscode":              "visual studio code",
 	}
 
 	if a, present := aliases[name]; present {
