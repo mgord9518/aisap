@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 95 unique apps currently supported
+// 97 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -337,6 +337,12 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"muwire": {
+		Level: 2,
+		Devices: []string{ "dri" },
+		Files:   []string{ "xdg-download:rw" },
+		Sockets: []string{ "x11", "network" },
+	},
 	"naev": {
 		Level: 3,
 		Devices: []string{ "dri" },
@@ -410,6 +416,10 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 3,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11" },
+	},
+	"pokete": {
+		Level: 3,
+		Sockets: []string{ "alsa", "network" },
 	},
 	"potato presenter": {
 		Level: 2,
