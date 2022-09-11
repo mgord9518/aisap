@@ -33,7 +33,7 @@ replace github.com/mgord9518/aisap/helpers => ../../helpers
 ' >> go.mod
 go mod tidy
 
-CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
+go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
 [ $? -ne 0 ] && exit $?
 cd ../..
 
@@ -96,7 +96,7 @@ ai_tool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.z
 mkdir -p 'AppDir/usr.aarch64/bin'
 cd cmd/aisap
 go mod tidy
-CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
+GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
 cd ../..
 ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
 
