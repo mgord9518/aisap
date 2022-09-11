@@ -56,11 +56,6 @@ wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly
 chmod +x 'AppDir/usr/bin/squashfuse'
 [ $? -ne 0 ] && exit $?
 
-# Download bwrap binary
-wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr/bin/bwrap'
-chmod +x 'AppDir/usr/bin/bwrap'
-[ $? -ne 0 ] && exit $?
-
 # Download excludelist
 wget 'https://raw.githubusercontent.com/AppImage/pkg2appimage/master/excludelist' -O \
 	'excludelist'
@@ -103,11 +98,6 @@ ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
 # Download squashfuse binary
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd-static.aarch64" -O 'AppDir/usr.aarch64/bin/squashfuse'
 chmod +x 'AppDir/usr.aarch64/bin/squashfuse'
-[ $? -ne 0 ] && exit $?
-
-# Download bwrap binary
-wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr.aarch64/bin/bwrap'
-chmod +x 'AppDir/usr.aarch64/bin/bwrap'
 [ $? -ne 0 ] && exit $?
 
 # Set arch
