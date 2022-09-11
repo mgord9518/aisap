@@ -106,7 +106,7 @@ chmod +x 'AppDir/usr.aarch64/bin/squashfuse'
 [ $? -ne 0 ] && exit $?
 
 # Download bwrap binary
-wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr.aarch64/bin/bwrap'
+wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.aarch64" -O 'AppDir/usr.aarch64/bin/bwrap'
 chmod +x 'AppDir/usr.aarch64/bin/bwrap'
 [ $? -ne 0 ] && exit $?
 
