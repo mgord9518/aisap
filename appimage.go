@@ -4,11 +4,6 @@
 
 package aisap
 
-/*
-// TODO: Get static link working (need a Musl libcap)
-#cgo amd64,linux LDFLAGS: ${SRCDIR}/lib/libbwrap.x86_64.a -lcap -lpthread
-*/
-import "C"
 import (
 	"bufio"
 	"crypto/md5"
@@ -51,7 +46,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.8.0-alpha"
+	Version = "0.7.8-alpha"
 )
 
 // Create a new AppImage object from a path
