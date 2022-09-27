@@ -1,15 +1,23 @@
 package aisap
 
+/*
+#include <stdlib.h>
+// Define the bwrap main function
+int bwrap_main(int argc, char **argv);
+*/
+import "C"
 import (
-	"errors"
+	"fmt"
 	"bytes"
 	"bufio"
+	"errors"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	helpers "github.com/mgord9518/aisap/helpers"
 	xdg     "github.com/adrg/xdg"
@@ -42,20 +50,22 @@ func (ai *AppImage) Run(args []string) error {
 	return cmd.Run()
 }
 
-// Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
-// Also automatically creates a portable home
+// Sandbox using linked bwrap instead of external binary
 func (ai *AppImage) Sandbox(args []string) error {
+	// TODO: figure out why it crashes when this isn't done
+	unmountDir(ai.MountDir())
+	ai.Mount()
+
 	if ai.dataDir == "" && !ai.Perms.NoDataDir {
 		ai.dataDir = ai.Path + ".home"
 	}
 
-	cmdArgs, err := ai.WrapArgs(args)
+	cmdArgs := []string{ "bwrap" }
+
+	cmdArgs2, err := ai.WrapArgs(args)
 	if err != nil { return err }
 
-	bwrapStr, present := helpers.CommandExists("bwrap")
-	if !present {
-		return errors.New("failed to find bwrap! unable to sandbox application")
-	}
+	cmdArgs = append(cmdArgs, cmdArgs2...)
 
 	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) && !ai.Perms.NoDataDir {
 		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
@@ -68,12 +78,21 @@ func (ai *AppImage) Sandbox(args []string) error {
 		noIntegrate.Close()
 	}
 
-	bwrap := exec.Command(bwrapStr, cmdArgs...)
-	bwrap.Stdout = os.Stdout
-	bwrap.Stderr = os.Stderr
-	bwrap.Stdin  = os.Stdin
+	// Convert Go []string into C char**
+	argv := make([]*C.char, len(cmdArgs))
+	for i, s := range cmdArgs {
+		cs := C.CString(s)
+		defer C.free(unsafe.Pointer(cs))
+		argv[i] = cs
+	}
 
-	return bwrap.Run()
+	// Execute bwrap `library`
+	errCode := C.bwrap_main(C.int(len(cmdArgs)), &argv[0])
+	if errCode != 0 {
+		return fmt.Errorf("%d", errCode)
+	}
+
+	return nil
 }
 
 func (ai *AppImage) setupRun() error {

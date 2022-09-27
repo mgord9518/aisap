@@ -46,7 +46,7 @@ I fully intend to create a proper binding of squashfuse for Golang, which would
 certainly benefit more than this project (unless someone else wants to knock
 that part out 😉)
 
-For additional information on the permission system, see
+For additional information on the permionnions system, see
 [here](permissions/README.md)
 
 ## Usage of the aisap CLI tool
@@ -238,4 +238,4 @@ Change the `HOME` directory of the AppImage. By default, this is
 ```
 (ai AppImage) SetLevel(l int)
 ```
-Change the sandbox's [base level](permissions/README.md)
+Change the sandbox's [base level](#sandboxing-levels)
