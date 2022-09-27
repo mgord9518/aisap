@@ -33,7 +33,7 @@ replace github.com/mgord9518/aisap/helpers => ../../helpers
 ' >> go.mod
 go mod tidy
 
-CC=gcc go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
+CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
 [ $? -ne 0 ] && exit $?
 cd ../..
 
@@ -54,6 +54,11 @@ wget "$aisapRawUrl/resources/aisap.appdata.xml" -O \
 # Download squashfuse binary
 wget "https://github.com/mgord9518/portable_squashfuse/releases/download/nightly/squashfuse_lz4_xz_zstd-static.$ARCH" -O 'AppDir/usr/bin/squashfuse'
 chmod +x 'AppDir/usr/bin/squashfuse'
+[ $? -ne 0 ] && exit $?
+
+# Download bwrap binary
+wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr/bin/bwrap'
+chmod +x 'AppDir/usr/bin/bwrap'
 [ $? -ne 0 ] && exit $?
 
 # Download excludelist
@@ -91,7 +96,7 @@ ai_tool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.z
 mkdir -p 'AppDir/usr.aarch64/bin'
 cd cmd/aisap
 go mod tidy
-CC=gcc GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
+CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w' -o '../../AppDir/usr.aarch64/bin'
 cd ../..
 ln -s './usr.aarch64/bin/aisap' 'AppDir/AppRun.aarch64'
 

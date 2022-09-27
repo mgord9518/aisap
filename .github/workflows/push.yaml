@@ -2,7 +2,7 @@ name: Automatic build
 
 on:
   push:
-    branches: [ testing ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -29,9 +29,9 @@ jobs:
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "testing"
+        automatic_release_tag: "continuous"
         prerelease: true
-        title: "Test branch"
+        title: "Continuous Build"
         files: |
           *.AppImage
           *.shImg
