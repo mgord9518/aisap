@@ -140,7 +140,7 @@ go run main.go > ../../profile_database.json
 # Build .a and .so libraries
 cd ../../cbindings
 go mod tidy
-go build -buildmode c-archive -o ../libaisap-x86_64.a
-go build -buildmode c-shared  -o ../libaisap-x86_64.so
+CC=gcc go build -buildmode c-archive -o ../libaisap-x86_64.a
+CC=gcc go build -buildmode c-shared  -o ../libaisap-x86_64.so
 
 exit 0
