@@ -36,4 +36,6 @@ jobs:
           *.AppImage
           *.shImg
           *.zsync
+          *.a
+          *.so
           profile_database.json
