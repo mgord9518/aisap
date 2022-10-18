@@ -142,5 +142,6 @@ cd ../../cbindings
 go mod tidy
 CC=gcc go build -buildmode c-archive -o ../libaisap-x86_64.a
 CC=gcc go build -buildmode c-shared  -o ../libaisap-x86_64.so
+mv ../libaisap-x86_64.h ../aisap.h
 
 exit 0
