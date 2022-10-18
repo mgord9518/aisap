@@ -137,4 +137,9 @@ replace github.com/mgord9518/aisap/profiles => ../../profiles
 go mod tidy
 go run main.go > ../../profile_database.json
 
+# Build .a and .so libraries
+cd ../../cbindings
+go build -buildmode c-archive -o ../libaisap-x86_64.a
+go build -buildmode c-shared  -o ../libaisap-x86_64.so
+
 exit 0
