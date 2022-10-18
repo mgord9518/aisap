@@ -1,0 +1,8 @@
+*.c
+*.h
+*.a
+*.so
+aisap
+a.out
+go.mod
+go.sum

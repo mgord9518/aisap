@@ -123,15 +123,13 @@ func (ai *AppImage) Destroy() error {
 	// Clean up
 	err = os.RemoveAll(ai.TempDir())
 
+	ai = nil
+
 	return err
 }
 
 func (ai *AppImage) IsMounted() bool {
-	if ai.mountDir == "" {
-		return false
-	}
-
-	return true
+	return ai.mountDir != ""
 }
 
 // Unmounts a directory (lazily in case the process is finishing up)
