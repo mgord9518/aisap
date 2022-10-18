@@ -38,4 +38,5 @@ jobs:
           *.zsync
           *.a
           *.so
+          *.h
           profile_database.json
