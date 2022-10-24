@@ -18,14 +18,15 @@ import (
 // Run the AppImage with appropriate sandboxing. If `ai.Perms.Level` == 0, use
 // no sandbox. If > 0, sandbox
 func (ai *AppImage) Run(args []string) error {
+	if !ai.IsMounted() {
+		return errors.New("AppImage must be mounted before running! call *AppImage.Mount() first")
+	}
+
 	if ai.Perms.Level > 0 {
 		return ai.Sandbox(args)
 	} else if ai.Perms.Level < 0 {
 		return errors.New("invalid permissions level!")
 	}
-
-	err := ai.setupRun()
-	if err != nil { return err }
 
 	os.Setenv("TMPDIR",         ai.tempDir)
 	os.Setenv("APPDIR",         ai.mountDir)
@@ -45,8 +46,20 @@ func (ai *AppImage) Run(args []string) error {
 // Executes AppImage through bwrap, fails if `ai.Perms.Level` < 1
 // Also automatically creates a portable home
 func (ai *AppImage) Sandbox(args []string) error {
-	if ai.dataDir == "" && !ai.Perms.NoDataDir {
-		ai.dataDir = ai.Path + ".home"
+	if !helpers.DirExists(filepath.Join(xdg.CacheHome, "appimage", ai.md5)) {
+		err := os.MkdirAll(filepath.Join(xdg.CacheHome, "appimage", ai.md5), 0744)
+		if err != nil { return err }
+	}
+
+	// Tell AppImages not to ask for integration
+	if !ai.Perms.NoDataDir {
+		if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
+			err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
+			if err != nil { return err }
+		}
+
+		noIntegrate, _ := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
+		noIntegrate.Close()
 	}
 
 	cmdArgs, err := ai.WrapArgs(args)
@@ -57,36 +70,12 @@ func (ai *AppImage) Sandbox(args []string) error {
 		return errors.New("failed to find bwrap! unable to sandbox application")
 	}
 
-	if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) && !ai.Perms.NoDataDir {
-		err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
-		if err != nil { return err }
-	}
-
-	// Tell AppImages not to ask for integration
-	if !ai.Perms.NoDataDir {
-		noIntegrate, _ := os.Create(filepath.Join(ai.dataDir, ".local/share/appimagekit/no_desktopintegration"))
-		noIntegrate.Close()
-	}
-
 	bwrap := exec.Command(bwrapStr, cmdArgs...)
 	bwrap.Stdout = os.Stdout
 	bwrap.Stderr = os.Stderr
 	bwrap.Stdin  = os.Stdin
 
 	return bwrap.Run()
-}
-
-func (ai *AppImage) setupRun() error {
-	if !ai.IsMounted() {
-		return errors.New("AppImage must be mounted before running! call *AppImage.Mount() first")
-	}
-
-	if !helpers.DirExists(filepath.Join(xdg.CacheHome, "appimage", ai.md5)) {
-		err := os.MkdirAll(filepath.Join(xdg.CacheHome, "appimage", ai.md5), 0744)
-		if err != nil { return err }
-	}
-
-	return nil
 }
 
 // Returns the bwrap arguments to sandbox the AppImage
@@ -100,10 +89,7 @@ func (ai AppImage) WrapArgs(args []string) ([]string, error) {
 
 	if ai.Perms.Level == 0 { return args, nil }
 
-	err := ai.setupRun()
 	cmdArgs := ai.mainWrapArgs()
-
-	if err != nil { return []string{}, err }
 
 	// Append console arguments provided by the user
 	return append(cmdArgs, args...), nil

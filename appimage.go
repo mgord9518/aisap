@@ -46,7 +46,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.7.8-alpha"
+	Version = "0.7.9-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -65,6 +65,7 @@ func NewAppImage(src string) (*AppImage, error) {
 	if err != nil { return nil, err }
 
 	ai.rootDir = "/"
+	ai.dataDir = ai.Path + ".home"
 	ai.Offset, err = helpers.GetOffset(src)
 	if err != nil { return nil, err }
 

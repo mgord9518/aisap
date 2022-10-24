@@ -427,7 +427,7 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-documents:rw" },
 		Sockets: []string{ "x11" },
 	},
-	"powder toy": {
+	"the powder toy": {
 		Level: 3,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "network" },
@@ -605,6 +605,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		"firefox beta":        "firefox",
 		"firefox nightly":     "firefox",
 		"freecad weekly":      "freecad conda",
+		"powder toy":          "the powder toy",
 		"python2.7.18":        "python",
 		"python3":             "python",
 		"python3.5.10":        "python",
