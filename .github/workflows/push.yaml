@@ -21,7 +21,7 @@ jobs:
         ./resources/install_deps.sh
         curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sudo sh
         distrobox create --name alpine --image alpine:3.16 --yes
-        distrobox enter alpine -- sudo apk add autoconf git gcc automake make cmake meson libcap-dev libcap-static libc-dev go fuse fuse3
+        distrobox enter alpine -- sudo apk add autoconf git gcc automake make cmake meson libcap-dev libcap-static libc-dev go fuse fuse3 file
 
     - name: Build
       run: distrobox enter alpine -- ./resources/build.sh
