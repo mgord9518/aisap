@@ -17,10 +17,14 @@ jobs:
         chmod +x ~/.local/bin/go
 
     - name: Install deps
-      run: ./resources/install_deps.sh
+      run: |
+        ./resources/install_deps.sh
+        curl -s https://raw.githubusercontent.com/89luca89/distrobox/main/install | sudo sh
+        distrobox create --name alpine --image alpine:3.16 --yes
+        distrobox enter alpine -- sudo apk add autoconf git gcc automake make cmake meson libcap-dev libcap-static libc-dev go
 
     - name: Build
-      run: ./resources/build.sh
+      run: distrobox enter alpine -- ./resources/build.sh
 
     - name: Test build
       run: ./resources/test.sh

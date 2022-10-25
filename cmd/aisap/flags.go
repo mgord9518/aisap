@@ -43,7 +43,6 @@ var (
 // Initialization of global variables and help menu
 func init() {
 	var present bool
-	handleCtrlC()
 
 	flag.Var(&addFile,   "add-file",   "give the sandbox access to a filesystem object")
 	flag.Var(&addDevice, "add-device", "add a device to the sandbox (eg dri)")

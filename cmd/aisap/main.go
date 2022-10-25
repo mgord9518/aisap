@@ -29,8 +29,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"syscall"
 
 	aisap       "github.com/mgord9518/aisap"
 	permissions "github.com/mgord9518/aisap/permissions"
@@ -270,18 +268,4 @@ func main() {
 		fmt.Fprintln(os.Stdout, "exited non-zero status:", err)
 		return
 	}
-}
-
-func handleCtrlC() {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	go func() {
-		<-c
-		if *verbose {
-			fmt.Println()
-			cli.Notify("quitting because <gray>[</><green>ctrl</><gray>]+</><green>c</> was hit!")
-		}
-		ai.Unmount()
-	}()
 }
