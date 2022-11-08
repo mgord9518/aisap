@@ -144,6 +144,7 @@ go run main.go > ../../profile_database.json
 cd ../../cbindings
 go mod tidy
 CC=gcc go build -buildmode c-archive -o ../libaisap-x86_64.a
+rm ../libaisap-x86_64.h
 # Shared library will be available again when the Zig implementation is complete
 #CC=gcc go build -buildmode c-shared  -o ../libaisap-x86_64.so
 
