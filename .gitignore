@@ -1,5 +1,4 @@
 *.c
-*.h
 *.a
 *.so
 *.o
@@ -7,5 +6,3 @@ aisap
 a.out
 go.mod
 go.sum
-test
-test.c
