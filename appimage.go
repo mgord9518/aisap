@@ -46,7 +46,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.7.9-alpha"
+	Version = "0.7.10-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -153,12 +153,20 @@ func (ai *AppImage) Thumbnail() (io.Reader, error) {
 	return ai.ExtractFileReader(".DirIcon")
 }
 
-func (ai *AppImage) Md5() string {
-	return ai.md5
+func (ai *AppImage) RootDir() string {
+	return ai.rootDir
+}
+
+func (ai *AppImage) DataDir() string {
+	return ai.dataDir
 }
 
 func (ai *AppImage) TempDir() string {
 	return ai.tempDir
+}
+
+func (ai *AppImage) Md5() string {
+	return ai.md5
 }
 
 func (ai *AppImage) MountDir() string {

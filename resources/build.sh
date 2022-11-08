@@ -137,11 +137,19 @@ replace github.com/mgord9518/aisap/profiles => ../../profiles
 go mod tidy
 go run main.go > ../../profile_database.json
 
-# Build .a and .so libraries
+# Build library version
+# Functions are partially implemented in Go, partially in Zig.
+# This will eventually be fully replaced with the Zig version, allowing for
+# a much smaller size footprint and easier C integration
 cd ../../cbindings
 go mod tidy
 CC=gcc go build -buildmode c-archive -o ../libaisap-x86_64.a
-CC=gcc go build -buildmode c-shared  -o ../libaisap-x86_64.so
-mv ../libaisap-x86_64.h ../aisap.h
+# Shared library will be available again when the Zig implementation is complete
+#CC=gcc go build -buildmode c-shared  -o ../libaisap-x86_64.so
 
+cd ../zig
+zig build-lib lib.zig --library c -I .. -fcompiler-rt -target x86_64-linux
+ar -x libaisap-x86_64.a
+ar -x liblib.a
+ar -c ../libaisap-x86_64.a *.o
 exit 0

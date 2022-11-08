@@ -5,10 +5,19 @@
 package main
 
 /*
+#include <stdlib.h>
 struct aisap_AppImage {
 	char* name;
 	char* path;
+	char* data_dir;
+	char* root_dir;
+	char* temp_dir;
+	char* mount_dir;
+	char* md5;
+	char* run_id;
 	unsigned int _index;
+	void*        _parent;
+	int ai_type;
 };
 struct aisap_AppImagePerms {
 	int    level;
@@ -35,12 +44,25 @@ func main() {}
 func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
 	ai, err := aisap.NewAppImage(C.GoString(src))
 
-	cAi._index = C.uint(len(openAppImages))
-	cAi.name = C.CString(ai.Name)
+	if err != nil {
+		return errToInt(err)
+	}
+
+	// Set all fields
+	cAi._index    = C.uint(len(openAppImages))
+	cAi.path      = C.CString(ai.Path)
+	cAi.name      = C.CString(ai.Name)
+	cAi.data_dir  = C.CString(ai.DataDir())
+	cAi.root_dir  = C.CString(ai.RootDir())
+	cAi.temp_dir  = C.CString(ai.TempDir())
+	cAi.mount_dir = C.CString(ai.MountDir())
+	cAi.md5       = C.CString(ai.Md5())
+	cAi.run_id    = C.CString(ai.RunId())
+	cAi.ai_type   = C.int(ai.Type())
 
 	openAppImages = append(openAppImages, ai)
 
-	return errToInt(err)
+	return 0
 }
 
 //export aisap_appimage_thumbnail
@@ -48,46 +70,6 @@ func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
 //func aisap_appimage_thumbnail(cAi *C.aisap_AppImage) *C.char {
 //	return C.CString(openAppImages[cAi._index].Md5())
 //}
-
-//export aisap_appimage_md5
-func aisap_appimage_md5(cAi *C.aisap_AppImage) *C.char {
-	return C.CString(openAppImages[cAi._index].Md5())
-}
-
-//export aisap_appimage_tempdir
-func aisap_appimage_tempdir(cAi *C.aisap_AppImage) *C.char {
-	return C.CString(openAppImages[cAi._index].TempDir())
-}
-
-//export aisap_appimage_mountdir
-func aisap_appimage_mountdir(cAi *C.aisap_AppImage) *C.char {
-	return C.CString(openAppImages[cAi._index].MountDir())
-}
-
-//export aisap_appimage_runid
-func aisap_appimage_runid(cAi *C.aisap_AppImage) *C.char {
-	return C.CString(openAppImages[cAi._index].RunId())
-}
-
-//export aisap_appimage_set_rootdir
-func aisap_appimage_set_rootdir(cAi *C.aisap_AppImage, d *C.char) {
-	openAppImages[cAi._index].SetRootDir(C.GoString(d))
-}
-
-//export aisap_appimage_set_datadir
-func aisap_appimage_set_datadir(cAi *C.aisap_AppImage, d *C.char) {
-	openAppImages[cAi._index].SetDataDir(C.GoString(d))
-}
-
-//export aisap_appimage_set_tempdir
-func aisap_appimage_set_tempdir(cAi *C.aisap_AppImage, d *C.char) {
-	openAppImages[cAi._index].SetTempDir(C.GoString(d))
-}
-
-//export aisap_appimage_type
-func aisap_appimage_type(cAi *C.aisap_AppImage) int {
-	return openAppImages[cAi._index].Type()
-}
 
 //export aisap_appimage_archetectures
 // TODO: add functionality
@@ -108,12 +90,6 @@ func aisap_appimage_run(cAi *C.aisap_AppImage, args **C.char) int {
 func aisap_appimage_sandbox(cAi *C.aisap_AppImage, args **C.char) int {
 	return errToInt(openAppImages[cAi._index].Sandbox([]string{}))
 }
-
-//export aisap_appimage_wrap_args
-// TODO: add functionality
-//func aisap_appimage_wrap_args(cAi *C.aisap_AppImage, args **C.char) **C.char {
-	//return errToInt(openAppImages[cAi._index].Sandbox([]string{}))
-//}
 
 // ------------------- mount.go ---------------
 
