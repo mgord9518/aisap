@@ -2,7 +2,10 @@
 *.a
 *.so
 *.o
+*libaisap*
 aisap
 a.out
 go.mod
 go.sum
+zig-*
+test
