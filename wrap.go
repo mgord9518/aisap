@@ -148,6 +148,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 			"--ro-bind",     "/sys", "/sys",
 			"--ro-bind-try", ai.resolve("usr"), "/usr",
 			"--ro-bind-try", ai.resolve("etc"), "/etc",
+			"--ro-bind-try", ai.resolve("/run/systemd"),   "/run/systemd",
 			"--ro-bind-try", filepath.Join(xdg.Home,       ".fonts"),            filepath.Join(xdg.Home, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"),        filepath.Join(xdg.Home, ".config", "fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"),           filepath.Join(xdg.Home, ".config", "gtk-3.0"),
@@ -366,7 +367,7 @@ func parseSockets(ai *AppImage) []string {
 		"network": {
 				"--share-net",
 				"--ro-bind-try", ai.resolve("/etc/ca-certificates"),       "/etc/ca-certificates",
-				"--ro-bind",     "/etc/resolv.conf",                       "/etc/resolv.conf",
+				"--ro-bind-try", ai.resolve("/etc/resolv.conf"),           "/etc/resolv.conf",
 				"--ro-bind-try", ai.resolve("/etc/ssl"),                   "/etc/ssl",
 				"--ro-bind-try", ai.resolve("/usr/share/ca-certificates"), "/usr/share/ca-certificates",
 		},
@@ -430,6 +431,13 @@ func parseSockets(ai *AppImage) []string {
 			waylandEnabled && waylandApp && soc == "x11" {
 				continue
 			}
+
+			// If level 1, do not try to share /etc files again
+			if soc == "network" && ai.Perms.Level == 1 {
+				s = append(s, "--share-net")
+				continue
+			}
+
 			s = append(s, sockets[soc]...)
 		} else {
 			s = append(s, unsocks[soc]...)

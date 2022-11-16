@@ -135,6 +135,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Files:   []string{ "xdg-download:rw", "~/Games:rw", "~/Roms:rw" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"discord": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "network", "pulseaudio" },
+	},
 	// Network for netplay
 	"dolphin emulator": {
 		Level: 2,
