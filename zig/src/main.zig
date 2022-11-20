@@ -11,7 +11,6 @@ const c = @cImport({
 pub const AppImage = struct {
     name: []const u8,
     path: []const u8,
-//    offset: u64,
 
     // The internal pointer to the C struct
     _internal: *c.aisap_AppImage = undefined,
@@ -59,21 +58,57 @@ pub const AppImage = struct {
         // Need an allocator as the size of `cmd_args` will change size
 
         var cmd_args: [][]const u8 = undefined;
-        cmd_args = allocator.alloc([]const u8, 1) catch unreachable;
+        cmd_args = allocator.alloc([]const u8, 2) catch unreachable;
         cmd_args[0] = "test";
-
-        //cmd_args.append("bwrap") catch unreachable;
+        cmd_args[1] = "test2";
 
         _ = ai;
-     //   _ = cmd_args;
 
-        //const e = [_][]const u8 {"test", "ligma"};
-
-      //  return &e;
         return cmd_args;
+    }
+
+    // This can't be finished until AppImage.wrapArgs works correctly
+    pub fn sandbox(ai: *AppImage, allocator: *std.mem.Allocator) !void {
+        const cmd = [_][]const u8 {
+            "--ro-bind", "/", "/",
+            "sh",
+        };
+
+        _ = ai;
+        _ = try bwrap(allocator, &cmd);
     }
 };
 
+pub const BWrapError = error {
+    GeneralError,
+    InvalidSyntax,
+};
+
+fn BWrapErrorFromInt(err: i32) BWrapError!void {
+    switch (err) {
+        1    => return BWrapError.GeneralError,
+        2    => return BWrapError.InvalidSyntax,
+        else => return,
+    }
+}
+
+// Compile in Bubble Wrap and call it as if it were a library
+// The C symbol must first be exposed
+extern fn bwrap_main(argc: i32, argv: [*c]const [*c]const u8) i32;
+fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
+    var result = try allocator.alloc([*]const u8, args.len + 1);
+
+    // Set ARGV0 then iterate through the slice and convert it to a C char**
+    result[0] = "bwrap";
+    for (args) |arg, idx| {
+        result[idx + 1] = @ptrCast([*]const u8, arg.ptr);
+    }
+
+    // Convert the exit code to a Zig error
+    return (BWrapErrorFromInt(
+        bwrap_main(@intCast(i32, args.len + 1), result.ptr))
+    );
+}
 
 export fn aisap_appimage_name(ai: *c.aisap_AppImage) [*:0]const u8 {
     return ai.name;

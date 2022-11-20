@@ -17,6 +17,9 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
     exe.linkLibC();
     exe.addIncludePath("../..");
+    exe.addLibraryPath(".");
+    exe.linkSystemLibrary("bwrap.x86_64");
+    exe.linkSystemLibrary("cap");
     exe.install();
 
     const run_cmd = exe.run();

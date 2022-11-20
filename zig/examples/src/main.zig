@@ -19,6 +19,9 @@ pub fn main() !void {
 
     std.debug.print("ai name: {s}\n", .{ai.name});
     std.debug.print("wrap args: {d}\n", .{wrap_args.len});
+
+    try ai.sandbox(&allocator);
+
     printMap(wrap_args);
 
 
