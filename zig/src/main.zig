@@ -57,8 +57,8 @@ pub const AppImage = struct {
     pub fn wrapArgs(ai: *AppImage, allocator: *std.mem.Allocator) [][]const u8 {
         // Need an allocator as the size of `cmd_args` will change size
 
-        var cmd_args: [][]const u8 = undefined;
-        cmd_args = allocator.alloc([]const u8, 2) catch unreachable;
+        //var cmd_args: [][]const u8 = undefined;
+        var cmd_args = allocator.alloc([]const u8, 2) catch unreachable;
         cmd_args[0] = "test";
         cmd_args[1] = "test2";
 

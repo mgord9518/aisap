@@ -88,6 +88,12 @@ func aisap_appimage_run(cAi *C.aisap_AppImage, args **C.char) int {
 
 //export aisap_appimage_sandbox
 func aisap_appimage_sandbox(cAi *C.aisap_AppImage, args **C.char) int {
+	// Set elements of parent Go struct before running
+	// They won't be properly applied otherwise
+	openAppImages[cAi._index].SetDataDir(C.GoString(cAi.data_dir))
+	openAppImages[cAi._index].SetRootDir(C.GoString(cAi.root_dir))
+	openAppImages[cAi._index].SetTempDir(C.GoString(cAi.temp_dir))
+
 	return errToInt(openAppImages[cAi._index].Sandbox([]string{}))
 }
 

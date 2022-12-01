@@ -12,9 +12,9 @@ pub fn main() !void {
 
     var ai = try AppImage.init("/home/mgord9518/.local/bin/go");
     //    _ = ai;
-        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        defer arena.deinit();
-        var allocator = arena.allocator();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    var allocator = arena.allocator();
     var wrap_args = ai.wrapArgs(&allocator);
 
     std.debug.print("ai name: {s}\n", .{ai.name});
@@ -22,9 +22,12 @@ pub fn main() !void {
 
     try ai.sandbox(&allocator);
 
-    printMap(wrap_args);
-
-
+    var i: i32 = 0;
+    while (i < 50) {
+        printMap(wrap_args);
+        std.debug.print("{d}\n", .{i});
+        i += 1;
+    }
 }
 
 fn printMap(map: []const []const u8) void {
