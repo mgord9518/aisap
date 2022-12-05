@@ -149,8 +149,9 @@ rm ../libaisap-x86_64.h
 #CC=gcc go build -buildmode c-shared  -o ../libaisap-x86_64.so
 
 cd ../zig
-zig build-lib lib.zig --library c -I .. -fcompiler-rt -target x86_64-linux
+zig build-lib lib.zig --library c -I .. -fcompiler-rt -fPIE -target x86_64-linux
 ar -x libaisap-x86_64.a
 ar -x liblib.a
 ar -qc ../libaisap-x86_64.a *.o
+
 exit 0

@@ -54,7 +54,6 @@ func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
 	cAi.name      = C.CString(ai.Name)
 	cAi.data_dir  = C.CString(ai.DataDir())
 	cAi.root_dir  = C.CString(ai.RootDir())
-	cAi.temp_dir  = C.CString(ai.TempDir())
 	cAi.mount_dir = C.CString(ai.MountDir())
 	cAi.md5       = C.CString(ai.Md5())
 	cAi.run_id    = C.CString(ai.RunId())
@@ -92,7 +91,6 @@ func aisap_appimage_sandbox(cAi *C.aisap_AppImage, args **C.char) int {
 	// They won't be properly applied otherwise
 	openAppImages[cAi._index].SetDataDir(C.GoString(cAi.data_dir))
 	openAppImages[cAi._index].SetRootDir(C.GoString(cAi.root_dir))
-	openAppImages[cAi._index].SetTempDir(C.GoString(cAi.temp_dir))
 
 	return errToInt(openAppImages[cAi._index].Sandbox([]string{}))
 }
@@ -101,7 +99,10 @@ func aisap_appimage_sandbox(cAi *C.aisap_AppImage, args **C.char) int {
 
 //export aisap_appimage_mount
 func aisap_appimage_mount(cAi *C.aisap_AppImage) int {
-	return errToInt(openAppImages[cAi._index].Mount())
+	err := openAppImages[cAi._index].Mount()
+	cAi.temp_dir = C.CString(openAppImages[cAi._index].TempDir())
+
+	return errToInt(err)
 }
 
 //export aisap_appimage_destroy
