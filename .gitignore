@@ -5,7 +5,7 @@
 *libaisap*
 aisap
 a.out
-go.mod
-go.sum
+*.mod
+*.sum
 zig-*
 test

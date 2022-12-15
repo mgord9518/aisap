@@ -17,10 +17,11 @@ pub fn main() !void {
     var allocator = arena.allocator();
     var wrap_args = ai.wrapArgs(&allocator);
 
+    std.debug.print("AISAP\n", .{});
     std.debug.print("ai name: {s}\n", .{ai.name});
     std.debug.print("wrap args: {d}\n", .{wrap_args.len});
 
-    try ai.sandbox(&allocator);
+    //    try ai.sandbox(&allocator);
 
     var i: i32 = 0;
     while (i < 50) {

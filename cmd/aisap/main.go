@@ -244,7 +244,11 @@ func main() {
 		return
 	}
 
-	ai.Mount()
+	err = ai.Mount()
+    if err != nil {
+        cli.Fatal(err, err)
+        return
+    }
 
 	if *rootDir != "" {
 		ai.SetRootDir(*rootDir)

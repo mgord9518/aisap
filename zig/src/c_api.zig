@@ -6,38 +6,8 @@ const expect = std.testing.expect;
 
 const c = @cImport({
     @cInclude("aisap.h");
+    @cInclude("unistd.h");
 });
-
-pub const AppImage = @import("AppImage.zig").AppImage;
-
-pub const BWrapError = error{
-    GeneralError,
-    InvalidSyntax,
-};
-
-fn BWrapErrorFromInt(err: i32) BWrapError!void {
-    switch (err) {
-        1 => return BWrapError.GeneralError,
-        2 => return BWrapError.InvalidSyntax,
-        else => return,
-    }
-}
-
-// Compile in Bubble Wrap and call it as if it were a library
-// The C symbol must first be exposed
-extern fn bwrap_main(argc: i32, argv: [*c]const [*c]const u8) i32;
-fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
-    var result = try allocator.alloc([*]const u8, args.len + 1);
-
-    // Set ARGV0 then iterate through the slice and convert it to a C char**
-    result[0] = "bwrap";
-    for (args) |arg, idx| {
-        result[idx + 1] = @ptrCast([*]const u8, arg.ptr);
-    }
-
-    // Convert the exit code to a Zig error
-    return (BWrapErrorFromInt(bwrap_main(@intCast(i32, args.len + 1), result.ptr)));
-}
 
 export fn aisap_appimage_name(ai: *c.aisap_AppImage) [*:0]const u8 {
     return ai.name;
@@ -122,6 +92,35 @@ export fn aisap_appimage_offset(ai: *c.aisap_AppImage, off: *u64) i32 {
     off.* = hdr.shoff + hdr.shentsize * hdr.shnum;
 
     return 0;
+}
+
+// For ABI compat with libAppImage
+export fn appimage_get_md5(path: [*]u8) [*:0]const u8 {
+    var ai: c.aisap_AppImage = undefined;
+    _ = c.aisap_new_appimage(&ai, path);
+
+    defer c.aisap_appimage_destroy(&ai);
+    return ai.md5;
+}
+
+export fn appimage_get_type(path: [*]u8) i32 {
+    var ai: c.aisap_AppImage = undefined;
+    _ = c.aisap_new_appimage(&ai, path);
+
+    defer c.aisap_appimage_destroy(&ai);
+    return ai.ai_type;
+}
+
+export fn appimage_get_payload_offset(path: [*]u8) c.off_t {
+    var ai: c.aisap_AppImage = undefined;
+    _ = c.aisap_new_appimage(&ai, path);
+
+    var off: u64 = 0;
+    _ = aisap_appimage_offset(&ai, &off);
+    var off_s = @intCast(i64, off);
+
+    defer c.aisap_appimage_destroy(&ai);
+    return off_s;
 }
 
 fn toMut(str: []const u8) []u8 {

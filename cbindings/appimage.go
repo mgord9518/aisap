@@ -40,8 +40,8 @@ func main() {}
 // -------------------- appimage.go ------------------
 // TODO: Finish appimage.go funcs
 
-//export aisap_new_appimage
-func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
+//export aisap_appimage_new
+func aisap_appimage_new(cAi *C.aisap_AppImage, src *C.char) int {
 	ai, err := aisap.NewAppImage(C.GoString(src))
 
 	if err != nil {
@@ -62,6 +62,11 @@ func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
 	openAppImages = append(openAppImages, ai)
 
 	return 0
+}
+
+//export aisap_new_appimage
+func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
+    return aisap_appimage_new(cAi, src)
 }
 
 //export aisap_appimage_thumbnail
