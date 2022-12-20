@@ -122,11 +122,3 @@ export fn appimage_get_payload_offset(path: [*]u8) c.off_t {
     defer c.aisap_appimage_destroy(&ai);
     return off_s;
 }
-
-fn toMut(str: []const u8) []u8 {
-    var buf: [256]u8 = undefined;
-    var mut: []u8 = buf[0..str.len];
-    std.mem.copy(u8, mut, str);
-
-    return mut;
-}

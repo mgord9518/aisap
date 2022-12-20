@@ -2,20 +2,28 @@ const std = @import("std");
 const warn = @import("std").debug.print;
 const aisap = @import("aisap");
 const AppImage = aisap.AppImage;
+const SquashFs = @import("squashfuse").SquashFs;
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-
     var ai = try AppImage.init("/home/mgord9518/.local/bin/go");
+    try ai.mount();
     //    _ = ai;
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     var allocator = arena.allocator();
-    var wrap_args = ai.wrapArgs(&allocator);
+    var wrap_args = ai.wrapArgs(allocator);
+
+    // Testing WIP SquashFS library
+    var sfs = try SquashFs.init("/home/mgord9518/.local/bin/go", 544156);
+    std.debug.print("SQFS\n", .{});
+    std.debug.print("sfs.fd: {d}\n", .{sfs.internal.fd});
+    std.debug.print("sfs.version: {d}.{d}\n", .{ sfs.version.major, sfs.version.minor });
+
+    var walker = try sfs.walk("");
+    while (walker.next()) |entry| {
+        std.debug.print("{}\n", .{entry.inode_type});
+        std.debug.print("{s}\n", .{entry.path});
+    }
 
     std.debug.print("AISAP\n", .{});
     std.debug.print("ai name: {s}\n", .{ai.name});
@@ -25,8 +33,8 @@ pub fn main() !void {
 
     var i: i32 = 0;
     while (i < 50) {
-        printMap(wrap_args);
-        std.debug.print("{d}\n", .{i});
+        //        printMap(wrap_args);
+        //        std.debug.print("{d}\n", .{i});
         i += 1;
     }
 }
@@ -38,11 +46,4 @@ fn printMap(map: []const []const u8) void {
         }
         warn("\n", .{});
     }
-}
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }

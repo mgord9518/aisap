@@ -30,6 +30,8 @@ typedef struct aisap_AppImagePerms aisap_AppImagePerms;
 */
 import "C"
 import (
+	"unsafe"
+
 	aisap "github.com/mgord9518/aisap"
 )
 
@@ -88,6 +90,26 @@ func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
 // make another AppImage run function that accepts **char instead of Go strings
 func aisap_appimage_run(cAi *C.aisap_AppImage, args **C.char) int {
 	return errToInt(openAppImages[cAi._index].Run([]string{}))
+}
+
+//export aisap_appimage_wrap_args
+func aisap_appimage_wrap_args(cAi *C.aisap_AppImage, argc int, args **C.char) **C.char {
+	//cmdArgs, _ := openAppImages[cAi._index].WrapArgs([]string{})
+	cmdArgs := []string{"test", "123"}
+
+	// Convert Go []string into C char**
+	argv := make([]*C.char, len(cmdArgs))
+	for i, s := range cmdArgs {
+		cs := C.CString(s)
+//		defer C.free(unsafe.Pointer(cs))
+		argv[i] = cs
+	}
+
+	//return errToInt(err)
+	ptr := (**C.char)(unsafe.Pointer(&argv[0]))
+	//return (**C.char)(unsafe.Pointer(&argv[0]))
+	return ptr
+	//return &argv[0]
 }
 
 //export aisap_appimage_sandbox

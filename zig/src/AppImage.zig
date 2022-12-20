@@ -3,9 +3,14 @@ const io = std.io;
 const fs = std.fs;
 const span = std.mem.span;
 const expect = std.testing.expect;
+const squashfs = @import("squashfs");
+const Squash = squashfs.SquashFs;
 
 const c = @cImport({
     @cInclude("aisap.h");
+    //    @cInclude("config.h"); // squashfuse config file
+    //    @cInclude("squashfuse.h"); // squashfuse config file
+    //@cInclude("hl.h");
 });
 
 pub const AppImage = struct {
@@ -54,7 +59,7 @@ pub const AppImage = struct {
         return hdr.shoff + hdr.shentsize * hdr.shnum;
     }
 
-    pub fn wrapArgs(ai: *AppImage, allocator: *std.mem.Allocator) [][]const u8 {
+    pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) [][]const u8 {
         // Need an allocator as the size of `cmd_args` will change size
 
         //var cmd_args: [][]const u8 = undefined;
@@ -65,6 +70,13 @@ pub const AppImage = struct {
         _ = ai;
 
         return cmd_args;
+    }
+
+    pub fn mount(ai: *AppImage) !void {
+        //        var sqfs = Squash{};
+        _ = ai;
+        //        const err = sqfs.lookup("test.sfs");
+        //        std.debug.print("test {d}\n", .{err});
     }
 
     // This can't be finished until AppImage.wrapArgs works correctly

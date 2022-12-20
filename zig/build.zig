@@ -5,10 +5,12 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const lib = b.addStaticLibrary("aisap", "lib/main.zig");
+    const lib = b.addStaticLibrary("aisap", "lib.zig");
     lib.setBuildMode(mode);
+    lib.addIncludePath("../");
     lib.install();
-    lib.addIncludeDir("../");
+
+    lib.addPackagePath("squashfuse", "squashfuse-zig/src/main.zig");
 
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);
