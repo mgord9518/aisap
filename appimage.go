@@ -42,11 +42,14 @@ type AppImage struct {
 	architecture []string // List of CPU architectures supported by the bundle
 	reader        *squashfs.Reader
 	file          *os.File
+
+	currentArg     int    // Should only ever be used for the C bindings
+	wrapArgs     []string // Should only ever be used for the C bindings
 }
 
 // Current version of aisap
 const (
-	Version = "0.7.12-alpha"
+	Version = "0.7.13-alpha"
 )
 
 // Create a new AppImage object from a path

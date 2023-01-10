@@ -33,6 +33,10 @@ export fn aisap_appimage_type(ai: *c.aisap_AppImage) i32 {
     return ai.ai_type;
 }
 
+export fn aisap_appimage_wrapargs(ai: *c.aisap_AppImage) [*:0]const u8 {
+    return c.aisap_appimage_wraparg_next(ai);
+}
+
 // TODO: Re-implement wrap.go in Zig
 
 fn aisap_appimage_sandbox(ai: *c.aisap_AppImage, argc: i32, args: [*c][*c]u8) i32 {

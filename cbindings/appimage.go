@@ -6,7 +6,7 @@ package main
 
 /*
 #include <stdlib.h>
-struct aisap_AppImage {
+typedef struct {
 	char* name;
 	char* path;
 	char* data_dir;
@@ -18,15 +18,14 @@ struct aisap_AppImage {
 	unsigned int _index;
 	void*        _parent;
 	int ai_type;
-};
-struct aisap_AppImagePerms {
+} aisap_AppImage;
+
+typedef struct {
 	int    level;
 	char** files;
 	char** devices;
 	char** sockets;
-};
-typedef struct aisap_AppImage aisap_AppImage;
-typedef struct aisap_AppImagePerms aisap_AppImagePerms;
+} aisap_AppImagePerms;
 */
 import "C"
 import (
@@ -71,17 +70,22 @@ func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
     return aisap_appimage_new(cAi, src)
 }
 
-//export aisap_appimage_thumbnail
-// TODO: add functionality
-//func aisap_appimage_thumbnail(cAi *C.aisap_AppImage) *C.char {
-//	return C.CString(openAppImages[cAi._index].Md5())
-//}
+// Just a way to pass the wrap args to the Zig implementation until I can
+// re-implement AppImage.WrapArgs as well
+//export aisap_wraparg_next
+func aisap_wraparg_next(cAi *C.aisap_AppImage) *C.char {
+	ai := openAppImages[cAi._index]
 
-//export aisap_appimage_archetectures
-// TODO: add functionality
-//func aisap_appimage_archetectures(cAi *C.aisap_AppImage) **C.char {
-//	return openAppImages[cAi._index].Archetectures()
-//}
+	if ai.wrapArgs == nil {
+		ai.wrapArgs, _ = ai.WrapArgs([]string{})
+	}
+
+	if ai.currentArg > len(ai.wrapArgs) {
+		return C.CString(ai.wrapArgs[ai.currentArg])
+	}
+
+	return nil
+}
 
 // -------------- wrap.go -----------------
 

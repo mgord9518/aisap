@@ -258,7 +258,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 // Returns the location of the requested directory on the host filesystem with
 // symlinks resolved. This should solve systems like GoboLinux, where
 // traditionally named directories are symlinks to something unconventional.
-func (ai *AppImage) resolve(src string) string {
+func (ai AppImage) resolve(src string) string {
 	s, _ := filepath.EvalSymlinks(filepath.Join(ai.rootDir, src))
 
 	if s == "" {
@@ -369,6 +369,7 @@ func parseSockets(ai *AppImage) []string {
 				"--ro-bind-try", ai.resolve("/etc/ca-certificates"),       "/etc/ca-certificates",
 				"--ro-bind-try", ai.resolve("/etc/resolv.conf"),           "/etc/resolv.conf",
 				"--ro-bind-try", ai.resolve("/etc/ssl"),                   "/etc/ssl",
+				"--ro-bind-try", ai.resolve("/etc/pki"),                   "/etc/pki",
 				"--ro-bind-try", ai.resolve("/usr/share/ca-certificates"), "/usr/share/ca-certificates",
 		},
 		"pid": {},

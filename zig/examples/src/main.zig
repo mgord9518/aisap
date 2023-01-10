@@ -2,7 +2,8 @@ const std = @import("std");
 const warn = @import("std").debug.print;
 const aisap = @import("aisap");
 const AppImage = aisap.AppImage;
-const SquashFs = @import("squashfuse").SquashFs;
+const squashfuse = @import("squashfuse");
+const SquashFs = squashfuse.SquashFs;
 
 pub fn main() !void {
     var ai = try AppImage.init("/home/mgord9518/.local/bin/go");
@@ -13,17 +14,18 @@ pub fn main() !void {
     var allocator = arena.allocator();
     var wrap_args = ai.wrapArgs(allocator);
 
-    // Testing WIP SquashFS library
     var sfs = try SquashFs.init("/home/mgord9518/.local/bin/go", 544156);
+    var walker = try sfs.walk("");
+    while (try walker.next()) |entry| {
+        std.debug.print("{any}\n", .{entry.kind});
+        std.debug.print("{s}\n", .{entry.path});
+        std.debug.print("{s}\n", .{entry.basename});
+    }
+
+    // Testing WIP SquashFS library
     std.debug.print("SQFS\n", .{});
     std.debug.print("sfs.fd: {d}\n", .{sfs.internal.fd});
     std.debug.print("sfs.version: {d}.{d}\n", .{ sfs.version.major, sfs.version.minor });
-
-    var walker = try sfs.walk("");
-    while (walker.next()) |entry| {
-        std.debug.print("{}\n", .{entry.inode_type});
-        std.debug.print("{s}\n", .{entry.path});
-    }
 
     std.debug.print("AISAP\n", .{});
     std.debug.print("ai name: {s}\n", .{ai.name});
