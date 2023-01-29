@@ -8,9 +8,6 @@ const Squash = squashfs.SquashFs;
 
 const c = @cImport({
     @cInclude("aisap.h");
-    //    @cInclude("config.h"); // squashfuse config file
-    //    @cInclude("squashfuse.h"); // squashfuse config file
-    //@cInclude("hl.h");
 });
 
 pub const AppImage = struct {

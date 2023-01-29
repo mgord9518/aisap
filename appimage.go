@@ -43,8 +43,8 @@ type AppImage struct {
 	reader        *squashfs.Reader
 	file          *os.File
 
-	currentArg     int    // Should only ever be used for the C bindings
-	wrapArgs     []string // Should only ever be used for the C bindings
+	CurrentArg     int    // Should only ever be used for the C bindings
+	WrapArgsList []string // Should only ever be used for the C bindings
 }
 
 // Current version of aisap

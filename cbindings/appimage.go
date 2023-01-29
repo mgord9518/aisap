@@ -29,7 +29,7 @@ typedef struct {
 */
 import "C"
 import (
-	"unsafe"
+//	"unsafe"
 
 	aisap "github.com/mgord9518/aisap"
 )
@@ -72,19 +72,26 @@ func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
 
 // Just a way to pass the wrap args to the Zig implementation until I can
 // re-implement AppImage.WrapArgs as well
-//export aisap_wraparg_next
-func aisap_wraparg_next(cAi *C.aisap_AppImage) *C.char {
+//export aisap_appimage_wraparg_next
+func aisap_appimage_wraparg_next(cAi *C.aisap_AppImage, length *int) *C.char {
 	ai := openAppImages[cAi._index]
 
-	if ai.wrapArgs == nil {
-		ai.wrapArgs, _ = ai.WrapArgs([]string{})
+	var ret *C.char
+
+	if ai.WrapArgsList == nil {
+		ai.WrapArgsList, _ = ai.WrapArgs([]string{})
 	}
 
-	if ai.currentArg > len(ai.wrapArgs) {
-		return C.CString(ai.wrapArgs[ai.currentArg])
+	// Set the return value and iterate the counter
+	if ai.CurrentArg < len(ai.WrapArgsList) {
+		ret = C.CString(ai.WrapArgsList[ai.CurrentArg])
+		*length = len(ai.WrapArgsList[ai.CurrentArg])
+
+		ai.CurrentArg++
 	}
 
-	return nil
+
+	return ret
 }
 
 // -------------- wrap.go -----------------
@@ -94,26 +101,6 @@ func aisap_wraparg_next(cAi *C.aisap_AppImage) *C.char {
 // make another AppImage run function that accepts **char instead of Go strings
 func aisap_appimage_run(cAi *C.aisap_AppImage, args **C.char) int {
 	return errToInt(openAppImages[cAi._index].Run([]string{}))
-}
-
-//export aisap_appimage_wrap_args
-func aisap_appimage_wrap_args(cAi *C.aisap_AppImage, argc int, args **C.char) **C.char {
-	//cmdArgs, _ := openAppImages[cAi._index].WrapArgs([]string{})
-	cmdArgs := []string{"test", "123"}
-
-	// Convert Go []string into C char**
-	argv := make([]*C.char, len(cmdArgs))
-	for i, s := range cmdArgs {
-		cs := C.CString(s)
-//		defer C.free(unsafe.Pointer(cs))
-		argv[i] = cs
-	}
-
-	//return errToInt(err)
-	ptr := (**C.char)(unsafe.Pointer(&argv[0]))
-	//return (**C.char)(unsafe.Pointer(&argv[0]))
-	return ptr
-	//return &argv[0]
 }
 
 //export aisap_appimage_sandbox

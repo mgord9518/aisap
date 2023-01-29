@@ -14,24 +14,38 @@ pub fn build(b: *std.build.Builder) void {
 
     const exe = b.addExecutable("open", "src/main.zig");
     exe.addPackagePath("aisap", "../lib.zig");
-    //    exe.addPackagePath("aisap", "../build.zig");
     exe.addPackagePath("squashfuse", "../squashfuse-zig/src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.linkLibC();
-    //    exe.addIncludePath("/usr/include");
-    //    exe.addIncludePath("/usr/include/x86_64-linux-gnu");
-    //    exe.addIncludePath("/usr/lib/gcc/x86_64-linux-gnu/11/include/");
-    exe.addIncludePath("../..");
-    //    exe.addIncludePath("../libsquash-zig/libsquash/include");
 
-    //    exe.addIncludePath("/usr/include/fuse3");
-    //exe.addCSourceFile("../squashfuse/hl.c", &[_][]const u8{"-D_FILE_OFFSET_BITS=64"});
+    exe.addIncludePath("../squashfuse-zig/squashfuse");
+    exe.addIncludePath("../..");
     exe.addLibraryPath(".");
-    exe.addLibraryPath("../libsquash-zig/libsquash/build");
+
+    // TODO: automatically include these when importing the bindings
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/stat.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-makedev.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-pread.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-stat.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/swap.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/fs.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/file.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/util.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/traverse.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/stack.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/dir.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/decompress.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/cache.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/table.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/xattr.c", &[_][]const u8{});
+
     exe.linkSystemLibrary("bwrap.x86_64");
-    exe.linkSystemLibrary("squashfuse");
     exe.linkSystemLibrary("zlib");
+    exe.linkSystemLibrary("zstd");
+    exe.linkSystemLibrary("lz4");
+    exe.linkSystemLibrary("lzma");
+
     exe.linkSystemLibrary("cap");
     exe.install();
 

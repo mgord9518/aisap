@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-struct aisap_AppImage {
+typedef struct aisap_AppImage {
 	char* name;
 	char* path;
 	char* data_dir;
@@ -14,22 +14,19 @@ struct aisap_AppImage {
 	unsigned int _index;  // For Go implementation as structs cannot contain Go pointers
 	void*        _parent; // For Zig implemenation, points to Zig AppImage
 	int ai_type;
-};
+} aisap_AppImage;
 
 // Not yet sure how I'll get the char** fields set. I've been unable to
 // properly find a way to pass either Go or Zig slices to C. I know it's
 // possible, but haven't had much luck. Maybe I'll make a function that cycles
 // through a single permission every time it's called and just return a char*
 // until I can figure it out
-struct aisap_AppImagePerms {
+typedef struct aisap_AppImagePerms {
 	int    level;
 	char** files;
 	char** devices;
 	char** sockets;
-};
-
-typedef struct aisap_AppImage aisap_AppImage;
-typedef struct aisap_AppImagePerms aisap_AppImagePerms;
+} aisap_AppImagePerms;
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +46,6 @@ extern void  aisap_appimage_destroy(aisap_AppImage* cAi);
 extern int   aisap_appimage_run(aisap_AppImage* cAi, char** args);
 extern int   aisap_appimage_mount(aisap_AppImage* cAi);
 extern int   aisap_appimage_ismounted(aisap_AppImage* cAi);
-extern char* aisap_appimage_wraparg_next(aisap_AppImage* cAi);
 
 // Zig-implemented C functions
 extern int          aisap_appimage_type(aisap_AppImage* cAi);
@@ -59,7 +55,7 @@ extern char*        aisap_appimage_tempdir(aisap_AppImage* cAi);
 extern char*        aisap_appimage_runid(aisap_AppImage* cAi);
 extern int          aisap_appimage_sandbox(aisap_AppImage* cAi, int argc, char** args);
 extern unsigned int aisap_appimage_offset(aisap_AppImage* ai, unsigned int* off);
-extern char* aisap_appimage_wrapargs(aisap_AppImage* cAi);
+extern char*        aisap_appimage_wrapargs(aisap_AppImage* cAi);
 
 // For ABI/API compat with libAppImage
 extern off_t appimage_get_payload_offset(char* path);
