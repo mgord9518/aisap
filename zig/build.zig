@@ -6,11 +6,11 @@ pub fn build(b: *std.build.Builder) void {
     const mode = b.standardReleaseOptions();
 
     const lib = b.addStaticLibrary("aisap", "lib.zig");
+    lib.addPackagePath("squashfuse", "squashfuse-zig/src/main.zig");
+
     lib.setBuildMode(mode);
     lib.addIncludePath("../");
     lib.install();
-
-    lib.addPackagePath("squashfuse", "squashfuse-zig/src/main.zig");
 
     const main_tests = b.addTest("src/main.zig");
     main_tests.setBuildMode(mode);

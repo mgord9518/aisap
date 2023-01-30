@@ -3,19 +3,31 @@ const io = std.io;
 const fs = std.fs;
 const span = std.mem.span;
 const expect = std.testing.expect;
-const squashfs = @import("squashfs");
-const Squash = squashfs.SquashFs;
+
+// TODO: figure out how to add this package correctly
+const squashfs = @import("squashfuse-zig/src/main.zig");
+const SquashFs = squashfs.SquashFs;
 
 const c = @cImport({
     @cInclude("aisap.h");
 });
 
 pub const AppImage = struct {
-    name: []const u8,
+    name: []const u8 = undefined,
     path: []const u8,
+    desktop_entry: []const u8 = undefined,
+    image: SquashFs = undefined,
 
     // The internal pointer to the C struct
     _internal: *c.aisap_AppImage = undefined,
+
+    pub const Permissions = struct {
+        level: u4 = 0,
+        files: []const []const u8 = undefined,
+        devices: []const []const u8 = undefined,
+        sockets: []const []const u8 = undefined,
+        data_dir: bool = true,
+    };
 
     // TODO: Use this to replace the Go implemenation
     // Once the Zig version is up to par, the Zig -> C bindings will call to
@@ -38,19 +50,61 @@ pub const AppImage = struct {
         };
 
         var ai = AppImage{
-            .name = path,
             .path = path,
             ._internal = &c_ai,
         };
 
         c_ai._parent = &ai;
 
+        const off = try ai.offset();
+
+        // Open the SquashFS image for reading
+        ai.image = try SquashFs.init(ai.path, off);
+
+        var walker = try ai.image.walk("");
+        while (try walker.next()) |entry| {
+            var extension = std.mem.splitBackwards(u8, entry.path, ".");
+
+            // Skip any files not ending in `.desktop`
+            // Also skip any file without an extension
+            if (!std.mem.eql(u8, extension.first(), "desktop") or extension.next() == null) continue;
+
+            // Read the first 4KiB of the desktop entry, it really should be a
+            // lot smaller than this, but just in case.
+            var buf: [1024 * 4]u8 = undefined;
+            var inode = try ai.image.getInode(entry.id);
+            const read_bytes = try ai.image.readRange(&inode, &buf, 0);
+            ai.desktop_entry = buf[0..@intCast(usize, read_bytes)];
+
+            break;
+        }
+
+        var line_it = std.mem.tokenize(u8, ai.desktop_entry, "\n");
+        var in_desktop_section = false;
+        while (line_it.next()) |line| {
+            if (std.mem.eql(u8, line, "[Desktop Entry]")) {
+                in_desktop_section = true;
+                continue;
+            }
+
+            var key_it = std.mem.tokenize(u8, line, "=");
+            const key = key_it.next() orelse "";
+
+            if (std.mem.eql(u8, key, "Name")) {
+                ai.name = key_it.next() orelse "";
+            }
+        }
+
         return ai;
+    }
+
+    pub fn deinit(ai: *AppImage) void {
+        ai.image.deinit();
     }
 
     // Find the offset of the internal read-only filesystem
     pub fn offset(ai: *AppImage) !u64 {
-        var f = try fs.cwd().openFile(span(ai._internal.path), .{});
+        var f = try fs.cwd().openFile(ai.path, .{});
         const hdr = try std.elf.Header.read(f);
 
         return hdr.shoff + hdr.shentsize * hdr.shnum;
@@ -69,11 +123,54 @@ pub const AppImage = struct {
         return cmd_args;
     }
 
+    pub fn permissions(ai: *AppImage, allocator: std.mem.Allocator) !Permissions {
+        var perms = Permissions{};
+
+        // Find the permissions section of the INI file, then actually
+        // parse the permissions
+        var line_it = std.mem.tokenize(u8, ai.desktop_entry, "\n");
+        var in_permissions_section = false;
+        while (line_it.next()) |line| {
+            if (std.mem.eql(u8, line, "[X-App Permissions]")) {
+                in_permissions_section = true;
+                continue;
+            }
+
+            if (!in_permissions_section) continue;
+
+            // Obtain the key name
+            // eg `Level=3` becomes `Level`
+            var key_it = std.mem.tokenize(u8, line, "=");
+            const key = key_it.next() orelse "";
+
+            var list = std.ArrayList([]const u8).init(allocator);
+
+            // Now get the elements
+            // TODO: handle quoting
+            var element_it = std.mem.tokenize(u8, key_it.next() orelse "", ";");
+            while (element_it.next()) |element| {
+                try list.append(element);
+            }
+
+            if (std.mem.eql(u8, key, "Level")) {
+                const level_slice = try list.toOwnedSlice();
+                perms.level = try std.fmt.parseInt(u4, level_slice[0], 10);
+            } else if (std.mem.eql(u8, key, "Files")) {
+                perms.sockets = try list.toOwnedSlice();
+            } else if (std.mem.eql(u8, key, "Devices")) {
+                perms.devices = try list.toOwnedSlice();
+            } else if (std.mem.eql(u8, key, "Sockets")) {
+                perms.sockets = try list.toOwnedSlice();
+            }
+        }
+
+        return perms;
+    }
+
     pub fn mount(ai: *AppImage) !void {
         //        var sqfs = Squash{};
         _ = ai;
         //        const err = sqfs.lookup("test.sfs");
-        //        std.debug.print("test {d}\n", .{err});
     }
 
     // This can't be finished until AppImage.wrapArgs works correctly
