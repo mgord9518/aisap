@@ -36,5 +36,5 @@ fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
     }
 
     // Convert the exit code to a Zig error
-    return (BWrapErrorFromInt(bwrap_main(@intCast(i32, args.len + 1), result.ptr)));
+    return BWrapErrorFromInt(bwrap_main(@intCast(i32, args.len + 1), result.ptr));
 }
