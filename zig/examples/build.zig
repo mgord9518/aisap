@@ -19,36 +19,43 @@ pub fn build(b: *std.build.Builder) void {
 
     exe.setTarget(target);
     exe.setBuildMode(mode);
-    exe.linkLibC();
 
     exe.addIncludePath("../squashfuse-zig/squashfuse");
     exe.addIncludePath("../..");
     exe.addLibraryPath(".");
 
     // TODO: automatically include these when importing the bindings
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/stat.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/cache.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/decompress.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/dir.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/file.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/fs.c", &[_][]const u8{});
     exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-makedev.c", &[_][]const u8{});
     exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-pread.c", &[_][]const u8{});
     exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-stat.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/swap.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/fs.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/file.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/util.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/traverse.c", &[_][]const u8{});
     exe.addCSourceFile("../squashfuse-zig/squashfuse/stack.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/dir.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/decompress.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/cache.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/stat.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/swap.c", &[_][]const u8{});
     exe.addCSourceFile("../squashfuse-zig/squashfuse/table.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/traverse.c", &[_][]const u8{});
+    exe.addCSourceFile("../squashfuse-zig/squashfuse/util.c", &[_][]const u8{});
     exe.addCSourceFile("../squashfuse-zig/squashfuse/xattr.c", &[_][]const u8{});
 
-    exe.linkSystemLibrary("bwrap.x86_64");
+    exe.linkLibC();
+    // TODO: Submodule the source of these and import their code
+    exe.linkSystemLibrary("cap");
+    //    exe.linkSystemLibrary("bwrap.x86_64");
     exe.linkSystemLibrary("zlib");
     exe.linkSystemLibrary("zstd");
     exe.linkSystemLibrary("lz4");
     exe.linkSystemLibrary("lzma");
+    exe.linkSystemLibrary("fuse3");
 
-    exe.linkSystemLibrary("cap");
+    // TODO: figure out why Zig automatically switches to dynamic linking
+    // Linking libs as object files is a temporary solution which may be used
+    // for now
+    //exe.addObjectFile("/usr/lib/x86_64-linux-gnu/libzstd.a");
+
     exe.install();
 
     const run_cmd = exe.run();
