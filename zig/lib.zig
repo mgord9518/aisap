@@ -9,6 +9,7 @@ const c = @cImport({
 });
 
 pub const AppImage = @import("src/AppImage.zig").AppImage;
+pub const SquashFs = @import("src/AppImage.zig").SquashFs;
 
 pub const BWrapError = error{
     GeneralError,

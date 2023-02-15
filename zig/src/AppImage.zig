@@ -6,11 +6,17 @@ const expect = std.testing.expect;
 
 // TODO: figure out how to add this package correctly
 const squashfs = @import("squashfuse-zig/src/main.zig");
-const SquashFs = squashfs.SquashFs;
+pub const SquashFs = squashfs.SquashFs;
 
 const c = @cImport({
     @cInclude("aisap.h");
 });
+
+pub const AppImageError = error{
+    Error, // Generic error
+    NoDesktopEntry,
+    InvalidDesktopEntry,
+};
 
 pub const AppImage = struct {
     name: []const u8 = undefined,
@@ -61,13 +67,20 @@ pub const AppImage = struct {
         // Open the SquashFS image for reading
         ai.image = try SquashFs.init(ai.path, off);
 
+        var desktop_entry_found = false;
         var walker = try ai.image.walk("");
         while (try walker.next()) |entry| {
-            var extension = std.mem.splitBackwards(u8, entry.path, ".");
+            var it = std.mem.splitBackwards(u8, entry.path, ".");
 
             // Skip any files not ending in `.desktop`
-            // Also skip any file without an extension
-            if (!std.mem.eql(u8, extension.first(), "desktop") or extension.next() == null) continue;
+            // Check for both null-terminated and non-null terminated names as
+            // I haven't settled on how it should be done with my squashfuse
+            // bindings
+            const extension = it.first();
+            if (!std.mem.eql(u8, extension, "desktop\x00") and !std.mem.eql(u8, extension, "desktop")) continue;
+
+            // Also skip any files without an extension
+            if (it.next() == null) continue;
 
             // Read the first 4KiB of the desktop entry, it really should be a
             // lot smaller than this, but just in case.
@@ -75,9 +88,12 @@ pub const AppImage = struct {
             var inode = try ai.image.getInode(entry.id);
             const read_bytes = try ai.image.readRange(&inode, &buf, 0);
             ai.desktop_entry = buf[0..@intCast(usize, read_bytes)];
+            desktop_entry_found = true;
 
             break;
         }
+
+        if (!desktop_entry_found) return AppImageError.NoDesktopEntry;
 
         var line_it = std.mem.tokenize(u8, ai.desktop_entry, "\n");
         var in_desktop_section = false;
