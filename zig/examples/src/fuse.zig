@@ -10,13 +10,46 @@ const c = @cImport({
     @cInclude("fuse3/fuse.h");
 });
 
-extern fn fuse_main_real(argc: c_int, argv: [*:null]const ?[*:0]const u8, op: *const Operations, op_size: usize, private_data: ?*anyopaque) c_int;
-pub fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8, op: *const Operations, private_data: ?*anyopaque) callconv(.C) c_int {
-    return fuse_main_real(argc, argv, op, @sizeOf(Operations), private_data);
+pub const FuseError = error{
+    InvalidArgument,
+    NoMountPoint,
+    SetupFailed,
+    MountFailed,
+    DaemonizeFailed,
+    SignalHandlerFailed,
+    FileSystemError,
+    UnknownError,
+};
+
+pub fn FuseErrorFromInt(err: c_int) FuseError {
+    return switch (err) {
+        1 => FuseError.InvalidArgument,
+        2 => FuseError.NoMountPoint,
+        3 => FuseError.SetupFailed,
+        4 => FuseError.MountFailed,
+        5 => FuseError.DaemonizeFailed,
+        6 => FuseError.SignalHandlerFailed,
+        7 => FuseError.FileSystemError,
+
+        else => FuseError.UnknownError,
+    };
 }
 
-pub fn getContext() callconv(.C) *Context {
+extern fn fuse_main_real(argc: c_int, argv: [*:null]const ?[*:0]const u8, op: *const Operations, op_size: usize, private_data: *const anyopaque) c_int;
+pub fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8, op: *const Operations, private_data: anytype) FuseError!void {
+    const err = fuse_main_real(argc, argv, op, @sizeOf(Operations), @ptrCast(*const anyopaque, &private_data));
+
+    // FuseErrorFromInt must only be used on non-zero values
+    if (err != 0) return FuseErrorFromInt(err);
+}
+
+pub inline fn context() *Context {
     return c.fuse_get_context();
+}
+
+// Convenience function to fetch FUSE private data without casting
+pub inline fn privateDataAs(comptime T: type) T {
+    return @ptrCast(*T, @alignCast(@alignOf(T), context().private_data)).*;
 }
 
 pub const ReadDirFlags = c.fuse_readdir_flags;
@@ -46,7 +79,7 @@ pub const Operations = extern struct {
     chown: ?*const fn ([*:0]const u8, linux.uid_t, linux.gid_t, ?*FileInfo) callconv(.C) c_int = null,
     truncate: ?*const fn ([*:0]const u8, linux.off_t, ?*FileInfo) callconv(.C) c_int = null,
     open: ?*const fn ([*:0]const u8, ?*FileInfo) callconv(.C) c_int = null,
-    read: ?*const fn ([*:0]const u8, [*:0]u8, usize, linux.off_t, ?*FileInfo) callconv(.C) c_int = null,
+    read: ?*const fn ([*:0]const u8, [*]u8, usize, linux.off_t, ?*FileInfo) callconv(.C) c_int = null,
     write: ?*const fn ([*:0]const u8, [*:0]const u8, usize, linux.off_t, ?*FileInfo) callconv(.C) c_int = null,
     statfs: ?*const fn ([*:0]const u8, *StatVfs) callconv(.C) c_int = null,
     flush: ?*const fn ([*:0]const u8, ?*FileInfo) callconv(.C) c_int = null,
