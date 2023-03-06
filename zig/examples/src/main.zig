@@ -14,7 +14,7 @@ const SquashFs = aisap.SquashFs;
 // Struct for holding our FUSE info
 const Squash = struct {
     image: SquashFs,
-    file_tree: std.StringHashMap(SquashFs.Walker.Entry) = undefined,
+    file_tree: std.StringArrayHashMap(SquashFs.Walker.Entry) = undefined,
 };
 
 // Been using my AppImage build of Go to test it, obviously if anyone else
@@ -32,16 +32,16 @@ pub export fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8) c_int {
     defer ai.deinit();
 
     //    var open_appimage = SquashFs.init(test_ai_path, 594264) catch return 1;
-    std.debug.print("ver: {}\n", .{ai.image.version});
+    //    std.debug.print("ver: {}\n", .{ai.image.version});
 
-    var fuse_ctx = Squash{ .image = ai.image };
+    var squash = Squash{ .image = ai.image };
 
     var allocator = std.heap.c_allocator;
-    var file_tree = std.StringHashMap(SquashFs.Walker.Entry).init(allocator);
+    var file_tree = std.StringArrayHashMap(SquashFs.Walker.Entry).init(allocator);
 
-    fuse_ctx.file_tree = file_tree;
+    squash.file_tree = file_tree;
 
-    var walker = fuse_ctx.image.walk("") catch return 2;
+    var walker = squash.image.walk("") catch return 2;
 
     // Iterate over the AppImage's internal SquashFS image
     // This is to test my squashfuse bindings
@@ -55,18 +55,23 @@ pub export fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8) c_int {
         //        new_path[0] = '/';
         //        std.mem.copy(u8, new_path[1..], entry.path);
 
+        //        var inode = fuse_ctx.image.getInode(entry.id) catch return 0;
+
         // A bit hacky, this copies over the whole string (including null
         // terminator) but only sets the slice to use the bytes leading up to
         // the terminator, not including it. This allows for easy byte
         // comparisons in Zig, but also allows casting to [*:0]const u8 for use
         // in C code.
         std.mem.copy(u8, new_path, entry.path);
-        fuse_ctx.file_tree.put(new_path[0 .. new_path.len - 1], entry) catch return 3;
+        const e = squash.file_tree.get(new_path[0 .. new_path.len - 1]);
+        if (e == null) {
+            squash.file_tree.put(new_path[0 .. new_path.len - 1], entry) catch return 3;
+        }
 
-        std.debug.print(" >>> {s}\n", .{new_path});
+        //        std.debug.print(" >>> {s}, {o}\n", .{ new_path, inode.base.mode });
     }
 
-    fuse.main(argc, argv, &fuse_ops, fuse_ctx) catch return 1;
+    fuse.main(argc, argv, &fuse_ops, squash) catch return 1;
 
     return 0;
 }
@@ -112,10 +117,7 @@ fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offse
     var squash = fuse.privateDataAs(Squash);
 
     // TODO: fix this to work without this janky shit
-    var p1 = std.mem.span(p);
-    var path: []const u8 = "";
-    if (p1.len > 1) path = p1[0..p1.len];
-    //    const path = std.mem.span(p);
+    var path = std.mem.span(p);
 
     // Populate the current and parent directories
     _ = filler(buf, ".", null, 0, 0);
@@ -125,8 +127,9 @@ fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offse
 
     // Iterate over the AppImage's internal SquashFS image
     // This is to test my squashfuse bindings
-    var it = squash.file_tree.keyIterator();
-    while (it.next()) |val| {
+    //var it = squash.file_tree.keyIterator();
+    const keys = squash.file_tree.keys();
+    for (keys) |key| {
         // Get the path depths of both the path provided by FUSE, and of our
         // current iteration
         var path_depth: u32 = 0;
@@ -135,21 +138,28 @@ fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offse
             if (char == '/') path_depth += 1;
         }
 
-        for (val.*) |char| {
+        for (key) |char| {
             if (char == '/') it_depth += 1;
         }
 
-        if (it_depth == path_depth) {
-            var entry = squash.file_tree.get(val.*) orelse return 1;
+        //        std.debug.print("{d}, {s}, {s}\n", .{ path.len, path, key });
+
+        if (it_depth <= path_depth and key.len > path.len and std.mem.eql(u8, key[0 .. path.len - 1], path[1..])) {
+            var entry = squash.file_tree.get(key) orelse return 1;
             var inode = squash.image.getInode(entry.id) catch return 0;
 
             // Load file info into buffer
             squash.image.statC(&inode, &st) catch return 0;
 
+            var skip = path.len;
+            if (path.len == 1) {
+                skip = 0;
+            }
+
             // No clue why, but that data gets corrupted when I use '[:0]const u8'
             // as the type of `entry.path` instead of `[]const u8`. Because of
             // this, it must be casted even though we *know* it has a null terminator
-            _ = filler(buf, @ptrCast([*:0]const u8, val.*[path.len..].ptr), &st, 0, 0);
+            _ = filler(buf, @ptrCast([*:0]const u8, key[skip..].ptr), &st, 0, 0);
         }
     }
 
@@ -206,19 +216,23 @@ fn squash_getattr(p: [*:0]const u8, stbuf: *std.os.linux.Stat, fi: ?*fuse.FileIn
     }
 
     // Otherwise, iterate through our entry map and find the path it wants
-    var it = squash.file_tree.keyIterator();
-    while (it.next()) |val| {
-        const long_enough = val.*.len >= path.len - 1;
-        const paths_eql = long_enough and std.mem.eql(u8, path[1..], val.*[0 .. path.len - 1]);
+    const keys = squash.file_tree.keys();
+    for (keys) |key| {
+        const long_enough = key.len >= path.len - 1;
+        const paths_eql = long_enough and std.mem.eql(u8, path[1..], key);
 
         if (paths_eql) {
-            var entry = squash.file_tree.get(val.*) orelse return 1;
+            var entry = squash.file_tree.get(key) orelse return 1;
             var inode = squash.image.getInode(entry.id) catch return 0;
+
+            //std.debug.print("{s} {s} {}, {o}\n", .{ key, path, paths_eql, inode.base.mode });
 
             // Load file info into buffer
             squash.image.statC(&inode, stbuf) catch return 0;
+
+            return 0;
         }
     }
 
-    return 0;
+    return 1;
 }
