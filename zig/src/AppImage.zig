@@ -86,8 +86,10 @@ pub const AppImage = struct {
             // lot smaller than this, but just in case.
             var buf: [1024 * 4]u8 = undefined;
             var inode = try ai.image.getInode(entry.id);
-            const read_bytes = try ai.image.readRange(&inode, &buf, 0);
-            ai.desktop_entry = buf[0..@intCast(usize, read_bytes)];
+
+            ai.desktop_entry = try ai.image.readRange(&inode, &buf, 0);
+            //            ai.desktop_entry = buf[0..read_bytes];
+
             desktop_entry_found = true;
 
             break;

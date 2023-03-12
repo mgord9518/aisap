@@ -21,8 +21,9 @@ pub const FuseError = error{
     UnknownError,
 };
 
-pub fn FuseErrorFromInt(err: c_int) FuseError {
+pub fn FuseErrorFromInt(err: c_int) FuseError!void {
     return switch (err) {
+        0 => {},
         1 => FuseError.InvalidArgument,
         2 => FuseError.NoMountPoint,
         3 => FuseError.SetupFailed,
@@ -37,10 +38,7 @@ pub fn FuseErrorFromInt(err: c_int) FuseError {
 
 extern fn fuse_main_real(argc: c_int, argv: [*:null]const ?[*:0]const u8, op: *const Operations, op_size: usize, private_data: *const anyopaque) c_int;
 pub fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8, op: *const Operations, private_data: anytype) FuseError!void {
-    const err = fuse_main_real(argc, argv, op, @sizeOf(Operations), @ptrCast(*const anyopaque, &private_data));
-
-    // FuseErrorFromInt must only be used on non-zero values
-    if (err != 0) return FuseErrorFromInt(err);
+    try FuseErrorFromInt(fuse_main_real(argc, argv, op, @sizeOf(Operations), @ptrCast(*const anyopaque, &private_data)));
 }
 
 pub inline fn context() *Context {
