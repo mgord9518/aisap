@@ -5,8 +5,7 @@
 const std = @import("std");
 const aisap = @import("aisap");
 const fuse = @import("fuse.zig");
-
-//var file_tree: std.StringHashMap(Walker.Entry) = undefined;
+const E = fuse.E;
 
 const AppImage = aisap.AppImage;
 const SquashFs = aisap.SquashFs;
@@ -14,16 +13,13 @@ const SquashFs = aisap.SquashFs;
 // Struct for holding our FUSE info
 const Squash = struct {
     image: SquashFs,
-    file_tree: std.StringArrayHashMap(SquashFs.Walker.Entry) = undefined,
+    file_tree: std.StringArrayHashMap(SquashFs.Walker.Entry),
 };
 
-// Been using my AppImage build of Go to test it, obviously if anyone else
-// wants to use this pre-alpha test you'll need to change the path
-//const test_ai_path = "/home/mgord9518/Downloads/YABG-0.0.1-x86_64.AppImage";
 const test_ai_path = "/home/mgord9518/Downloads/Powder_Toy-96.2-x86_64.AppImage";
-//const test_ai_path = "/home/mgord9518/Downloads/aisap-0.7.13-alpha-x86_64.AppImage";
-//const test_ai_path = "/home/mgord9518/.local/bin/go";
 
+// I'll add this automatically soon, but currently, the `-s` flag must be
+// supplied as it only works single-threaded
 pub export fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8) c_int {
     var ai = AppImage.init(test_ai_path) catch |err| {
         std.debug.print("error: {!}\n", .{err});
@@ -31,15 +27,10 @@ pub export fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8) c_int {
     };
     defer ai.deinit();
 
-    //    var open_appimage = SquashFs.init(test_ai_path, 594264) catch return 1;
-    //    std.debug.print("ver: {}\n", .{ai.image.version});
-
-    var squash = Squash{ .image = ai.image };
-
     var allocator = std.heap.c_allocator;
     var file_tree = std.StringArrayHashMap(SquashFs.Walker.Entry).init(allocator);
 
-    squash.file_tree = file_tree;
+    var squash = Squash{ .image = ai.image, .file_tree = file_tree };
 
     var walker = squash.image.walk("") catch return 2;
 
@@ -48,21 +39,29 @@ pub export fn main(argc: c_int, argv: [*:null]const ?[*:0]const u8) c_int {
     while (walker.next() catch return 1) |entry| {
         // Copy paths as they're automatically cleaned up by squashfuse and we
         // actually want them to stick around
-        var new_path = allocator.alloc(u8, entry.path.len) catch return 5;
+        var new_path = allocator.alloc(u8, entry.path.len + 1) catch return 5;
 
         // TODO: implement this
         // Start new path with slash as squashfuse doesn't
         //        new_path[0] = '/';
         //        std.mem.copy(u8, new_path[1..], entry.path);
 
-        //        var inode = fuse_ctx.image.getInode(entry.id) catch return 0;
         std.mem.copy(u8, new_path, entry.path);
-        const e = squash.file_tree.get(new_path[0 .. new_path.len - 1]);
+
+        // Make sure to add a null byte, because the keys will be not-so-optimally
+        // casted to [*:0]const u8 for use in FUSE
+        new_path[new_path.len - 1] = '\x00';
+        new_path.len -= 1;
+
+        // Now add to the HashMap
+        const e = squash.file_tree.get(new_path);
         if (e == null) {
-            squash.file_tree.put(new_path[0 .. new_path.len - 1], entry) catch return 3;
+            squash.file_tree.put(new_path, entry) catch return 3;
         }
 
-        //        std.debug.print(" >>> {s}, {o}\n", .{ new_path, inode.base.mode });
+        // Debug
+        //        var inode = squash.image.getInode(squash.file_tree.get(new_path).?.id) catch return 2;
+        //        std.debug.print(" >>> {s}, {o}\n", .{ new_path, inode.internal.base.mode });
     }
 
     fuse.main(argc, argv, &fuse_ops, squash) catch return 1;
@@ -75,13 +74,16 @@ export const fuse_ops = fuse.Operations{
     .getattr = squash_getattr,
     .getxattr = squash_getxattr,
     .open = squash_open,
+    .opendir = squash_opendir,
+    .release = squash_release,
+    .releasedir = squash_releasedir,
     .create = squash_create,
     .read = squash_read,
     .readdir = squash_readdir,
     .readlink = squash_readlink,
 };
 
-fn squash_read(p: [*:0]const u8, b: [*]u8, sz: usize, o: std.os.linux.off_t, fi: ?*fuse.FileInfo) callconv(.C) c_int {
+fn squash_read(p: [*:0]const u8, b: [*]u8, sz: usize, o: std.os.linux.off_t, fi: *fuse.FileInfo) callconv(.C) c_int {
     _ = fi;
 
     const path = std.mem.span(p);
@@ -89,30 +91,58 @@ fn squash_read(p: [*:0]const u8, b: [*]u8, sz: usize, o: std.os.linux.off_t, fi:
     const offset = @intCast(usize, o);
 
     // Build slice from buffer length and pointer
-    var buf: []u8 = undefined;
-    buf.ptr = b;
-    buf.len = sz;
+    var buf = b[0..sz];
 
     // FUSE provides leading slash, skip it as squashfuse doesn't
-    var entry = squash.file_tree.get(path[1..]) orelse return -5;
-    var inode = squash.image.getInode(entry.id) catch return -5;
+    var entry = squash.file_tree.get(path[1..]) orelse return @enumToInt(E.IO);
+    var inode = squash.image.getInode(entry.id) catch return @enumToInt(E.IO);
 
-    const read_bytes = squash.image.readRange(&inode, buf, offset) catch return -5;
+    const read_bytes = squash.image.readRange(&inode, buf, offset) catch return @enumToInt(E.IO);
 
     return @intCast(c_int, read_bytes.len);
 }
 
-fn squash_create(p: [*:0]const u8, mode: std.os.linux.mode_t, fi: *fuse.FileInfo) callconv(.C) c_int {
+fn squash_create(p: [*:0]const u8, mode: std.os.linux.mode_t, fi: *fuse.FileInfo) callconv(.C) E {
     _ = p;
     _ = mode;
     _ = fi;
 
-    return -30;
+    return .ROFS;
 }
 
-// TODO: refactor and fix.
-// Does NOT currently read file trees correctly
-fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offset: std.os.linux.off_t, fi: ?*fuse.FileInfo, flags: fuse.ReadDirFlags) callconv(.C) c_int {
+fn squash_opendir(p: [*:0]const u8, fi: *fuse.FileInfo) callconv(.C) E {
+    const path = std.mem.span(p);
+    var squash = fuse.privateDataAs(Squash);
+
+    if (std.mem.eql(u8, path, "/")) {
+        var inode = squash.image.getInode(squash.image.internal.sb.root_inode) catch return .NOENT;
+
+        fi.handle = @ptrToInt(&inode.internal);
+
+        return .SUCCESS;
+    }
+
+    var entry = squash.file_tree.get(path[1..]) orelse return .NOENT;
+    var inode = squash.image.getInode(entry.id) catch return .IO;
+
+    if (entry.kind != .Directory) return .NOTDIR;
+
+    fi.handle = @ptrToInt(&inode.internal);
+
+    return .SUCCESS;
+}
+
+fn squash_release(p: [*:0]const u8, fi: *fuse.FileInfo) callconv(.C) E {
+    _ = p;
+
+    fi.handle = 0;
+    return .SUCCESS;
+}
+
+const squash_releasedir = squash_release;
+
+// TODO: refactor
+fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offset: std.os.linux.off_t, fi: *fuse.FileInfo, flags: fuse.ReadDirFlags) callconv(.C) E {
     _ = flags;
     _ = offset;
     _ = fi;
@@ -122,9 +152,9 @@ fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offse
     // TODO: fix this to work without this janky shit
     var path = std.mem.span(p);
 
-    var root_inode = squash.image.getInode(squash.image.internal.sb.root_inode) catch return -5;
-    var root_st = root_inode.statC() catch return -5;
-    //    root_st.nlink = 2;
+    var root_inode = squash.image.getInode(squash.image.internal.sb.root_inode) catch return .IO;
+    var root_st = root_inode.statC() catch return .IO;
+    //root_st.nlink = 2;
 
     // Populate the current and parent directories
     _ = filler(buf, ".", &root_st, 0, 0);
@@ -144,44 +174,41 @@ fn squash_readdir(p: [*:0]const u8, buf: *anyopaque, filler: fuse.FillDir, offse
             if (char == '/') it_depth += 1;
         }
 
-        //        std.debug.print("{d}, {s}, {s}\n", .{ path.len, path, key });
-
         if (it_depth <= path_depth and key.len > path.len and std.mem.eql(u8, key[0 .. path.len - 1], path[1..])) {
-            var entry = squash.file_tree.get(key) orelse return -5;
-            var inode = squash.image.getInode(entry.id) catch return 0;
+            var entry = squash.file_tree.get(key) orelse return .IO;
+            var inode = squash.image.getInode(entry.id) catch return .IO;
 
             // Load file info into buffer
-            var st = inode.statC() catch return 0;
+            var st = inode.statC() catch return .IO;
 
             var skip = path.len;
             if (path.len == 1) {
                 skip = 0;
             }
 
+            // This cast is normally not safe, but I've explicitly added a null
+            // byte after the key slices upon creation
             _ = filler(buf, @ptrCast([*:0]const u8, key[skip..].ptr), &st, 0, 0);
         }
     }
 
-    return 0;
+    return .SUCCESS;
 }
 
-fn squash_readlink(p: [*:0]const u8, b: [*:0]u8, size: usize) callconv(.C) c_int {
+fn squash_readlink(p: [*:0]const u8, b: [*:0]u8, size: usize) callconv(.C) E {
     const path = std.mem.span(p);
     var squash = fuse.privateDataAs(Squash);
 
-    var entry = squash.file_tree.get(path[1..]) orelse return 1;
-    var inode = squash.image.getInode(entry.id) catch return 0;
+    var entry = squash.file_tree.get(path[1..]) orelse return .NOENT;
+    var inode = squash.image.getInode(entry.id) catch return .NOENT;
 
-    // If not link type
-    if (inode.internal.base.mode & 0o120000 != 0o120000) {
-        return -22;
-    }
+    if (entry.kind != .SymLink) return .INVAL;
 
     var buf = b[0..size];
 
-    inode.readLink(buf) catch return -5;
+    inode.readLink(buf) catch return .IO;
 
-    return 0;
+    return .SUCCESS;
 }
 
 fn squash_init(nfo: *fuse.ConnectionInfo, conf: *fuse.Config) callconv(.C) ?*anyopaque {
@@ -191,59 +218,49 @@ fn squash_init(nfo: *fuse.ConnectionInfo, conf: *fuse.Config) callconv(.C) ?*any
     return fuse.context().private_data;
 }
 
-fn squash_open(p: [*:0]const u8, fi: ?*fuse.FileInfo) callconv(.C) c_int {
+fn squash_open(p: [*:0]const u8, fi: *fuse.FileInfo) callconv(.C) E {
     const path = std.mem.span(p);
     var squash = fuse.privateDataAs(Squash);
-    _ = fi;
 
-    _ = squash.file_tree.get(path[1..]) orelse return -2;
+    const entry = squash.file_tree.get(path[1..]) orelse return .NOENT;
+    var inode = squash.image.getInode(entry.id) catch return .NOENT;
 
-    return 0;
+    if (entry.kind == .Directory) return .ISDIR;
+
+    fi.handle = @ptrToInt(&inode.internal);
+    fi.keep_cache = 1;
+
+    return .SUCCESS;
 }
 
-fn squash_getxattr(p: [*:0]const u8, r: [*:0]const u8, buf: [*:0]u8, i: usize) callconv(.C) c_int {
+fn squash_getxattr(p: [*:0]const u8, r: [*:0]const u8, buf: [*:0]u8, i: usize) callconv(.C) E {
     _ = p;
     _ = r;
     _ = i;
     _ = buf;
 
-    return 0;
+    return .SUCCESS;
 }
 
-fn squash_getattr(p: [*:0]const u8, stbuf: *std.os.linux.Stat, fi: ?*fuse.FileInfo) callconv(.C) c_int {
+fn squash_getattr(p: [*:0]const u8, stbuf: *std.os.linux.Stat, fi: *fuse.FileInfo) callconv(.C) E {
     _ = fi;
 
     const path = std.mem.span(p);
     var squash = fuse.privateDataAs(Squash);
 
-    // Load from the root inode and dip if FUSE wants the root permissions
+    // Load from the root inode
     if (std.mem.eql(u8, path, "/")) {
-        std.debug.print("root: {s}\n", .{path});
-        var inode = squash.image.getInode(squash.image.internal.sb.root_inode) catch return -5;
-        stbuf.* = inode.statC() catch return 1;
-        //stbuf.nlink = 2;
+        var inode = squash.image.getInode(squash.image.internal.sb.root_inode) catch return .IO;
+        stbuf.* = inode.statC() catch return .IO;
 
-        return 0;
+        return .SUCCESS;
     }
 
-    // Otherwise, iterate through our entry map and find the path it wants
-    const keys = squash.file_tree.keys();
-    for (keys) |key| {
-        //        const long_enough = key.len >= path.len - 1;
-        const paths_eql = path.len > 0 and std.mem.eql(u8, path[1..], key);
+    // Otherwise, grab the entry from our filetree hashmap
+    var entry = squash.file_tree.get(path[1..]) orelse return .IO;
+    var inode = squash.image.getInode(entry.id) catch return .IO;
 
-        if (paths_eql) {
-            var entry = squash.file_tree.get(key) orelse return -5;
-            var inode = squash.image.getInode(entry.id) catch return 0;
+    stbuf.* = inode.statC() catch return .IO;
 
-            //std.debug.print("{s} {s} {}, {o}\n", .{ key, path, paths_eql, inode.base.mode });
-
-            // Load file info into buffer
-            stbuf.* = inode.statC() catch return 0;
-
-            return 0;
-        }
-    }
-
-    return 0;
+    return .SUCCESS;
 }

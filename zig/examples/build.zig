@@ -10,15 +10,20 @@ pub fn build(b: *std.build.Builder) void {
 
     // Standard release options allow the person running `zig build` to select
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable("open", "src/main.zig");
+    const exe = b.addExecutable(.{
+        .name = "squashfuse",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
 
-    exe.addPackagePath("squashfuse", "../squashfuse-zig/src/main.zig");
-    exe.addPackagePath("aisap", "../lib.zig");
+    const squashfuse_mod = b.addModule("squashfuse", .{ .source_file = .{ .path = "../squashfuse-zig/lib.zig" } });
+    const aisap_mod = b.addModule("aisap", .{ .source_file = .{ .path = "../lib.zig" } });
 
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
+    exe.addModule("squashfuse", squashfuse_mod);
+    exe.addModule("aisap", aisap_mod);
 
     exe.addIncludePath("../squashfuse-zig/squashfuse");
     exe.addIncludePath("../..");
@@ -43,7 +48,7 @@ pub fn build(b: *std.build.Builder) void {
 
     exe.linkLibC();
     // TODO: Submodule the source of these and import their code
-    exe.linkSystemLibrary("cap");
+    //    exe.linkSystemLibrary("cap");
     //    exe.linkSystemLibrary("bwrap.x86_64");
     exe.linkSystemLibrary("zlib");
     exe.linkSystemLibrary("zstd");
@@ -67,9 +72,12 @@ pub fn build(b: *std.build.Builder) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const exe_tests = b.addTest("src/main.zig");
-    exe_tests.setTarget(target);
-    exe_tests.setBuildMode(mode);
+    // TODO: add tests
+    const exe_tests = b.addTest(.{
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);

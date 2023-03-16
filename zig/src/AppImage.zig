@@ -5,7 +5,7 @@ const span = std.mem.span;
 const expect = std.testing.expect;
 
 // TODO: figure out how to add this package correctly
-const squashfs = @import("squashfuse-zig/src/main.zig");
+const squashfs = @import("squashfuse-zig/lib.zig");
 pub const SquashFs = squashfs.SquashFs;
 
 const c = @cImport({
