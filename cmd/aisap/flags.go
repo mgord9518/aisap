@@ -87,7 +87,6 @@ func init() {
 		printUsage("version")
 		clr.Printf("\n<yellow>enviornment variables</>:\n")
 		clr.Printf("  <cyan>NO_COLOR</>:                disable color\n")
-		clr.Printf("  <cyan>PREFER_SYSTEM_LIBRARIES</>: force use of system libraries (generally not recommended)\n")
 		clr.Printf("  <cyan>PREFER_AISAP_PROFILE</>:    prefer aisap internal profile over the user defined one\n")
 		clr.Printf("\n<yellow>config</>:\n")
 		clr.Printf("  <cyan>~/.local/share/aisap</>: parent config directory\n")

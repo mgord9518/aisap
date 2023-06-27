@@ -2,10 +2,10 @@
 
 <p align="center"><img src="resources/aisap.svg" width=256 height="256"/></p>
 
-AppImage SAndboxing Project (pronounced /eɪsæp/): a Go library to help sandbox
+AppImage SAndboxing Project (pronounced /eɪsæp/): a tool to help sandbox
 AppImages through bwrap.
 
-**VERY EARLY DEVELOPMENT!** Many parts of this are subject to change and should
+**EARLY DEVELOPMENT!** Many parts of this are subject to change and should
 be expected to until it reaches a more stable form.
 
 ## What is it?
@@ -38,16 +38,17 @@ The ultimate goal is to have as many AppImages in
 known apps may request their own permssions per the developer. Running programs
 sandboxed should mostly be seamless and feel native with the system
 
-Unfortunately, I've been unable to find a Golang binding for squashfuse, so my
-current *hacky* workaround is to simply use squashfuse's binary executable,
-which needs to be in the same directory as any project that uses this library,
-or installed on the host system. Once I get sandboxing to a more stable state,
-I fully intend to create a proper binding of squashfuse for Golang, which would
-certainly benefit more than this project (unless someone else wants to knock
-that part out 😉)
-
 For additional information on the permission system, see
 [here](permissions/README.md)
+
+As it is currently, the main aisap implementation requires a `squashfuse`
+binary to function. I have attempted to create Go squashfuse bindings with
+essentially zero success, so it will likely remain that way for the forseeable
+future. Luckily, I have started working on a Zig implementation of aisap, and
+due to Zig's extremely easy C interop, I already have some pretty decent Zig
+squashfuse bindings to use. Don't expect the Zig implementation to be done
+super soon, but it should be completely self-contained once it is and I will
+probably replace the main CLI tool with it.
 
 ## Usage of the aisap CLI tool
 aisap CLI tool is a simple wrapper around the library to mainly serve as a
@@ -73,6 +74,8 @@ normal options:
 long-only options:
   --example:            print out examples
   --level:              change the permissions level
+  --trust:              set whether the AppImage is trusted or not
+  --trust-once:         trust the AppImage for one run
   --root-dir:           use a different filesystem root for system files
   --data-dir:           change the AppImage's sandbox home location
   --no-data-dir:        force AppImage's HOME to be a tmpfs (default false)
@@ -90,6 +93,10 @@ long-only options:
 ```
 
 ## API:
+warning: the API documentation is currenly out of date and may not work as
+explained here
+
+TODO: update docs and split for Go and Zig
 ### NewAppImage
 ```
 NewAppImage(src string) (*AppImage, error)
