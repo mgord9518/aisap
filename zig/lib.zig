@@ -8,8 +8,7 @@ const c = @cImport({
     @cInclude("aisap.h");
 });
 
-pub const AppImage = @import("src/AppImage.zig").AppImage;
-pub const SquashFs = @import("src/AppImage.zig").SquashFs;
+pub const AppImage = @import("lib/AppImage.zig").AppImage;
 
 pub const BWrapError = error{
     GeneralError,
@@ -34,9 +33,9 @@ fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
     // Set ARGV0 then iterate through the slice and convert it to a C char**
     result[0] = "bwrap";
     for (args, 1..) |arg, idx| {
-        result[idx] = @ptrCast([*]const u8, arg.ptr);
+        result[idx] = arg.ptr;
     }
 
     // Convert the exit code to a Zig error
-    return BWrapErrorFromInt(bwrap_main(@intCast(c_int, args.len + 1), result.ptr));
+    return BWrapErrorFromInt(bwrap_main(@intCast(args.len + 1), result.ptr));
 }

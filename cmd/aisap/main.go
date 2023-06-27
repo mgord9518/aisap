@@ -53,6 +53,7 @@ var (
 	invalidPermLevel       = errors.New("failed to set permissions level (this shouldn't happen!):")
 	invalidFallbackProfile = errors.New("failed to set fallback profile:")
     invalidSocketSet       = errors.New("failed to set socket:")
+    cantRun                = errors.New("failed to run application:")
 )
 
 // Process flags
@@ -260,6 +261,15 @@ func main() {
 
 	if *noDataDir {
 		ai.Perms.NoDataDir = true
+	}
+
+	if flagUsed("trust") {
+		ai.SetTrusted(*trust)
+	}
+
+	if !ai.Trusted() && !*trustOnce {
+		cli.Fatal(cantRun, errors.New("bundle isn't marked trusted"))
+		return
 	}
 
 	if *verbose {

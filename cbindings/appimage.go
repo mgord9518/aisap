@@ -4,33 +4,8 @@
 
 package main
 
-/*
-#include <stdlib.h>
-typedef struct {
-	char* name;
-	char* path;
-	char* data_dir;
-	char* root_dir;
-	char* temp_dir;
-	char* mount_dir;
-	char* md5;
-	char* run_id;
-	unsigned int _index;
-	void*        _parent;
-	int ai_type;
-} aisap_AppImage;
-
-typedef struct {
-	int    level;
-	char** files;
-	char** devices;
-	char** sockets;
-} aisap_AppImagePerms;
-*/
 import "C"
 import (
-//	"unsafe"
-
 	aisap "github.com/mgord9518/aisap"
 )
 
@@ -39,10 +14,9 @@ var openAppImages []*aisap.AppImage
 func main() {}
 
 // -------------------- appimage.go ------------------
-// TODO: Finish appimage.go funcs
 
 //export aisap_appimage_new
-func aisap_appimage_new(cAi *C.aisap_AppImage, src *C.char) int {
+func aisap_appimage_new(cAi *C.aisap_appimage, src *C.char) int {
 	ai, err := aisap.NewAppImage(C.GoString(src))
 
 	if err != nil {
@@ -66,14 +40,14 @@ func aisap_appimage_new(cAi *C.aisap_AppImage, src *C.char) int {
 }
 
 //export aisap_new_appimage
-func aisap_new_appimage(cAi *C.aisap_AppImage, src *C.char) int {
+func aisap_new_appimage(cAi *C.aisap_appimage, src *C.char) int {
     return aisap_appimage_new(cAi, src)
 }
 
 // Just a way to pass the wrap args to the Zig implementation until I can
 // re-implement AppImage.WrapArgs as well
 //export aisap_appimage_wraparg_next
-func aisap_appimage_wraparg_next(cAi *C.aisap_AppImage, length *int) *C.char {
+func aisap_appimage_wraparg_next(cAi *C.aisap_appimage, length *int) *C.char {
 	ai := openAppImages[cAi._index]
 
 	var ret *C.char
@@ -99,12 +73,12 @@ func aisap_appimage_wraparg_next(cAi *C.aisap_AppImage, length *int) *C.char {
 //export aisap_appimage_run
 // TODO: Make char get passed correctly. This may just be easiest to just
 // make another AppImage run function that accepts **char instead of Go strings
-func aisap_appimage_run(cAi *C.aisap_AppImage, args **C.char) int {
+func aisap_appimage_run(cAi *C.aisap_appimage, args **C.char) int {
 	return errToInt(openAppImages[cAi._index].Run([]string{}))
 }
 
 //export aisap_appimage_sandbox
-func aisap_appimage_sandbox(cAi *C.aisap_AppImage, args **C.char) int {
+func aisap_appimage_sandbox(cAi *C.aisap_appimage, args **C.char) int {
 	// Set elements of parent Go struct before running
 	// They won't be properly applied otherwise
 	openAppImages[cAi._index].SetDataDir(C.GoString(cAi.data_dir))
@@ -116,7 +90,7 @@ func aisap_appimage_sandbox(cAi *C.aisap_AppImage, args **C.char) int {
 // ------------------- mount.go ---------------
 
 //export aisap_appimage_mount
-func aisap_appimage_mount(cAi *C.aisap_AppImage) int {
+func aisap_appimage_mount(cAi *C.aisap_appimage) int {
 	err := openAppImages[cAi._index].Mount()
 	cAi.temp_dir = C.CString(openAppImages[cAi._index].TempDir())
 
@@ -124,13 +98,13 @@ func aisap_appimage_mount(cAi *C.aisap_AppImage) int {
 }
 
 //export aisap_appimage_destroy
-func aisap_appimage_destroy(cAi *C.aisap_AppImage) {
+func aisap_appimage_destroy(cAi *C.aisap_appimage) {
 	openAppImages[cAi._index].Destroy()
 	cAi = nil
 }
 
 //export aisap_appimage_ismounted
-func aisap_appimage_ismounted(cAi *C.aisap_AppImage) int {
+func aisap_appimage_ismounted(cAi *C.aisap_appimage) int {
 	if openAppImages[cAi._index].IsMounted() {
 		return 1
 	}

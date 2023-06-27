@@ -32,6 +32,12 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 		p.NoDataDir = true
 	}
 
+	// Phasing out negative bools, I will eventually replace `NoDataDir`
+	// in favor of `DataDir`
+	if e.Section("X-App Permissions").Key("DataDir").Value() == "false" {
+		p.NoDataDir = false
+	}
+
 	l, err := strconv.Atoi(level)
 	if err != nil || l < 0 || l > 3 {
 		p.Level = -1

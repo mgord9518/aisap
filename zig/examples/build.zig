@@ -1,5 +1,5 @@
 const std = @import("std");
-const aisap = @import("../aisap.zig");
+const squashfuse = @import("squashfuse-zig/build.zig");
 
 pub fn build(b: *std.build.Builder) void {
     // Standard target options allows the person running `zig build` to choose
@@ -13,57 +13,42 @@ pub fn build(b: *std.build.Builder) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "squashfuse",
+        .name = "example",
         .root_source_file = .{ .path = "src/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    const squashfuse_mod = b.addModule("squashfuse", .{ .source_file = .{ .path = "../squashfuse-zig/lib.zig" } });
-    const aisap_mod = b.addModule("aisap", .{ .source_file = .{ .path = "../lib.zig" } });
+    const squashfuse_mod = b.addModule("squashfuse", .{
+        .source_file = .{ .path = "../squashfuse-zig/lib.zig" },
+    });
+
+    const aisap_mod = b.addModule("aisap", .{
+        .source_file = .{ .path = "../lib.zig" },
+    });
 
     exe.addModule("squashfuse", squashfuse_mod);
     exe.addModule("aisap", aisap_mod);
 
-    exe.addIncludePath("../squashfuse-zig/squashfuse");
     exe.addIncludePath("../..");
     exe.addLibraryPath(".");
 
-    // TODO: automatically include these when importing the bindings
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/cache.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/decompress.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/dir.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/file.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/fs.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-makedev.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-pread.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/nonstd-stat.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/stack.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/stat.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/swap.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/table.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/traverse.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/util.c", &[_][]const u8{});
-    exe.addCSourceFile("../squashfuse-zig/squashfuse/xattr.c", &[_][]const u8{});
+    squashfuse.linkVendored(exe, .{
+        .enable_lz4 = true,
+        .enable_lzo = true,
+        .enable_zlib = true,
+        .enable_zstd = true,
+        .enable_xz = true,
 
-    exe.linkLibC();
-    // TODO: Submodule the source of these and import their code
-    //    exe.linkSystemLibrary("cap");
-    //    exe.linkSystemLibrary("bwrap.x86_64");
-    exe.linkSystemLibrary("zlib");
-    exe.linkSystemLibrary("zstd");
-    exe.linkSystemLibrary("lz4");
-    exe.linkSystemLibrary("lzma");
-    exe.linkSystemLibrary("fuse3");
+        .use_libdeflate = true,
+        .use_system_fuse = true,
 
-    // TODO: figure out why Zig automatically switches to dynamic linking
-    // Linking libs as object files is a temporary solution which may be used
-    // for now
-    //exe.addObjectFile("/usr/lib/x86_64-linux-gnu/libzstd.a");
+        .squashfuse_dir = "squashfuse-zig",
+    });
 
-    exe.install();
+    b.installArtifact(exe);
 
-    const run_cmd = exe.run();
+    const run_cmd = b.addRunArtifact(exe);
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);

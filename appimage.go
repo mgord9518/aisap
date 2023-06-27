@@ -49,7 +49,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.7.13-alpha"
+	Version = "0.8.0-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -124,25 +124,61 @@ func NewAppImage(src string) (*AppImage, error) {
 	// Fall back to permissions inside AppImage if all else fails
 	if err != nil {
 		ai.Perms, _ = permissions.FromIni(ai.Desktop)
+	}
 
-		// Copy AppImage permissions to system to prevent an AppImage from
-		// modifying its own permissions through an update. This also gives
-		// users a good template to customize their permissions on a per-app
-		// basis.
-		aisapConfig := filepath.Join(xdg.DataHome, "aisap", "profiles")
+	return ai, nil
+}
+
+// Returns `true` if the AppImage in question is both executable and has
+// its profile copied to the aisap config dir. This is to ensure the
+// permissions can't change under the user's feet through an update to the
+// AppImage
+func (ai *AppImage) Trusted() bool {
+	aisapConfig := filepath.Join(xdg.DataHome, "aisap", "profiles")
+	filePath := filepath.Join(aisapConfig, ai.Name)
+
+	// If the AppImage permissions exist in aisap's config directory and the
+	// AppImage is executable, we consider it trusted
+	if helpers.FileExists(filePath) {
+		info, err := os.Stat(ai.Path)
+		if err != nil {
+			return false
+		}
+
+		return info.Mode() & 0100 != 0
+	}
+
+	return false
+}
+
+func (ai *AppImage) SetTrusted(trusted bool) error {
+	aisapConfig := filepath.Join(xdg.DataHome, "aisap", "profiles")
+	filePath := filepath.Join(aisapConfig, ai.Name)
+
+	if trusted {
 		if !helpers.DirExists(aisapConfig) {
 			os.MkdirAll(aisapConfig, 0744)
 		}
 
-		filePath := filepath.Join(aisapConfig, ai.Name)
-		if !helpers.FileExists(filePath) {
-			desktopReader, _ = ai.getEntry()
-			permFile, _ := os.Create(filePath)
-			io.Copy(permFile, desktopReader)
+		info, err := os.Stat(ai.Path)
+		if err != nil {
+			return err
 		}
+
+		os.Chmod(ai.Path, info.Mode() | 0100)
+
+		if helpers.FileExists(filePath) {
+			return errors.New("entry already exists in aisap config dir")
+		}
+
+		desktopReader, _ := ai.getEntry()
+		permFile, _ := os.Create(filePath)
+		io.Copy(permFile, desktopReader)
+	} else {
+		os.Remove(filePath)
 	}
 
-	return ai, nil
+	return nil
 }
 
 // Return a reader for the `.DirIcon` file of the AppImage

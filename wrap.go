@@ -2,8 +2,6 @@ package aisap
 
 import (
 	"errors"
-	"bytes"
-	"bufio"
 	"os"
 	"os/exec"
 	"path"
@@ -199,58 +197,9 @@ func (ai *AppImage) mainWrapArgs() []string {
 		}, cmdArgs...)
 	}
 
-	// Only supply libraries that aren't present on the host system to the
-	// sandbox. This needs more work (eg: move whole directories over if they
-	// contain no libs), but for some AppImages it may reduce RAM usage, reduce
-	// launch time and significantly speed up execution in emulating a
-	// different architecture (although this isn't a common thing)
-	_, present = os.LookupEnv("PREFER_SYSTEM_LIBRARIES")
-	if present {
-		// Get a list of the system libraries into a string by running ldconfig
-		r := &bytes.Buffer{}
-		cmd := exec.Command("ldconfig", "-p")
-		cmd.Stdout = r
-		cmd.Run()
-		scanner := bufio.NewScanner(r)
-		sysLibs := []string{}
-		for scanner.Scan() {
-			s := strings.Split(scanner.Text(), " ")
-			sysLibs = append(sysLibs, s[len(s)-1])
-		}
-
-		filepath.Walk(ai.mountDir, func(dir string, info os.FileInfo, err error) error {
-			if err != nil { return err }
-			if info.IsDir() {
-				return nil
-			}
-
-			var nDir string
-			foundLib := false
-			for _, val := range(sysLibs) {
-				if path.Base(val) == path.Base(dir) {
-					nDir = val
-					foundLib = true
-				}
-			}
-
-			if !foundLib {
-				nDir = strings.Replace(dir, ai.mountDir, "", 1)
-			}
-
-			cmdArgs = append([]string{
-				"--ro-bind", dir, "/tmp/.mount_" + ai.runId+nDir,
-			}, cmdArgs...)
-
-			return nil
-		})
-		cmdArgs = append([]string{
-			"--dir", "/tmp/.mount_" + ai.runId,
-		}, cmdArgs...)
-	} else {
-		cmdArgs = append([]string{
-			"--bind",   ai.tempDir, "/tmp",
-		}, cmdArgs...)
-	}
+	cmdArgs = append([]string{
+		"--bind",   ai.tempDir, "/tmp",
+	}, cmdArgs...)
 
 	return cmdArgs
 }

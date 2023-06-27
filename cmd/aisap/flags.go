@@ -29,6 +29,8 @@ var (
 	profile          = flag.String("profile",           "",    "use a profile from a desktop entry")
 	fallbackProfile  = flag.String("fallback-profile",  "",    "set profile to fallback on if one isn't found")
 	version          = flag.Bool  ("version",           false, "show the version and quit")
+	trustOnce        = flag.Bool  ("trust-once",        false, "trust the AppImage for one run")
+	trust            = flag.Bool  ("trust",             false, "set whether the AppImage is trusted or not")
 
 	addFile   arrayFlags
 	addDevice arrayFlags
@@ -67,6 +69,8 @@ func init() {
 		clr.Printf("\n<yellow>long-only options</>:\n")
 		printUsage("example")
 		printUsage("level")
+		printUsage("trust")
+		printUsage("trust-once")
 		printUsage("root-dir")
 		printUsage("data-dir")
 		printUsage("no-data-dir")
@@ -153,4 +157,14 @@ func (i *arrayFlags) String() string {
 
 func (i *arrayFlags) Type() string {
 	return ""
+}
+
+func flagUsed(name string) bool {
+	found := false
+    flag.Visit(func(f *flag.Flag) {
+        if f.Name == name {
+            found = true
+        }
+    })
+	return found
 }
