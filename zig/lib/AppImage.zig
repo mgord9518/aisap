@@ -4,29 +4,42 @@ const fs = std.fs;
 const span = std.mem.span;
 const expect = std.testing.expect;
 
+const Md5 = std.crypto.hash.Md5;
+
 // TODO: figure out how to add this package correctly
 const squashfs = @import("squashfuse-zig/lib.zig");
 pub const SquashFs = squashfs.SquashFs;
 
-const c = @cImport({
+pub const c = @cImport({
     @cInclude("aisap.h");
 });
 
+pub const c_AppImage = c.aisap_appimage;
+
 pub const AppImageError = error{
     Error, // Generic error
+    InvalidMagic,
     NoDesktopEntry,
     InvalidDesktopEntry,
     InvalidSocket,
 };
 
 pub const AppImage = struct {
-    name: []const u8,
-    path: []const u8,
+    name: [:0]const u8,
+    path: [:0]const u8,
     desktop_entry: [:0]const u8 = undefined,
     image: SquashFs = undefined,
+    kind: Kind,
 
     // The internal pointer to the C struct
     _internal: *c.aisap_appimage = undefined,
+
+    pub const Kind = enum(i3) {
+        shimg = -2,
+
+        type1 = 1,
+        type2,
+    };
 
     pub const Permissions = struct {
         level: u2,
@@ -96,27 +109,22 @@ pub const AppImage = struct {
     // doesn't allow Go pointers to be passed to C
     pub fn init(allocator: std.mem.Allocator, path: []const u8) !AppImage {
         // Create the AppImage type for the C binding
-        var c_ai = c.aisap_appimage{
-            .name = path.ptr,
-            .path = path.ptr,
-            .data_dir = undefined,
-            .temp_dir = undefined,
-            .root_dir = undefined,
-            .mount_dir = undefined,
-            .md5 = undefined,
-            .run_id = undefined,
-            ._index = 0,
-            ._parent = undefined,
-            .ai_type = 2,
-        };
-
         var ai = AppImage{
+            // Name is defined when parsing desktop entry
             .name = undefined,
-            .path = path,
-            ._internal = &c_ai,
+            .path = try allocator.dupeZ(u8, path),
+            ._internal = undefined,
+            .kind = .type2,
         };
 
-        c_ai._parent = &ai;
+        var c_ai = try allocator.create(c.aisap_appimage);
+
+        c_ai.path = ai.path.ptr;
+        c_ai.path_len = ai.path.len;
+        c_ai._go_index = 0;
+        c_ai._zig_parent = &ai;
+
+        ai._internal = c_ai;
 
         const off = try ai.offset();
 
@@ -140,6 +148,8 @@ pub const AppImage = struct {
             // lot smaller than this, but just in case.
             var entry_buf: [1024 * 4]u8 = undefined;
             var inode = entry.inode();
+
+            //std.debug.print("test\n", .{});
 
             // TODO: error checking buffer size
             const read_bytes = try inode.read(&entry_buf, 0);
@@ -167,8 +177,14 @@ pub const AppImage = struct {
             var key_it = std.mem.tokenize(u8, line, "=");
             const key = key_it.next() orelse "";
 
+            // TODO: guess name based on filename if none set in desktop entry
             if (std.mem.eql(u8, key, "Name")) {
-                ai.name = key_it.next() orelse "";
+                ai.name = try allocator.dupeZ(u8, key_it.next() orelse "");
+
+                ai._internal.name = ai.name.ptr;
+                ai._internal.name_len = ai.name.len;
+
+                break;
             }
         }
 
@@ -177,14 +193,18 @@ pub const AppImage = struct {
 
     pub fn deinit(self: *AppImage) void {
         self.image.deinit();
+        self.allocator.free(self.path);
+        self.allocator.free(self.name);
+        self.allocator.free(self._internal);
     }
 
     // Find the offset of the internal read-only filesystem
     pub fn offset(ai: *AppImage) !u64 {
-        var f = try fs.cwd().openFile(ai.path, .{});
-        const hdr = try std.elf.Header.read(f);
+        return offsetFromPath(ai.path);
+    }
 
-        return hdr.shoff + hdr.shentsize * hdr.shnum;
+    pub fn md5(self: *const AppImage) [:0]const u8 {
+        return md5FromPath(self.path);
     }
 
     pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) [][]const u8 {
@@ -232,6 +252,7 @@ pub const AppImage = struct {
             // TODO: handle quoting
             var element_it = std.mem.tokenize(u8, key_it.next() orelse "", ";");
 
+            // TODO: refactor
             if (!std.mem.eql(u8, key, "Sockets")) {
                 while (element_it.next()) |element| {
                     try list.append(element);
@@ -281,3 +302,65 @@ pub const AppImage = struct {
     //        _ = try bwrap(allocator, &cmd);
     //    }
 };
+
+pub fn md5FromPath(path: []const u8) [:0]const u8 {
+    // Digest will be hex encoded, doubling the size
+    // Add one extra byte for null terminator
+    var buf: [Md5.digest_length * 2 + 1]u8 = undefined;
+
+    var md5_buf: [Md5.digest_length]u8 = undefined;
+
+    // Generate the MD5
+    var h = Md5.init(.{});
+    h.update("file://");
+    h.update(path);
+    h.final(&md5_buf);
+
+    // Format as hexadecimal instead of raw bytes
+    return std.fmt.bufPrintZ(&buf, "{x}", .{
+        std.fmt.fmtSliceHexLower(&md5_buf),
+    }) catch unreachable;
+}
+
+pub fn offsetFromPath(path: []const u8) !u64 {
+    var f = try fs.cwd().openFile(path, .{});
+    defer f.close();
+
+    // Get header
+    // Buffer of 19 as it is shImg's header size.
+    // Normal AppImages can be detected by reading 10 bytes
+    var hdr_buf: [19]u8 = undefined;
+    _ = try f.read(hdr_buf[0..]);
+    try f.seekTo(0);
+
+    // TODO: function to detect type
+    if (std.mem.eql(u8, hdr_buf[0..], "#!/bin/sh\n#.shImg.#")) {
+        // Read shImg offset
+        var buf_reader = io.bufferedReader(f.reader());
+        var in_stream = buf_reader.reader();
+
+        // Small buffer needed, the `sfs_offset` line should be well below this amount
+        var buf: [256]u8 = undefined;
+
+        var line: u32 = 0;
+        while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |text| {
+            // Iterated over too many lines, not shImg
+            line += 1;
+            if (line > 512) return AppImageError.InvalidMagic;
+
+            if (text.len > 10 and std.mem.eql(u8, text[0..11], "sfs_offset=")) {
+                var it = std.mem.tokenize(u8, text, "=");
+
+                // Throw away first chunk, should equal `sfs_offset`
+                _ = it.next();
+
+                return try std.fmt.parseInt(u64, it.next().?, 0);
+            }
+        }
+    }
+
+    // Read ELF offset
+    const hdr = try std.elf.Header.read(f);
+
+    return hdr.shoff + hdr.shentsize * hdr.shnum;
+}

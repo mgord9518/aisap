@@ -7,7 +7,8 @@ const aisap = @import("aisap");
 
 const AppImage = aisap.AppImage;
 
-const test_ai_path = "/home/mgord9518/Downloads/Powder_Toy-96.2-x86_64.AppImage";
+//const test_ai_path = "/home/mgord9518/Downloads/Powder_Toy-96.2-x86_64.AppImage";
+const test_ai_path = "/home/mgord9518/Downloads/Spelunky-Classic-HD-Minimal-x86-64.AppImage";
 
 // I'll add this automatically soon, but currently, the `-s` flag must be
 // supplied as it only works single-threaded

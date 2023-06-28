@@ -4,6 +4,24 @@
 
 package main
 
+/*
+// Redefine here as including `aisap.h` causes redefinition issues
+typedef struct aisap_appimage {
+        const char* name;
+		size_t      name_len;
+        const char* path;
+		size_t      path_len;
+        unsigned int _go_index;
+        void*        _zig_parent;
+} aisap_appimage ;
+
+//typedef struct aisap_appimageperms {
+//        int    level;
+//        char** files;
+//        char** devices;
+//        char** sockets;
+//} aisap_appimageperms;
+*/
 import "C"
 import (
 	aisap "github.com/mgord9518/aisap"
@@ -15,40 +33,27 @@ func main() {}
 
 // -------------------- appimage.go ------------------
 
-//export aisap_appimage_new
-func aisap_appimage_new(cAi *C.aisap_appimage, src *C.char) int {
+//export aisap_appimage_init_go
+func aisap_appimage_init_go(cAi *C.aisap_appimage, src *C.char) C.int {
 	ai, err := aisap.NewAppImage(C.GoString(src))
 
+	// As the intended return value is a positive int, return errors
+	// as negated values
 	if err != nil {
-		return errToInt(err)
+		return -errToInt(err)
 	}
 
-	// Set all fields
-	cAi._index    = C.uint(len(openAppImages))
-	cAi.path      = C.CString(ai.Path)
-	cAi.name      = C.CString(ai.Name)
-	cAi.data_dir  = C.CString(ai.DataDir())
-	cAi.root_dir  = C.CString(ai.RootDir())
-	cAi.mount_dir = C.CString(ai.MountDir())
-	cAi.md5       = C.CString(ai.Md5())
-	cAi.run_id    = C.CString(ai.RunId())
-	cAi.ai_type   = C.int(ai.Type())
-
 	openAppImages = append(openAppImages, ai)
+	return C.int(len(openAppImages) - 1)
 
 	return 0
-}
-
-//export aisap_new_appimage
-func aisap_new_appimage(cAi *C.aisap_appimage, src *C.char) int {
-    return aisap_appimage_new(cAi, src)
 }
 
 // Just a way to pass the wrap args to the Zig implementation until I can
 // re-implement AppImage.WrapArgs as well
 //export aisap_appimage_wraparg_next
 func aisap_appimage_wraparg_next(cAi *C.aisap_appimage, length *int) *C.char {
-	ai := openAppImages[cAi._index]
+	ai := openAppImages[cAi._go_index]
 
 	var ret *C.char
 
@@ -73,46 +78,43 @@ func aisap_appimage_wraparg_next(cAi *C.aisap_appimage, length *int) *C.char {
 //export aisap_appimage_run
 // TODO: Make char get passed correctly. This may just be easiest to just
 // make another AppImage run function that accepts **char instead of Go strings
-func aisap_appimage_run(cAi *C.aisap_appimage, args **C.char) int {
-	return errToInt(openAppImages[cAi._index].Run([]string{}))
+func aisap_appimage_run(cAi *C.aisap_appimage, args **C.char) C.int {
+	return errToInt(openAppImages[cAi._go_index].Run([]string{}))
 }
 
 //export aisap_appimage_sandbox
-func aisap_appimage_sandbox(cAi *C.aisap_appimage, args **C.char) int {
-	// Set elements of parent Go struct before running
-	// They won't be properly applied otherwise
-	openAppImages[cAi._index].SetDataDir(C.GoString(cAi.data_dir))
-	openAppImages[cAi._index].SetRootDir(C.GoString(cAi.root_dir))
+func aisap_appimage_sandbox(cAi *C.aisap_appimage, args **C.char) C.int {
+	ai := openAppImages[cAi._go_index]
 
-	return errToInt(openAppImages[cAi._index].Sandbox([]string{}))
+	return errToInt(ai.Sandbox([]string{}))
 }
 
 // ------------------- mount.go ---------------
 
 //export aisap_appimage_mount
-func aisap_appimage_mount(cAi *C.aisap_appimage) int {
-	err := openAppImages[cAi._index].Mount()
-	cAi.temp_dir = C.CString(openAppImages[cAi._index].TempDir())
+func aisap_appimage_mount(cAi *C.aisap_appimage) C.int {
+	err := openAppImages[cAi._go_index].Mount()
+//	cAi.temp_dir = C.CString(openAppImages[cAi._go_index].TempDir())
 
 	return errToInt(err)
 }
 
 //export aisap_appimage_destroy
 func aisap_appimage_destroy(cAi *C.aisap_appimage) {
-	openAppImages[cAi._index].Destroy()
+	openAppImages[cAi._go_index].Destroy()
 	cAi = nil
 }
 
 //export aisap_appimage_ismounted
-func aisap_appimage_ismounted(cAi *C.aisap_appimage) int {
-	if openAppImages[cAi._index].IsMounted() {
+func aisap_appimage_ismounted(cAi *C.aisap_appimage) C.int {
+	if openAppImages[cAi._go_index].IsMounted() {
 		return 1
 	}
 
 	return 0
 }
 
-func errToInt(err error) int {
+func errToInt(err error) C.int {
 	switch err {
 	case nil:
 		return 0

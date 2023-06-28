@@ -14,7 +14,7 @@ import (
 // issue and any error messages you encounter so that I can try to fix them
 // NOTE: Some app permissions are `aliases` of others, so care must be taken
 // that modifying the parent permission will also affect apps based on it
-// 97 unique apps currently supported
+// 105 unique apps currently supported
 var profiles = map[string]permissions.AppImagePerms{
 	"0 a.d.": {
 		Level: 3,
@@ -191,6 +191,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "audio", "network" },
 	},
+	"fireboy and watergirl: in the forest temple": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
+	},
 	"firefox": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -248,13 +253,30 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "network", "alsa" },
 	},
-	"hyper": {
-		Level: 2,
+	"henry stickmin 1 breaking the bank": {
+		Level: 1,
 		Devices: []string{ "dri" },
-		Files:   []string{ "~/.config/nvim:ro", "~/.profile:ro",
-		                   "~/.bashrc:ro",      "~/.zshrc:ro",
-		                   "~/.viminfo:ro"},
-		Sockets: []string{ "x11", "network" },
+		Sockets: []string{ "x11", "pulseaudio" },
+	},
+	"henry stickmin 2 escaping the prison": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
+	},
+	"henry stickmin 3 stealing the diamond": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
+	},
+	"henry stickmin 4 infiltrating the airship": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
+	},
+	"henry stickmin 5 fleeing the complex": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
 	},
 	"imagemagick": {
 		Level: 3,
@@ -319,6 +341,11 @@ var profiles = map[string]permissions.AppImagePerms{
 	// until a fix is found Minecraft will have to be run without a sandbox
 	"minecraft": {
 		Level: 0,
+	},
+	"minecraft tower defense": {
+		Level: 1,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
 	},
 	// Minetest demonstrates that not all GUI apps need level 2 or lower
 	// fully self-contained apps that don't use system fonts, etc. can be
@@ -485,6 +512,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa" },
 	},
+	"spelunky classic hd": {
+		Level: 3,
+		Devices: []string{ "dri" },
+		Sockets: []string{ "x11", "pulseaudio" },
+	},
 	"stackandconquer": {
 		Level: 2,
 		Devices: []string{ "dri" },
@@ -586,6 +618,11 @@ var profiles = map[string]permissions.AppImagePerms{
 		Level: 3,
 		Devices: []string{ "dri" },
 		Sockets: []string{ "x11", "alsa", "network" },
+	},
+	"yabg": {
+		Level: 3,
+		Devices: []string{ "dri", "input" },
+		Sockets: []string{ "x11", "pulseaudio" },
 	},
 	"yuzu": {
 		Level: 2,
