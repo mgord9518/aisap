@@ -9,6 +9,8 @@ const Md5 = std.crypto.hash.Md5;
 // TODO: figure out how to add this package correctly
 const squashfs = @import("squashfuse-zig/lib.zig");
 pub const SquashFs = squashfs.SquashFs;
+// TODO: mounting in Zig
+//pub const fuse = @import("squashfuse-zig/src/fuse.zig");
 
 pub const c = @cImport({
     @cInclude("aisap.h");
@@ -22,6 +24,7 @@ pub const AppImageError = error{
     NoDesktopEntry,
     InvalidDesktopEntry,
     InvalidSocket,
+    NoSpaceLeft,
 };
 
 pub const AppImage = struct {
@@ -30,9 +33,10 @@ pub const AppImage = struct {
     desktop_entry: [:0]const u8 = undefined,
     image: SquashFs = undefined,
     kind: Kind,
+    allocator: std.mem.Allocator,
 
     // The internal pointer to the C struct
-    _internal: *c.aisap_appimage = undefined,
+    _internal: ?*c_AppImage = null,
 
     pub const Kind = enum(i3) {
         shimg = -2,
@@ -71,35 +75,7 @@ pub const AppImage = struct {
         x11,
 
         pub fn fromString(sock: []const u8) !Socket {
-            if (std.mem.eql(u8, sock, "alsa")) {
-                return .alsa;
-            } else if (std.mem.eql(u8, sock, "audio")) {
-                return .audio;
-            } else if (std.mem.eql(u8, sock, "cgroup")) {
-                return .cgroup;
-            } else if (std.mem.eql(u8, sock, "ipc")) {
-                return .ipc;
-            } else if (std.mem.eql(u8, sock, "network")) {
-                return .network;
-            } else if (std.mem.eql(u8, sock, "pid")) {
-                return .pid;
-            } else if (std.mem.eql(u8, sock, "pipewire")) {
-                return .pipewire;
-            } else if (std.mem.eql(u8, sock, "pulseaudio")) {
-                return .pulseaudio;
-            } else if (std.mem.eql(u8, sock, "session")) {
-                return .session;
-            } else if (std.mem.eql(u8, sock, "user")) {
-                return .user;
-            } else if (std.mem.eql(u8, sock, "uts")) {
-                return .uts;
-            } else if (std.mem.eql(u8, sock, "wayland")) {
-                return .wayland;
-            } else if (std.mem.eql(u8, sock, "x11")) {
-                return .x11;
-            }
-
-            return AppImageError.InvalidSocket;
+            return std.meta.stringToEnum(sock) orelse AppImageError.InvalidSocket;
         }
     };
 
@@ -113,18 +89,9 @@ pub const AppImage = struct {
             // Name is defined when parsing desktop entry
             .name = undefined,
             .path = try allocator.dupeZ(u8, path),
-            ._internal = undefined,
             .kind = .type2,
+            .allocator = allocator,
         };
-
-        var c_ai = try allocator.create(c.aisap_appimage);
-
-        c_ai.path = ai.path.ptr;
-        c_ai.path_len = ai.path.len;
-        c_ai._go_index = 0;
-        c_ai._zig_parent = &ai;
-
-        ai._internal = c_ai;
 
         const off = try ai.offset();
 
@@ -181,9 +148,6 @@ pub const AppImage = struct {
             if (std.mem.eql(u8, key, "Name")) {
                 ai.name = try allocator.dupeZ(u8, key_it.next() orelse "");
 
-                ai._internal.name = ai.name.ptr;
-                ai._internal.name_len = ai.name.len;
-
                 break;
             }
         }
@@ -191,11 +155,13 @@ pub const AppImage = struct {
         return ai;
     }
 
+    // TODO
     pub fn deinit(self: *AppImage) void {
-        self.image.deinit();
-        self.allocator.free(self.path);
-        self.allocator.free(self.name);
-        self.allocator.free(self._internal);
+        _ = self;
+        //self.image.deinit();
+        //self.allocator.free(self.path);
+        //self.allocator.free(self.name);
+        //self.freePermissions();
     }
 
     // Find the offset of the internal read-only filesystem
@@ -203,10 +169,11 @@ pub const AppImage = struct {
         return offsetFromPath(ai.path);
     }
 
-    pub fn md5(self: *const AppImage) [:0]const u8 {
-        return md5FromPath(self.path);
+    pub fn md5(self: *const AppImage, buf: []u8) ![:0]const u8 {
+        return try md5FromPath(self.path, buf);
     }
 
+    // TODO
     pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) [][]const u8 {
         // Need an allocator as the size of `cmd_args` will change size
 
@@ -281,12 +248,19 @@ pub const AppImage = struct {
         return perms;
     }
 
-    pub fn freePermissions(self: *AppImage) void {
-        self.allocator.free(self.permissions.files);
-        self.allocator.free(self.permissions.devices);
-        self.allocator.free(self.permissions.sockets);
-    }
+    //    pub fn freePermissions(self: *AppImage) void {
+    //        if (self.permissions.files) {
+    //            self.allocator.free(self.permissions.files);
+    //        }
+    //        if (self.permissions.devices) {
+    //            self.allocator.free(self.permissions.devices);
+    //        }
+    //        if (self.perimssions.sockets) {
+    //            self.allocator.free(self.permissions.sockets);
+    //        }
+    //    }
 
+    // TODO
     pub fn mount(ai: *AppImage) !void {
         _ = ai;
     }
@@ -303,10 +277,10 @@ pub const AppImage = struct {
     //    }
 };
 
-pub fn md5FromPath(path: []const u8) [:0]const u8 {
-    // Digest will be hex encoded, doubling the size
-    // Add one extra byte for null terminator
-    var buf: [Md5.digest_length * 2 + 1]u8 = undefined;
+pub fn md5FromPath(path: []const u8, buf: []u8) ![:0]const u8 {
+    if (buf.len < Md5.digest_length * 2 + 1) {
+        return AppImageError.NoSpaceLeft;
+    }
 
     var md5_buf: [Md5.digest_length]u8 = undefined;
 
@@ -317,7 +291,7 @@ pub fn md5FromPath(path: []const u8) [:0]const u8 {
     h.final(&md5_buf);
 
     // Format as hexadecimal instead of raw bytes
-    return std.fmt.bufPrintZ(&buf, "{x}", .{
+    return std.fmt.bufPrintZ(buf, "{x}", .{
         std.fmt.fmtSliceHexLower(&md5_buf),
     }) catch unreachable;
 }

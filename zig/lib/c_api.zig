@@ -19,29 +19,53 @@ const CAppImageError = enum(u8) {
     no_desktop_entry,
     invalid_desktop_entry,
     invalid_socket,
+    no_space_left,
 };
 
-export fn aisap_appimage_init(ai: *aisap.c_AppImage, path: [*:0]const u8) CAppImageError {
+export fn aisap_appimage_new(path: [*:0]const u8, err: *CAppImageError) aisap.c_AppImage {
     var allocator = std.heap.c_allocator;
 
+    var ai: aisap.c_AppImage = undefined;
     var zig_ai = AppImage.init(allocator, std.mem.span(path)) catch {
-        return .err;
+        err.* = .err;
+        return ai;
     };
 
-    ai.* = zig_ai._internal.*;
+    ai.path = zig_ai.path.ptr;
+    ai.path_len = zig_ai.path.len;
+    ai.name = zig_ai.name.ptr;
+    ai.name_len = zig_ai.name.len;
+
+    zig_ai._internal = &ai;
+    ai._zig_parent = &zig_ai;
 
     // Init Go AppImage to access its functions until they're replaced
-    const go_index = c.aisap_appimage_init_go(ai, path);
+    const go_index = c.aisap_appimage_init_go(&ai, path);
 
-    if (go_index < 0) return .err;
+    if (go_index < 0) err.* = .err;
 
-    zig_ai._internal._go_index = @intCast(go_index);
+    ai._go_index = @intCast(go_index);
 
-    return .ok;
+    err.* = .ok;
+
+    return ai;
 }
 
-export fn aisap_appimage_md5(ai: *aisap.c_AppImage) [*:0]const u8 {
-    return aisap.md5FromPath(ai.path[0..ai.path_len]).ptr;
+export fn aisap_appimage_destroy(ai: *aisap.c_AppImage) void {
+    c.aisap_appimage_destroy_go(ai);
+    getParent(ai).deinit();
+}
+
+export fn aisap_appimage_md5(ai: *aisap.c_AppImage, buf: [*]u8, buf_len: usize, errno: *CAppImageError) [*:0]const u8 {
+    return (aisap.md5FromPath(ai.path[0..ai.path_len], buf[0..buf_len]) catch |err| {
+        errno.* = switch (err) {
+            // This should be the only error ever given from this function
+            aisap.AppImageError.NoSpaceLeft => .no_space_left,
+
+            else => .err,
+        };
+        unreachable;
+    }).ptr;
 }
 
 //export fn aisap_appimage_tempdir(ai: *aisap.c_AppImage) [*:0]const u8 {
@@ -128,9 +152,10 @@ fn aisap_appimage_sandbox(ai: *c.aisap_appimage, argc: i32, args: [*c]const [*c]
 
 /// Get the SquashFS image offset of the AppImage
 /// Offset is stored in `off`, returns error code
-export fn aisap_appimage_offset(ai: *c.aisap_appimage, off: *usize) CAppImageError {
-    off.* = getParent(ai).offset() catch |err| {
-        return switch (err) {
+export fn aisap_appimage_offset(ai: *c.aisap_appimage, errno: *CAppImageError) usize {
+    errno.* = .ok;
+    const off = getParent(ai).offset() catch |err| {
+        errno.* = switch (err) {
             aisap.AppImageError.InvalidMagic => .invalid_magic,
             aisap.AppImageError.NoDesktopEntry => .no_desktop_entry,
             aisap.AppImageError.InvalidDesktopEntry => .invalid_desktop_entry,
@@ -138,15 +163,18 @@ export fn aisap_appimage_offset(ai: *c.aisap_appimage, off: *usize) CAppImageErr
 
             else => .err,
         };
+
+        return 0;
     };
 
-    return .ok;
+    return off;
 }
 
-/// This function doesn't actually require opening an AppImage, just calculates
-/// the MD5 using its path
+/// This function allocates memory on the heap, the caller is responsible
+/// for freeing it
 export fn appimage_get_md5(path: [*:0]const u8) [*:0]const u8 {
-    return aisap.md5FromPath(std.mem.span(path)).ptr;
+    var buf = std.heap.page_allocator.alloc(u8, Md5.digest_length * 2 + 1) catch unreachable;
+    return (aisap.md5FromPath(std.mem.span(path), buf) catch unreachable).ptr;
 }
 
 export fn appimage_get_payload_offset(path: [*:0]const u8) std.os.off_t {

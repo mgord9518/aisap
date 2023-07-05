@@ -41,11 +41,6 @@ func mount(src string, dest string, offset int) error {
 	return nil
 }
 
-// Experimental mounting through Go squashfuse implementaion
-//func mountNoBin(src string, dest string, offset int) error (
-	
-//)
-
 // Takes an optional argument to mount at a specific location (failing if it
 // doesn't exist or more than one arg given. If none given, automatically
 // create a temporary directory and mount to it
@@ -85,15 +80,9 @@ func (ai *AppImage) Mount(dest ...string) error {
 	// Only mount if no previous instances (launched of the same version) are
 	// already mounted there. This is to reuse their libraries, save on RAM and
 	// to spam the mount list as little as possible
-	//if _, present := os.LookupEnv("AISAP_EXPERIMENTAL"); present {
-	//	if !isMountPoint(ai.mountDir) {
-	//		err = mountNoBin(ai.Path, ai.mountDir, ai.Offset)
-	//	}
-	//} else {
-		if !isMountPoint(ai.mountDir) {
-			err = mount(ai.Path, ai.mountDir, ai.Offset)
-		}
-	//}
+	if !isMountPoint(ai.mountDir) {
+		err = mount(ai.Path, ai.mountDir, ai.Offset)
+	}
 
 	return err
 }

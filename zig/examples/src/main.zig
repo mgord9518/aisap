@@ -25,4 +25,8 @@ pub fn main() !void {
     std.debug.print("{s}\n", .{ai.desktop_entry});
     std.debug.print("{s}\n", .{ai.desktop_entry.ptr});
     std.debug.print("{}\n", .{try ai.permissions(allocator)});
+
+    var buf: [32]u8 = undefined;
+
+    std.debug.print("{s}\n", .{try std.fmt.bufPrint(&buf, "{s}", .{ai.md5()})});
 }

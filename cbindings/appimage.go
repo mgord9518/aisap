@@ -99,8 +99,8 @@ func aisap_appimage_mount(cAi *C.aisap_appimage) C.int {
 	return errToInt(err)
 }
 
-//export aisap_appimage_destroy
-func aisap_appimage_destroy(cAi *C.aisap_appimage) {
+//export aisap_appimage_destroy_go
+func aisap_appimage_destroy_go(cAi *C.aisap_appimage) {
 	openAppImages[cAi._go_index].Destroy()
 	cAi = nil
 }
