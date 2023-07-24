@@ -20,7 +20,9 @@ jobs:
       run: ./resources/install_deps.sh
 
     - name: Build
-      run: ./resources/build.sh
+      run: |
+        git submodule update --recursive --init
+        ./resources/build.sh
 
     - name: Test build
       run: ./resources/test.sh
