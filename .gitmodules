@@ -1,3 +1,6 @@
 [submodule "zig/squashfuse-zig"]
 	path = zig/squashfuse-zig
 	url = https://github.com/mgord9518/squashfuse-zig/
+[submodule "zig/bubblewrap"]
+	path = zig/bubblewrap
+	url = https://github.com/mgord9518/bubblewrap

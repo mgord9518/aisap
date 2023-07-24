@@ -25,6 +25,12 @@ typedef struct aisap_appimageperms {
 	char** sockets;
 } aisap_appimageperms;
 
+typedef enum aisap_app_type {
+	AISAP_BUNDLE_SHIMG = -2,
+	AISAP_BUNDLE_TYPE1 = 1,
+	AISAP_BUNDLE_TYPE2 = 2,
+} aisap_app_type;
+
 typedef uint8_t aisap_error;
 
 #ifdef __cplusplus
@@ -39,7 +45,7 @@ extern "C" {
 // work in Zig. 
 // TODO: Make char get passed correctly. This may just be easiest to just
 // make another AppImage run function that accepts char** instead of Go strings
-extern int   aisap_appimage_init_go(aisap_appimage* ai, const char* src); // Returns index
+extern int   aisap_appimage_init_go(aisap_appimage* ai, const char* path); // Returns index
 extern void  aisap_appimage_destroy_go(aisap_appimage* ai);
 extern int   aisap_appimage_run(aisap_appimage* ai, char** args);
 extern int   aisap_appimage_mount(aisap_appimage* ai);
@@ -49,9 +55,15 @@ extern int   aisap_appimage_ismounted(aisap_appimage* ai);
 // `aisap_appimage_new` initializes both the Zig and Go AppImage structs, so
 // until I can get the rest of the functions ported over you'll still be able
 // to call all of them
-extern aisap_appimage aisap_appimage_new(const char* src, aisap_error* err);
+extern aisap_appimage aisap_appimage_new(const char* path, aisap_error* err);
+
+// Like `aisap_appimage_new`, but takes a path length instead of a
+// null-terminated path. For this function, path does NOT have to be null-
+// terminated
+extern aisap_appimage aisap_appimage_newn(const char* path, size_t path_len, aisap_error* err);
+
 extern void           aisap_appimage_destroy(aisap_appimage* ai);
-extern int8_t         aisap_appimage_type(aisap_appimage* ai, aisap_error* err);
+extern aisap_app_type aisap_appimage_type(aisap_appimage* ai, aisap_error* err);
 extern size_t         aisap_appimage_offset(aisap_appimage* ai, aisap_error* err);
 extern const char*    aisap_appimage_md5(aisap_appimage* ai, char* buf, size_t buf_len, aisap_error* err);
 

@@ -18,17 +18,18 @@ pub const BWrapError = error{
 fn BWrapErrorFromInt(err: c_int) BWrapError!void {
     return switch (err) {
         0 => {},
+
         2 => BWrapError.InvalidSyntax,
 
         else => BWrapError.GeneralError,
     };
 }
 
-// Compile in Bubble Wrap and call it as if it were a library
+// Compile in bwrap and call it as if it were a library
 // The C symbol must first be exposed
-extern fn bwrap_main(argc: c_int, argv: [*c]const [*c]const u8) c_int;
+extern fn bwrap_main(argc: c_int, argv: [*]const [*:0]const u8) c_int;
 fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
-    var result = try allocator.alloc([*]const u8, args.len + 1);
+    var result = try allocator.alloc([*:0]const u8, args.len + 1);
 
     // Set ARGV0 then iterate through the slice and convert it to a C char**
     result[0] = "bwrap";
@@ -37,5 +38,5 @@ fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
     }
 
     // Convert the exit code to a Zig error
-    return BWrapErrorFromInt(bwrap_main(@intCast(args.len + 1), result.ptr));
+    try BWrapErrorFromInt(bwrap_main(@intCast(args.len + 1), result.ptr));
 }

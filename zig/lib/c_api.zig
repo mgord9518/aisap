@@ -23,10 +23,15 @@ const CAppImageError = enum(u8) {
 };
 
 export fn aisap_appimage_new(path: [*:0]const u8, err: *CAppImageError) aisap.c_AppImage {
+    const path_len = std.mem.len(path);
+    return aisap_appimage_newn(path, path_len, err);
+}
+
+export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImageError) aisap.c_AppImage {
     var allocator = std.heap.c_allocator;
 
     var ai: aisap.c_AppImage = undefined;
-    var zig_ai = AppImage.init(allocator, std.mem.span(path)) catch {
+    var zig_ai = AppImage.init(allocator, path[0..path_len]) catch {
         err.* = .err;
         return ai;
     };
@@ -64,7 +69,7 @@ export fn aisap_appimage_md5(ai: *aisap.c_AppImage, buf: [*]u8, buf_len: usize, 
 
             else => .err,
         };
-        unreachable;
+        //unreachable;
     }).ptr;
 }
 

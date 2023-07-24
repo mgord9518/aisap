@@ -2,7 +2,6 @@
 *.a
 *.so
 *.o
-*libaisap*
 aisap
 a.out
 *.mod

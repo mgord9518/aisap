@@ -18,8 +18,6 @@ import (
 // mount mounts the requested AppImage `src` to `dest`
 // Quick, hacky implementation, ideally this should be redone using the
 // squashfuse library
-// Also planning on not requiring AppImages to be mounted unless they're being
-// sandboxed
 func mount(src string, dest string, offset int) error {
 	squashfuse, present := helpers.CommandExists("squashfuse")
 	if !present {

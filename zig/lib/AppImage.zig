@@ -6,11 +6,11 @@ const expect = std.testing.expect;
 
 const Md5 = std.crypto.hash.Md5;
 
-// TODO: figure out how to add this package correctly
-const squashfs = @import("squashfuse-zig/lib.zig");
+const squashfs = @import("squashfuse");
 pub const SquashFs = squashfs.SquashFs;
+
 // TODO: mounting in Zig
-//pub const fuse = @import("squashfuse-zig/src/fuse.zig");
+//const mountHelper = @import("mount.zig");
 
 pub const c = @cImport({
     @cInclude("aisap.h");
@@ -75,7 +75,7 @@ pub const AppImage = struct {
         x11,
 
         pub fn fromString(sock: []const u8) !Socket {
-            return std.meta.stringToEnum(sock) orelse AppImageError.InvalidSocket;
+            return std.meta.stringToEnum(Socket, sock) orelse AppImageError.InvalidSocket;
         }
     };
 
@@ -96,7 +96,7 @@ pub const AppImage = struct {
         const off = try ai.offset();
 
         // Open the SquashFS image for reading
-        ai.image = try SquashFs.init(allocator, ai.path, off);
+        ai.image = try SquashFs.init(allocator, ai.path, .{ .offset = off });
 
         var desktop_entry_found = false;
         var root_inode = try ai.image.getInode(ai.image.internal.sb.root_inode);
@@ -116,10 +116,8 @@ pub const AppImage = struct {
             var entry_buf: [1024 * 4]u8 = undefined;
             var inode = entry.inode();
 
-            //std.debug.print("test\n", .{});
-
             // TODO: error checking buffer size
-            const read_bytes = try inode.read(&entry_buf, 0);
+            const read_bytes = try inode.read(&entry_buf);
 
             // Append null byte for use in C
             entry_buf[read_bytes] = '\x00';
@@ -263,6 +261,7 @@ pub const AppImage = struct {
     // TODO
     pub fn mount(ai: *AppImage) !void {
         _ = ai;
+        //        try mountHelper.mountImage(ai.path, ai.offset());
     }
 
     // This can't be finished until AppImage.wrapArgs works correctly
