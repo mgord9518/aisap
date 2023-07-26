@@ -3,10 +3,10 @@
 echo "Building Go functions for libaisap"
 cd ../cbindings
 go mod tidy
-CC="zig cc" go build -buildmode c-archive -o ../libaisap-x86_64.a
+CC="zig cc" go build -buildmode c-archive -o libaisap-x86_64.a
 
 # Don't need this auto-generated header file
-rm ../libaisap-x86_64.h
+rm libaisap-x86_64.h
 
 echo "Building Zig functions for libaisap"
 cd ../zig
