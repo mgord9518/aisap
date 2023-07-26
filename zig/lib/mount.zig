@@ -20,9 +20,8 @@ const Squash = struct {
     file_tree: std.StringArrayHashMap(SquashFs.Inode.Walker.Entry),
 };
 
+// TODO: replace fuse.main because it exits the process
 pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
-    //    std.debug.print("mount.zig test\n", .{});
-
     var allocator = std.heap.c_allocator;
 
     const args = &[_][:0]const u8{

@@ -283,11 +283,11 @@ pub const AppImage = struct {
 
     pub fn mount(ai: *AppImage, opts: MountOptions) !void {
         // TODO: proper temp dir
-        //        std.debug.print("AppImage.zig test\n", .{});
         const mount_dir = opts.path orelse "/tmp/mountTemp";
 
-        //        std.debug.print("AppImage.zig test2 {s}\n", .{mount_dir});
-        try mountHelper.mountImage(ai.path, mount_dir, try ai.offset());
+        const off = try ai.offset();
+
+        try mountHelper.mountImage(ai.path, mount_dir, off);
     }
 
     // This can't be finished until AppImage.wrapArgs works correctly

@@ -31,7 +31,8 @@ export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImag
     var allocator = std.heap.c_allocator;
 
     var ai: aisap.c_AppImage = undefined;
-    var zig_ai = AppImage.init(allocator, path[0..path_len]) catch {
+    var zig_ai = allocator.create(AppImage) catch unreachable;
+    zig_ai.* = AppImage.init(allocator, path[0..path_len]) catch {
         err.* = .err;
         return ai;
     };
@@ -42,7 +43,7 @@ export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImag
     ai.name_len = zig_ai.name.len;
 
     zig_ai._internal = &ai;
-    ai._zig_parent = &zig_ai;
+    ai._zig_parent = zig_ai;
 
     // Init Go AppImage to access its functions until they're replaced
     const go_index = c.aisap_appimage_init_go(&ai, path);
@@ -67,18 +68,17 @@ export fn aisap_appimage_mount(ai: *aisap.c_AppImage, path: ?[*:0]const u8, err:
 export fn aisap_appimage_mountn(ai: *aisap.c_AppImage, path: ?[*]const u8, path_len: usize, err: *CAppImageError) void {
     _ = err;
 
-    std.debug.print("test1\n", .{});
     if (path) |p| {
         getParent(ai).mount(.{
             .path = p[0..path_len],
         }) catch {
             @panic("mount error with path");
         };
+
+        return;
     }
 
-    std.debug.print("test2\n", .{});
     getParent(ai).mount(.{}) catch @panic("mount error no path");
-    std.debug.print("test3\n", .{});
 }
 
 export fn aisap_appimage_destroy(ai: *aisap.c_AppImage) void {
