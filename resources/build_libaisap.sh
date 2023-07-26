@@ -1,6 +1,6 @@
-# Temporary helper script
+#!/bin/sh
 
-set -o pipefail
+set -e
 
 echo "Building Go functions for libaisap"
 cd ../cbindings
@@ -12,7 +12,7 @@ rm ../libaisap-x86_64.h
 
 echo "Building Zig functions for libaisap"
 cd ../zig
-zig build
+zig build -Doptimize=ReleaseSafe
 #zig build-lib \
 #	lib/c_api.zig -lc \
 #	-I .. \
