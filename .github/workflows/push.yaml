@@ -20,6 +20,7 @@ jobs:
         git submodule update --recursive --init
         ./resources/build.sh
 
+    # TODO: Add Zig tests
     - name: Test build
       run: ./resources/test.sh
 
@@ -34,7 +35,7 @@ jobs:
           *.AppImage
           *.shImg
           *.zsync
-          *.a
-          *.so
-          *.h
+          libaisap*.a
+          libaisap*.so
+          aisap.h
           profile_database.json
