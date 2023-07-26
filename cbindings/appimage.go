@@ -51,8 +51,8 @@ func aisap_appimage_init_go(cAi *C.aisap_appimage, src *C.char) C.int {
 
 // Just a way to pass the wrap args to the Zig implementation until I can
 // re-implement AppImage.WrapArgs as well
-//export aisap_appimage_wraparg_next
-func aisap_appimage_wraparg_next(cAi *C.aisap_appimage, length *int) *C.char {
+//export aisap_appimage_wraparg_next_go
+func aisap_appimage_wraparg_next_go(cAi *C.aisap_appimage, length *C.int) *C.char {
 	ai := openAppImages[cAi._go_index]
 
 	var ret *C.char
@@ -64,11 +64,10 @@ func aisap_appimage_wraparg_next(cAi *C.aisap_appimage, length *int) *C.char {
 	// Set the return value and iterate the counter
 	if ai.CurrentArg < len(ai.WrapArgsList) {
 		ret = C.CString(ai.WrapArgsList[ai.CurrentArg])
-		*length = len(ai.WrapArgsList[ai.CurrentArg])
+		*length = C.int(len(ai.WrapArgsList[ai.CurrentArg]))
 
 		ai.CurrentArg++
 	}
-
 
 	return ret
 }
@@ -90,14 +89,6 @@ func aisap_appimage_sandbox(cAi *C.aisap_appimage, args **C.char) C.int {
 }
 
 // ------------------- mount.go ---------------
-
-//export aisap_appimage_mount
-func aisap_appimage_mount(cAi *C.aisap_appimage) C.int {
-	err := openAppImages[cAi._go_index].Mount()
-//	cAi.temp_dir = C.CString(openAppImages[cAi._go_index].TempDir())
-
-	return errToInt(err)
-}
 
 //export aisap_appimage_destroy_go
 func aisap_appimage_destroy_go(cAi *C.aisap_appimage) {

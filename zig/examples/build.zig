@@ -68,6 +68,8 @@ pub fn build(b: *std.build.Builder) void {
         .squashfuse_dir = "squashfuse-zig",
     });
 
+    exe.linkSystemLibrary("fuse3");
+
     b.installArtifact(exe);
 
     const run_cmd = b.addRunArtifact(exe);

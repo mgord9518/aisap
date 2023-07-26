@@ -1,6 +1,7 @@
  zig cc -static \
 	-o test test.c \
 	../libaisap-x86_64.a \
+	-lfuse3
 #	-I ../ \
 #	-I squashfuse-zig/zstd/lib \
 #	-DENABLE_ZLIB \

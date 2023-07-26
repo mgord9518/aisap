@@ -10,7 +10,7 @@ const squashfs = @import("squashfuse");
 pub const SquashFs = squashfs.SquashFs;
 
 // TODO: mounting in Zig
-//const mountHelper = @import("mount.zig");
+const mountHelper = @import("mount.zig");
 
 pub const c = @cImport({
     @cInclude("aisap.h");
@@ -172,7 +172,7 @@ pub const AppImage = struct {
     }
 
     // TODO
-    pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) [][]const u8 {
+    pub fn wrapArgs_old(ai: *AppImage, allocator: std.mem.Allocator) [][]const u8 {
         // Need an allocator as the size of `cmd_args` will change size
 
         //var cmd_args: [][]const u8 = undefined;
@@ -258,10 +258,36 @@ pub const AppImage = struct {
     //        }
     //    }
 
-    // TODO
-    pub fn mount(ai: *AppImage) !void {
-        _ = ai;
-        //        try mountHelper.mountImage(ai.path, ai.offset());
+    extern fn aisap_appimage_wraparg_next_go(*c_AppImage, *i32) ?[*:0]const u8;
+
+    // TODO: implement in Zig
+    // This will return `![]const []const u8` once reimplemented
+    // Currently returns `![*:null]?[*:0]const u8` for easier C interop
+    pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![*:null]?[*:0]const u8 {
+        var wrapargs_list = std.ArrayList(?[*:0]const u8).init(allocator);
+
+        var arg_len: c_int = undefined;
+
+        while (aisap_appimage_wraparg_next_go(ai._internal.?, &arg_len)) |arg| {
+            try wrapargs_list.append(arg);
+        }
+
+        try wrapargs_list.append(null);
+
+        return @ptrCast(wrapargs_list.items.ptr);
+    }
+
+    pub const MountOptions = struct {
+        path: ?[]const u8 = null,
+    };
+
+    pub fn mount(ai: *AppImage, opts: MountOptions) !void {
+        // TODO: proper temp dir
+        //        std.debug.print("AppImage.zig test\n", .{});
+        const mount_dir = opts.path orelse "/tmp/mountTemp";
+
+        //        std.debug.print("AppImage.zig test2 {s}\n", .{mount_dir});
+        try mountHelper.mountImage(ai.path, mount_dir, try ai.offset());
     }
 
     // This can't be finished until AppImage.wrapArgs works correctly

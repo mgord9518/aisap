@@ -37,7 +37,7 @@ CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
 [ $? -ne 0 ] && exit $?
 cd ../..
 
-# Download icongo mod tidy
+# Download icon
 wget "$aisapRawUrl/resources/aisap.svg" -O \
 	'AppDir/usr/share/icons/hicolor/scalable/apps/io.github.mgord9518.aisap.svg'
 [ $? -ne 0 ] && exit $?

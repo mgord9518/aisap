@@ -56,6 +56,31 @@ export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImag
     return ai;
 }
 
+// TODO: error handling
+export fn aisap_appimage_mount(ai: *aisap.c_AppImage, path: ?[*:0]const u8, err: *CAppImageError) void {
+    const path_len = if (path) |p| std.mem.len(p) else 0;
+
+    aisap_appimage_mountn(ai, path, path_len, err);
+}
+
+// TODO: error handling
+export fn aisap_appimage_mountn(ai: *aisap.c_AppImage, path: ?[*]const u8, path_len: usize, err: *CAppImageError) void {
+    _ = err;
+
+    std.debug.print("test1\n", .{});
+    if (path) |p| {
+        getParent(ai).mount(.{
+            .path = p[0..path_len],
+        }) catch {
+            @panic("mount error with path");
+        };
+    }
+
+    std.debug.print("test2\n", .{});
+    getParent(ai).mount(.{}) catch @panic("mount error no path");
+    std.debug.print("test3\n", .{});
+}
+
 export fn aisap_appimage_destroy(ai: *aisap.c_AppImage) void {
     c.aisap_appimage_destroy_go(ai);
     getParent(ai).deinit();
@@ -69,7 +94,8 @@ export fn aisap_appimage_md5(ai: *aisap.c_AppImage, buf: [*]u8, buf_len: usize, 
 
             else => .err,
         };
-        //unreachable;
+
+        unreachable;
     }).ptr;
 }
 
@@ -92,22 +118,12 @@ export fn aisap_appimage_md5(ai: *aisap.c_AppImage, buf: [*]u8, buf_len: usize, 
 
 // This will be used until AppImage.WrapArgs can be completely re-implemented
 // in Zig
-extern fn aisap_appimage_wraparg_next(*aisap.c_AppImage, *i32) ?[*:0]const u8;
+extern fn aisap_appimage_wraparg_next_go(*aisap.c_AppImage, *i32) ?[*:0]const u8;
 
-export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage) [*:0]const u8 {
-    var it: i32 = undefined;
-    //while (aisap_appimage_wraparg_next(ai, &it)) |arg| {
-    //    std.debug.print("{s} ({d}) ", .{ arg, it });
-    //}
-
-    _ = aisap_appimage_sandbox(ai, 0, null);
-
-    const ret = aisap_appimage_wraparg_next(ai, &it);
-    if (ret != null) {
-        return ret.?;
-    }
-
-    return "failed";
+// Returned memory must be freed
+export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage, errno: CAppImageError) [*:null]?[*:0]const u8 {
+    _ = errno;
+    return getParent(ai).wrapArgs(std.heap.c_allocator) catch unreachable;
 }
 
 // TODO: Re-implement wrap.go in Zig
@@ -133,7 +149,7 @@ fn aisap_appimage_sandbox(ai: *c.aisap_appimage, argc: i32, args: [*c]const [*c]
     var it: i32 = 0;
 
     list.append("bwrap") catch return 3;
-    while (aisap_appimage_wraparg_next(ai, &len)) |arg| {
+    while (aisap_appimage_wraparg_next_go(ai, &len)) |arg| {
         var str: []const u8 = undefined;
         str.len = @intCast(len);
         str.ptr = arg;

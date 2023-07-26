@@ -34,8 +34,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const pie = b.option(bool, "no-pie", "build as a PIE (position independent executable)") orelse true;
-    lib.pie = !pie;
+    const pie = b.option(bool, "pie", "build as a PIE (position independent executable)") orelse true;
+    lib.pie = pie;
 
     squashfuse.linkVendored(lib, .{
         .enable_lz4 = true,

@@ -7,10 +7,10 @@ const expect = std.testing.expect;
 const Md5 = std.crypto.hash.Md5;
 
 // TODO: figure out how to add this package correctly
-const squashfs = @import("squashfuse-zig/lib.zig");
+const squashfs = @import("squashfuse");
 pub const SquashFs = squashfs.SquashFs;
 
-const fuse = @import("squashfuse-zig/src/fuse.zig");
+const fuse = @import("fuse.zig");
 const E = fuse.E;
 const linux = std.os.linux;
 
@@ -20,15 +20,19 @@ const Squash = struct {
     file_tree: std.StringArrayHashMap(SquashFs.Inode.Walker.Entry),
 };
 
-pub fn mountImage(src: []const u8, offset: usize) !void {
+pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
+    //    std.debug.print("mount.zig test\n", .{});
+
     var allocator = std.heap.c_allocator;
 
-    const args = &[_]u8{
+    const args = &[_][:0]const u8{
+        "aisap_mount",
         "-s",
+        try allocator.dupeZ(u8, dest),
     };
 
     var squash = Squash{
-        .image = SquashFs.init(
+        .image = try SquashFs.init(
             allocator,
             src,
             .{ .offset = offset },
@@ -36,7 +40,21 @@ pub fn mountImage(src: []const u8, offset: usize) !void {
         .file_tree = std.StringArrayHashMap(SquashFs.Inode.Walker.Entry).init(allocator),
     };
 
-    try fuse.main(allocator, args.items, &fuse_ops, squash);
+    var root_inode = squash.image.getRootInode();
+    var walker = try root_inode.walk(allocator);
+    defer walker.deinit();
+
+    // Populate the filetree
+    while (try walker.next()) |entry| {
+        // Start new path with slash as squashfuse doesn't supply one
+        // and add a null byte
+        const new_path = try std.fmt.allocPrintZ(allocator, "/{s}", .{entry.path});
+
+        // Now add to the HashMap
+        try squash.file_tree.put(new_path, entry);
+    }
+
+    try fuse.main(allocator, args, &fuse_ops, squash);
 }
 
 export const fuse_ops = fuse.Operations{

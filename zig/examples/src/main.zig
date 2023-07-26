@@ -39,5 +39,7 @@ pub fn main() !void {
             try ai.md5(&md5_buf),
         }),
     });
+
+    try ai.mount(.{});
     //    ai.mount();
 }
