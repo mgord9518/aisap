@@ -4,3 +4,6 @@
 [submodule "zig/bubblewrap"]
 	path = zig/bubblewrap
 	url = https://github.com/mgord9518/bubblewrap
+[submodule "zig/known-folders"]
+	path = zig/known-folders
+	url = https://github.com/ziglibs/known-folders

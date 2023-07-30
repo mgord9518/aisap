@@ -3,9 +3,11 @@ const io = std.io;
 const fs = std.fs;
 const span = std.mem.span;
 const expect = std.testing.expect;
+const os = std.os;
 
 const Md5 = std.crypto.hash.Md5;
 
+const known_folders = @import("known-folders");
 const squashfs = @import("squashfuse");
 pub const SquashFs = squashfs.SquashFs;
 
@@ -279,15 +281,42 @@ pub const AppImage = struct {
 
     pub const MountOptions = struct {
         path: ?[]const u8 = null,
+        foreground: bool = false,
     };
 
+    // TODO: refactor
+    fn getMountDir(ai: *AppImage, buf: []u8) ![]const u8 {
+        var allocator_buf: [4096]u8 = undefined;
+        var fba = std.heap.FixedBufferAllocator.init(&allocator_buf);
+        const allocator = fba.allocator();
+
+        const runtime_dir = try known_folders.getPath(allocator, .runtime) orelse unreachable;
+
+        var md5_buf: [33]u8 = undefined;
+        return try std.fmt.bufPrint(buf, "{s}/aisap/mount/{s}", .{ runtime_dir, try ai.md5(&md5_buf) });
+    }
+
     pub fn mount(ai: *AppImage, opts: MountOptions) !void {
-        // TODO: proper temp dir
-        const mount_dir = opts.path orelse "/tmp/mountTemp";
+        var buf: [os.PATH_MAX]u8 = undefined;
+
+        //        const cwd = fs.cwd();
+        //        cwd.makePath(runtime_dir) catch |err| {
+        //            if (err != os.MakeDirError.PathAlreadyExists) {}
+        //        };
+
+        const mount_dir = opts.path orelse try ai.getMountDir(&buf);
 
         const off = try ai.offset();
 
-        try mountHelper.mountImage(ai.path, mount_dir, off);
+        if (opts.foreground) {
+            mountHelper.mountImage;
+        } else {
+            _ = try std.Thread.spawn(
+                .{},
+                mountHelper.mountImage,
+                .{ ai.path, mount_dir, off },
+            );
+        }
     }
 
     // This can't be finished until AppImage.wrapArgs works correctly

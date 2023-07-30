@@ -13,18 +13,11 @@ rm ../libaisap-x86_64.h
 echo "Building Zig functions for libaisap"
 cd ../zig
 zig build -Doptimize=ReleaseSafe
-#zig build-lib \
-#	lib/c_api.zig -lc \
-#	-I .. \
-#	-I squashfuse-zig/squashfuse \
-#	-fcompiler-rt \
-#	-fPIE \
-#	-target x86_64-linux
 
 # Extract both, then combine them into a single lib
-ar -x  ../libaisap-x86_64.a
-ar -x  zig-out/lib/libaisap.a
-ar -qfc ../libaisap-x86_64.a *.o
+zig ar -x  ../libaisap-x86_64.a
+zig ar -x  zig-out/lib/libaisap.a
+zig ar -qc ../libaisap-x86_64.a *.o
 
 # Clean up
 rm *.o

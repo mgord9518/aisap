@@ -1,6 +1,6 @@
 module github.com/mgord9518/aisap/cmd/aisap
 
-go 1.19
+go 1.18
 
 replace github.com/mgord9518/aisap => ../../
 
@@ -13,7 +13,7 @@ replace github.com/mgord9518/aisap/spooky => ../../spooky
 replace github.com/mgord9518/aisap/helpers => ../../helpers
 
 require (
-	github.com/gookit/color v1.5.3
+	github.com/gookit/color v1.5.4
 	github.com/mgord9518/aisap v0.0.0-00010101000000-000000000000
 	github.com/mgord9518/aisap/helpers v0.0.0-20230110044537-c0113f9e4b7c
 	github.com/mgord9518/aisap/permissions v0.0.0-20230110044537-c0113f9e4b7c
@@ -34,5 +34,5 @@ require (
 	github.com/therootcompany/xz v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
 )

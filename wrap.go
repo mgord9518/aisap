@@ -102,7 +102,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 	cmdArgs := []string{
 		"--setenv", "TMPDIR",              "/tmp",
 		"--setenv", "HOME",                xdg.Home,
-		"--setenv", "APPDIR",              "/tmp/.mount_"+ai.runId,
+		"--setenv", "APPDIR",              "/tmp/.mount_"+ai.md5,
 		"--setenv", "APPIMAGE",            filepath.Join("/app", path.Base(ai.Path)),
 		"--setenv", "ARGV0",               filepath.Join(path.Base(ai.Path)),
 		"--setenv", "XDG_DESKTOP_DIR",     filepath.Join(xdg.Home, "Desktop"),
@@ -185,7 +185,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 	cmdArgs = append(cmdArgs, parseFiles(ai)...)
 	cmdArgs = append(cmdArgs, parseSockets(ai)...)
 	cmdArgs = append(cmdArgs, parseDevices(ai)...)
-	cmdArgs = append(cmdArgs, "--", "/tmp/.mount_"+ai.runId+"/AppRun")
+	cmdArgs = append(cmdArgs, "--", "/tmp/.mount_"+ai.md5+"/AppRun")
 
 	if ai.Perms.NoDataDir {
 		cmdArgs = append([]string{
@@ -199,6 +199,7 @@ func (ai *AppImage) mainWrapArgs() []string {
 
 	cmdArgs = append([]string{
 		"--bind",   ai.tempDir, "/tmp",
+		"--bind",   ai.mountDir, "/tmp/.mount_"+ai.md5,
 	}, cmdArgs...)
 
 	return cmdArgs
@@ -327,6 +328,7 @@ func parseSockets(ai *AppImage) []string {
 		},
 		"pulseaudio": {
 			"--ro-bind-try", filepath.Join(xdg.RuntimeDir, "pulse"), "/run/user/"+uid+"/pulse",
+			// TODO: fix bwrap error when running in level 1
 			"--ro-bind-try", ai.resolve("/etc/pulse"),              "/etc/pulse",
 		},
 		"session": {},

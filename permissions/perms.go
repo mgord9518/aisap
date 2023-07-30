@@ -20,11 +20,36 @@ var (
     InvalidSocket = errors.New("socket invalid")
 )
 
+type File struct {
+	Source   string
+	Dest     string
+	Writable bool
+}
+
+type Socket int
+
+const (
+    x11 = Socket(0)
+	alsa
+	audio
+	pulseaudio
+	wayland
+	dbus
+	cgroup
+	network
+	pid
+	pipewire
+	session
+	user
+	uts
+)
+
 type AppImagePerms struct {
 	Level        int    `json:"level"`       // How much access to system files
 	Files      []string `json:"filesystem"`  // Grant permission to access files
 	Devices    []string `json:"devices"`     // Access device files (eg: dri, input)
 	Sockets    []string `json:"sockets"`     // Use sockets (eg: x11, pulseaudio, network)
+	// TODO: rename to PersistentHome or something
 	NoDataDir    bool   `json:"no_data_dir"` // Whether or not a data dir should be created (only
 	// use if the AppImage saves ZERO data eg: 100% online or a game without
 	// save files)

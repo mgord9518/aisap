@@ -28,28 +28,29 @@ type AppImage struct {
 	Desktop       *ini.File                  // INI of internal desktop entry
 	Perms         *permissions.AppImagePerms // Permissions
 	Path           string // Location of AppImage
-	dataDir        string // The AppImage's `~` directory
+	dataDir        string // The AppImage's `HOME` directory
 	rootDir        string // Can be used to give the AppImage fake system files
 	tempDir        string // The AppImage's `/tmp` directory
 	mountDir       string // The location the AppImage is mounted at
 	md5            string // MD5 of AppImage's URI
-	runId          string // Random string associated with this specific run instance
 	Name           string // AppImage name from the desktop entry
-	Version        string // Version of the AppImage
-	UpdateInfo     string // Update information
+	Version        string
+	UpdateInfo     string
 	Offset         int    // Offset of SquashFS image
 	imageType      int    // Type of AppImage (1=ISO 9660 ELF, 2=squashfs ELF, -2=shImg shell)
 	architecture []string // List of CPU architectures supported by the bundle
 	reader        *squashfs.Reader
 	file          *os.File
 
+	// These will both be removed when the Zig-implemented C bindings
+	// become usable
 	CurrentArg     int    // Should only ever be used for the C bindings
 	WrapArgsList []string // Should only ever be used for the C bindings
 }
 
 // Current version of aisap
 const (
-	Version = "0.8.1-alpha"
+	Version = "0.9.0-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -210,10 +211,6 @@ func (ai *AppImage) Md5() string {
 
 func (ai *AppImage) MountDir() string {
 	return ai.mountDir
-}
-
-func (ai *AppImage) RunId() string {
-	return ai.runId
 }
 
 // Set the directory the sandbox pulls system files from

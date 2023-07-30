@@ -6,9 +6,8 @@ const expect = std.testing.expect;
 
 const Md5 = std.crypto.hash.Md5;
 
-// TODO: figure out how to add this package correctly
-const squashfs = @import("squashfuse");
-pub const SquashFs = squashfs.SquashFs;
+const squashfuse = @import("squashfuse");
+pub const SquashFs = squashfuse.SquashFs;
 
 const fuse = @import("fuse.zig");
 const E = fuse.E;
@@ -20,13 +19,15 @@ const Squash = struct {
     file_tree: std.StringArrayHashMap(SquashFs.Inode.Walker.Entry),
 };
 
-// TODO: replace fuse.main because it exits the process
+// TODO: replace fuse.main because it prints errors on fail
 pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
     var allocator = std.heap.c_allocator;
 
     const args = &[_][:0]const u8{
-        "aisap_mount",
+        "aisap_squashfuse",
+        // Squashfuse doesn't support multithreading
         "-s",
+        "-f",
         try allocator.dupeZ(u8, dest),
     };
 

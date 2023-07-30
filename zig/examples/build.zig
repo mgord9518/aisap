@@ -38,6 +38,10 @@ pub fn build(b: *std.build.Builder) void {
         },
     });
 
+    const known_folders_mod = b.addModule("known-folders", .{
+        .source_file = .{ .path = "../known-folders/known-folders.zig" },
+    });
+
     const aisap_mod = b.addModule("aisap", .{
         .source_file = .{ .path = "../lib.zig" },
         .dependencies = &.{
@@ -45,6 +49,10 @@ pub fn build(b: *std.build.Builder) void {
             .{
                 .name = "squashfuse",
                 .module = squashfuse_mod,
+            },
+            .{
+                .name = "known-folders",
+                .module = known_folders_mod,
             },
         },
     });
@@ -57,7 +65,7 @@ pub fn build(b: *std.build.Builder) void {
 
     squashfuse.linkVendored(exe, .{
         .enable_lz4 = true,
-        .enable_lzo = true,
+        .enable_lzo = false,
         .enable_zlib = true,
         .enable_zstd = true,
         .enable_xz = true,

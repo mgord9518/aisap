@@ -36,5 +36,13 @@ pub fn main() !void {
         try ai.md5(&md5_buf),
     });
 
-    try ai.mount(.{});
+    try ai.mount(.{
+        .path = "/tmp/ligma",
+    });
+
+    while (true) {
+        std.time.sleep(10000000000);
+    }
+
+    std.debug.print("OUT OF MOUNT\n", .{});
 }

@@ -3,13 +3,12 @@ package aisap
 import (
 	"bufio"
 	"bytes"
-	"path"
-	"path/filepath"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"errors"
+	"fmt"
 
 	helpers "github.com/mgord9518/aisap/helpers"
 	xdg     "github.com/adrg/xdg"
@@ -58,22 +57,16 @@ func (ai *AppImage) Mount(dest ...string) error {
 		return nil
 	}
 
-	pfx := path.Base(ai.Path)
-	if len(pfx) > 6 {
-		pfx = pfx[0:6]
-	}
+	var err error
 
-	// Generate a seed based on the AppImage URI MD5sum. This shouldn't cause
-	// any issues as AppImages will have a different path given a different
-	// version
-	seed, err := strconv.ParseInt(ai.md5[0:15], 16, 64)
-	ai.runId = pfx + helpers.RandString(int(seed), 6)
-
-	ai.tempDir, err = helpers.MakeTemp(filepath.Join(xdg.RuntimeDir, "aisap"), ai.runId)
+	ai.tempDir, err = helpers.MakeTemp(xdg.RuntimeDir + "/aisap/tmp", ai.md5)
 	if err != nil { return err }
 
-	ai.mountDir, err = helpers.MakeTemp(ai.tempDir, ".mount_" + ai.runId)
+	ai.mountDir, err = helpers.MakeTemp(xdg.RuntimeDir + "/aisap/mount", ai.md5)
 	if err != nil { return err }
+
+	fmt.Println(ai.mountDir)
+	fmt.Println(ai.tempDir)
 
 	// Only mount if no previous instances (launched of the same version) are
 	// already mounted there. This is to reuse their libraries, save on RAM and
