@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 typedef struct aisap_appimage {
 	const char*  name;
@@ -9,27 +10,63 @@ typedef struct aisap_appimage {
 	const char*  path;
 	size_t       path_len;
 
-	unsigned int _go_index;   // For Go implementation as structs cannot contain Go pointers
-	void*        _zig_parent; // For Zig implemenation, points to Zig AppImage
+	// For Go implementation (Go does not allow C structs to store Go pointers,
+	// so an index into an array is used)
+	unsigned int _go_index;   
+
+	// For Zig implemenation, points to Zig AppImage
+	void*        _zig_parent; 
 } aisap_appimage ;
 
-// Not yet sure how I'll get the char** fields set. I've been unable to
-// properly find a way to pass either Go or Zig slices to C. I know it's
-// possible, but haven't had much luck. Maybe I'll make a function that cycles
-// through a single permission every time it's called and just return a char*
-// until I can figure it out
-typedef struct aisap_appimageperms {
-	int    level;
-	char** files;
-	char** devices;
-	char** sockets;
-} aisap_appimageperms;
+typedef enum aisap_socket {
+	AISAP_SOCKET_ALSA,
+	AISAP_SOCKET_AUDIO,
+	AISAP_SOCKET_CGROUP,
+	AISAP_SOCKET_DBUS,
+	AISAP_SOCKET_IPC,
+	AISAP_SOCKET_NETWORK,
+	AISAP_SOCKET_PID,
+	AISAP_SOCKET_PIPEWIRE,
+	AISAP_SOCKET_PULSEAUDIO,
+	AISAP_SOCKET_SESSION,
+	AISAP_SOCKET_USER,
+	AISAP_SOCKET_UTS,
+	AISAP_SOCKET_WAYLAND,
+	AISAP_SOCKET_X11,
+} aisap_socket;
 
-typedef enum aisap_app_type {
+typedef struct aisap_file {
+	// The file's real path
+	const char*	  src_path;
+	size_t        src_path_len;
+
+	// The path it'll be exposed to in the sandbox
+	const char*	  dest_path;
+	size_t        dest_path_len;
+
+	bool writable;
+} aisap_file;
+
+// Not yet implemented, just messing around with potential API at the moment
+typedef struct aisap_permissions {
+	// level ranges from 0 to 3
+	uint8_t		  level;
+
+	aisap_file*	  files;
+	size_t	   	  files_len;
+
+	char**		  devices;
+	size_t	   	  devices_len;
+
+	aisap_socket* sockets;
+	size_t	   	  sockets_len;
+} aisap_permissions;
+
+typedef enum aisap_bundle_type {
 	AISAP_BUNDLE_SHIMG = -2,
 	AISAP_BUNDLE_TYPE1 = 1,
 	AISAP_BUNDLE_TYPE2 = 2,
-} aisap_app_type;
+} aisap_bundle_type;
 
 typedef uint8_t aisap_error;
 
@@ -61,11 +98,11 @@ extern aisap_appimage aisap_appimage_new(const char* path, aisap_error* err);
 // terminated
 extern aisap_appimage aisap_appimage_newn(const char* path, size_t path_len, aisap_error* err);
 
-extern void           aisap_appimage_destroy(aisap_appimage* ai);
-extern aisap_app_type aisap_appimage_type(aisap_appimage* ai, aisap_error* err);
-extern size_t         aisap_appimage_offset(aisap_appimage* ai, aisap_error* err);
-extern const char*    aisap_appimage_md5(aisap_appimage* ai, char* buf, size_t buf_len, aisap_error* err);
-extern void           aisap_appimage_mount(aisap_appimage* ai, char* path, aisap_error* err);
+extern void              aisap_appimage_destroy(aisap_appimage* ai);
+extern aisap_bundle_type aisap_appimage_type(aisap_appimage* ai, aisap_error* err);
+extern size_t            aisap_appimage_offset(aisap_appimage* ai, aisap_error* err);
+extern const char*       aisap_appimage_md5(aisap_appimage* ai, char* buf, size_t buf_len, aisap_error* err);
+extern void              aisap_appimage_mount(aisap_appimage* ai, char* path, aisap_error* err);
 
 // THESE FUNCTIONS NOT YET IMPLEMENTED
 //extern uint8_t aisap_appimage_sandbox(aisap_appimage* ai, int argc, char** args);

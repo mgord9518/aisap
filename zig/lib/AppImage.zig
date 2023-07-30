@@ -309,7 +309,7 @@ pub const AppImage = struct {
         const off = try ai.offset();
 
         if (opts.foreground) {
-            mountHelper.mountImage;
+            try mountHelper.mountImage(ai.path, mount_dir, off);
         } else {
             _ = try std.Thread.spawn(
                 .{},

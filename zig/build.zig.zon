@@ -1,9 +1,4 @@
 .{
     .name = "aisap",
-    .version = "0.9.0",
-    .dependencies = .{
-        .basedirs = .{
-            .url = "https://github.com/mgord9518/basedirs-zig/archive/refs/tags/continuous.tar.gz",
-        },
-    }
+    .version = "0.9.1",
 }

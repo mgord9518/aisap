@@ -49,6 +49,10 @@ pub fn build(b: *std.Build) void {
         .squashfuse_dir = "squashfuse-zig",
     });
 
+    const known_folders_mod = b.addModule("known-folders", .{
+        .source_file = .{ .path = "known-folders/known-folders.zig" },
+    });
+
     const squashfuse_mod = b.addModule("squashfuse", .{
         .source_file = .{ .path = "squashfuse-zig/lib.zig" },
         .dependencies = &.{
@@ -60,8 +64,9 @@ pub fn build(b: *std.Build) void {
     });
 
     lib.addModule("squashfuse", squashfuse_mod);
+    lib.addModule("known-folders", known_folders_mod);
 
-    lib.addIncludePath("..");
+    lib.addIncludePath("../include");
 
     lib.linkLibC();
 
