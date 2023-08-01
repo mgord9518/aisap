@@ -409,9 +409,10 @@ pub const AppImage = struct {
                     const writable = std.mem.eql(u8, split_it.first(), "rw");
 
                     try file_list.append(.{
-                        .src_path = element,
-                        .dest_path = element,
+                        .src_path = try allocator.dupeZ(u8, element),
+                        .dest_path = try allocator.dupeZ(u8, element),
                         .writable = writable,
+                        .allocator = allocator,
                     });
                 }
             } else {

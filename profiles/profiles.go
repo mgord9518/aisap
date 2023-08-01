@@ -38,15 +38,11 @@ var jsonDatabase []byte
 var RawProfiles = []permissions.AppImagePerms{}
 
 func InitRawProfiles() error {
-	if len(RawProfiles) != 0 && len(jsonDatabase) == 0 {
-		return
+	if len(RawProfiles) != 0 || len(jsonDatabase) == 0 {
+		return nil
 	}
 
-	err := json.Unmarshal(jsonDatabase, &RawProfiles)
-
-	if err != nil {
-		return err
-	}
+	return json.Unmarshal(jsonDatabase, &RawProfiles)
 }
 
 func Profiles() map[string]permissions.AppImagePerms {
