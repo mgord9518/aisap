@@ -38,4 +38,3 @@ jobs:
           libaisap*.a
           libaisap*.so
           aisap.h
-          profile_database.json

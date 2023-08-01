@@ -260,7 +260,7 @@ func main() {
 	}
 
 	if *noDataDir {
-		ai.Perms.NoDataDir = true
+		ai.Perms.DataDir = false
 	}
 
 	if flagUsed("trust") {

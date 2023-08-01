@@ -12,7 +12,7 @@ typedef struct aisap_appimage {
 
 	// For Go implementation (Go does not allow C structs to store Go pointers,
 	// so an index into an array is used)
-	unsigned int _go_index;   
+	size_t       _go_index;   
 
 	// For Zig implemenation, points to Zig AppImage
 	void*        _zig_parent; 
@@ -82,7 +82,7 @@ extern "C" {
 // work in Zig. 
 // TODO: Make char get passed correctly. This may just be easiest to just
 // make another AppImage run function that accepts char** instead of Go strings
-extern int   aisap_appimage_init_go(aisap_appimage* ai, const char* path); // Returns index
+extern void  aisap_appimage_init_go(aisap_appimage* ai, const char* path, aisap_error* err);
 extern void  aisap_appimage_destroy_go(aisap_appimage* ai);
 extern int   aisap_appimage_run(aisap_appimage* ai, char** args);
 extern int   aisap_appimage_ismounted(aisap_appimage* ai);

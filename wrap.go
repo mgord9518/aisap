@@ -50,7 +50,7 @@ func (ai *AppImage) Sandbox(args []string) error {
 	}
 
 	// Tell AppImages not to ask for integration
-	if !ai.Perms.NoDataDir {
+	if ai.Perms.DataDir {
 		if !helpers.DirExists(filepath.Join(ai.dataDir,  ".local/share/appimagekit")) {
 			err := os.MkdirAll(filepath.Join(ai.dataDir, ".local/share/appimagekit"), 0744)
 			if err != nil { return err }
@@ -187,13 +187,13 @@ func (ai *AppImage) mainWrapArgs() []string {
 	cmdArgs = append(cmdArgs, parseDevices(ai)...)
 	cmdArgs = append(cmdArgs, "--", "/tmp/.mount_"+ai.md5+"/AppRun")
 
-	if ai.Perms.NoDataDir {
+	if ai.Perms.DataDir {
 		cmdArgs = append([]string{
-			"--tmpfs", xdg.Home,
+			"--bind", ai.dataDir, xdg.Home,
 		}, cmdArgs...)
 	} else {
 		cmdArgs = append([]string{
-			"--bind", ai.dataDir, xdg.Home,
+			"--tmpfs", xdg.Home,
 		}, cmdArgs...)
 	}
 

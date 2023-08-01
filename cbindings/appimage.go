@@ -6,21 +6,21 @@ package main
 
 /*
 // Redefine here as including `aisap.h` causes redefinition issues
-typedef struct aisap_appimage {
-        const char* name;
-		size_t      name_len;
-        const char* path;
-		size_t      path_len;
-        unsigned int _go_index;
-        void*        _zig_parent;
-} aisap_appimage ;
+#include <stddef.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <stdbool.h>
 
-//typedef struct aisap_appimageperms {
-//        int    level;
-//        char** files;
-//        char** devices;
-//        char** sockets;
-//} aisap_appimageperms;
+typedef struct aisap_appimage {
+        const char*  name;
+        size_t       name_len;
+
+        const char*  path;
+        size_t       path_len;
+
+        size_t       _go_index;   
+        void*        _zig_parent; 
+} aisap_appimage ;
 */
 import "C"
 import (
@@ -34,19 +34,19 @@ func main() {}
 // -------------------- appimage.go ------------------
 
 //export aisap_appimage_init_go
-func aisap_appimage_init_go(cAi *C.aisap_appimage, src *C.char) C.int {
+func aisap_appimage_init_go(cAi *C.aisap_appimage, src *C.char, cErr *C.uint8_t) {
 	ai, err := aisap.NewAppImage(C.GoString(src))
 
 	// As the intended return value is a positive int, return errors
 	// as negated values
 	if err != nil {
-		return -errToInt(err)
+		*cErr = C.uint8_t(errToInt(err))
+		return
 	}
 
 	openAppImages = append(openAppImages, ai)
-	return C.int(len(openAppImages) - 1)
 
-	return 0
+	cAi._go_index = C.size_t(len(openAppImages) - 1)
 }
 
 // Just a way to pass the wrap args to the Zig implementation until I can

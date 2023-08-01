@@ -2,6 +2,10 @@ module github.com/mgord9518/aisap
 
 go 1.18
 
+replace github.com/mgord9518/aisap/permissions => ./permissions
+
+replace github.com/mgord9518/aisap/profiles => ./profiles
+
 require (
 	github.com/CalebQ42/squashfs v0.8.1
 	github.com/adrg/xdg v0.4.0

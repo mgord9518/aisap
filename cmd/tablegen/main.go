@@ -5,33 +5,20 @@ package main
 
 import (
 	"fmt"
-	"sort"
 
 	profiles "github.com/mgord9518/aisap/profiles"
 )
 
 // Process flags
 func main() {
-	profileMap := profiles.Profiles()
-
 	// Table header
-	fmt.Printf("## Current supported applications (%d)\n", len(profileMap))
+	fmt.Printf("## Current supported applications (%d)\n", len(profiles.RawProfiles))
 	fmt.Println("|name|level|devices|sockets|filesystem|")
 	fmt.Println("|-|-|-|-|-|")
 
-	names := make([]string, 0, len(profileMap))
-
-	for name, _ := range profileMap {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-
-	for _, name := range names {
-		profile := profileMap[name]
-
+	for _, profile := range profiles.RawProfiles {
 		// Name
-		fmt.Printf("|%s", name)
+		fmt.Printf("|%s", profile.Names[0])
 
 		// Level
 		fmt.Printf("|%d", profile.Level)

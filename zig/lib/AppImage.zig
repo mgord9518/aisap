@@ -8,10 +8,11 @@ const os = std.os;
 const Md5 = std.crypto.hash.Md5;
 
 const known_folders = @import("known-folders");
-const squashfs = @import("squashfuse");
-pub const SquashFs = squashfs.SquashFs;
+const KnownFolder = known_folders.KnownFolder;
 
-// TODO: mounting in Zig
+const squashfuse = @import("squashfuse");
+pub const SquashFs = squashfuse.SquashFs;
+
 const mountHelper = @import("mount.zig");
 
 pub const c = @cImport({
@@ -32,12 +33,12 @@ pub const AppImageError = error{
 pub const AppImage = struct {
     name: [:0]const u8,
     path: [:0]const u8,
-    desktop_entry: [:0]const u8 = undefined,
+    desktop_entry: [:0]const u8,
     image: SquashFs = undefined,
     kind: Kind,
     allocator: std.mem.Allocator,
 
-    // The internal pointer to the C struct
+    // This will only get populated if using the C bindings
     _internal: ?*c_AppImage = null,
 
     pub const Kind = enum(i3) {
@@ -47,17 +48,204 @@ pub const AppImage = struct {
         type2,
     };
 
-    pub const Permissions = struct {
+    const JsonPermissions = struct {
+        names: []const []const u8,
         level: u2,
-        files: ?[]const []const u8,
+        filesystem: ?[]const []const u8,
         devices: ?[]const []const u8,
-        sockets: ?[]Socket,
+        sockets: ?[]const []const u8,
         data_dir: bool = true,
     };
 
+    pub const Permissions = struct {
+        level: u2,
+        filesystem: ?[]FilePermissions,
+        devices: ?[]const []const u8,
+        sockets: ?[]Socket,
+        data_dir: bool = true,
+        allocator: std.mem.Allocator,
+
+        var permissions_database: ?std.StringHashMap(Permissions) = null;
+
+        // Parses the built-in JSON database into a HashMap
+        // TODO: do this comptime
+        fn initDatabase(allocator: std.mem.Allocator) !std.StringHashMap(Permissions) {
+            const json_database = @embedFile("../profile_database.json");
+
+            const parsed = try std.json.parseFromSlice(
+                []JsonPermissions,
+                allocator,
+                json_database,
+                .{},
+            );
+
+            defer parsed.deinit();
+
+            var hash_map = std.StringHashMap(Permissions).init(allocator);
+
+            for (parsed.value) |item| {
+                for (item.names) |name| {
+                    const filesystem = if (item.filesystem) |files| blk: {
+                        var file_list = std.ArrayList(FilePermissions).init(allocator);
+
+                        for (files) |file| {
+                            try file_list.append(try FilePermissions.fromString(
+                                allocator,
+                                file,
+                            ));
+                        }
+
+                        break :blk try file_list.toOwnedSlice();
+                    } else null;
+                    try hash_map.put(name, .{
+                        .level = item.level,
+                        .filesystem = filesystem,
+                        .sockets = null,
+                        .devices = null,
+                        .allocator = allocator,
+                    });
+                }
+            }
+
+            return hash_map;
+        }
+
+        /// Returns the permissions based on its (case insensitive) name
+        /// The caller should free the returned memory with `Permissions.deinit()`
+        pub fn fromName(allocator: std.mem.Allocator, name: []const u8) ?Permissions {
+            if (Permissions.permissions_database == null) {
+                Permissions.permissions_database = initDatabase(allocator) catch unreachable;
+            }
+
+            var name_buf: [256]u8 = undefined;
+
+            const lowercase_name = std.ascii.lowerString(&name_buf, name);
+
+            return Permissions.permissions_database.?.get(lowercase_name);
+        }
+
+        pub fn deinit(self: *Permissions) void {
+            if (self.files) |files| {
+                self.allocator.free(files);
+            }
+            if (self.sockets) |sockets| {
+                self.allocator.free(sockets);
+            }
+            if (self.devices) |devices| {
+                self.allocator.free(devices);
+            }
+        }
+    };
+
     pub const FilePermissions = struct {
-        path: []const u8,
-        read_only: bool,
+        writable: bool,
+
+        // The file's real location
+        src_path: [:0]const u8,
+
+        // Where the file will be exposed inside the sanbox
+        dest_path: [:0]const u8,
+
+        allocator: std.mem.Allocator,
+
+        pub const XdgDirs = &[_][]const u8{};
+
+        /// Converts xdg string to KnownFolder
+        /// TODO: fix xdg-state, xdg-templates
+        pub fn xdgStringToKnownFolder(path: []const u8) ?KnownFolder {
+            if (std.mem.eql(u8, path, "xdg-home")) {
+                return .home;
+            } else if (std.mem.eql(u8, path, "xdg-documents")) {
+                return .documents;
+            } else if (std.mem.eql(u8, path, "xdg-pictures")) {
+                return .pictures;
+            } else if (std.mem.eql(u8, path, "xdg-music")) {
+                return .music;
+            } else if (std.mem.eql(u8, path, "xdg-videos")) {
+                return .videos;
+            } else if (std.mem.eql(u8, path, "xdg-desktop")) {
+                return .desktop;
+            } else if (std.mem.eql(u8, path, "xdg-download")) {
+                return .downloads;
+            } else if (std.mem.eql(u8, path, "xdg-publicshare")) {
+                return .public;
+            } else if (std.mem.eql(u8, path, "xdg-templates")) {
+                return null;
+            } else if (std.mem.eql(u8, path, "xdg-config")) {
+                return .local_configuration;
+            } else if (std.mem.eql(u8, path, "xdg-cache")) {
+                return .cache;
+            } else if (std.mem.eql(u8, path, "xdg-data")) {
+                return .data;
+            } else if (std.mem.eql(u8, path, "xdg-state")) {
+                return null;
+            }
+
+            return null;
+        }
+
+        //        fn xdgExpand(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
+        //            var top_directory: []const u8 = "";
+        //
+        //            const top_directory = for (path, 0..) |char, idx| blk: {
+        //                if (char == '/') {
+        //                    break :blk path[0..idx];
+        //                }
+        //            }
+        //
+        //            const known_folder = try xdgStringToKnownFolder(top_directory);
+        //        }
+
+        /// Converts a file string such as `~/Downloads:rw` into a FilePermissions structure
+        /// Unfortunately, this only requires an allocator because it'll need
+        /// to handle XDG prefixes
+        /// TODO: handle XDG prefixes
+        pub fn fromString(allocator: std.mem.Allocator, path_string: []const u8) !FilePermissions {
+            const basename = std.fs.path.basename(path_string);
+
+            var split_it = std.mem.splitBackwards(u8, basename, ":");
+            const writable = std.mem.eql(u8, split_it.first(), "rw");
+
+            const contains_writable_postfix = split_it.next() != null;
+
+            const real_src = if (contains_writable_postfix) blk: {
+                break :blk try allocator.dupeZ(u8, path_string[0 .. path_string.len - 3]);
+            } else blk: {
+                break :blk try allocator.dupeZ(u8, path_string);
+            };
+
+            return .{
+                .src_path = real_src,
+                .dest_path = real_src,
+                .writable = writable,
+
+                .allocator = allocator,
+            };
+        }
+
+        // You probably shouldn't need to call this manually
+        pub fn deinit(self: *FilePermissions) void {
+            self.allocator.free(self.src_path);
+        }
+
+        /// Creates bwrap arguments from file
+        /// Caller must free returned slice if not null
+        pub fn args(self: *FilePermissions, allocator: std.mem.Allocator) ![]const []const u8 {
+            var list = std.ArrayList([]const u8).init(allocator);
+
+            if (self.writable) {
+                try list.append("--bind-try");
+            } else {
+                try list.append("--ro-bind-try");
+            }
+
+            try list.appendSlice(&[_][]const u8{
+                self.src_path,
+                self.dest_path,
+            });
+
+            return list.toOwnedSlice();
+        }
     };
 
     pub const Socket = enum {
@@ -92,6 +280,7 @@ pub const AppImage = struct {
             .name = undefined,
             .path = try allocator.dupeZ(u8, path),
             .kind = .type2,
+            .desktop_entry = undefined,
             .allocator = allocator,
         };
 
@@ -115,11 +304,11 @@ pub const AppImage = struct {
 
             // Read the first 4KiB of the desktop entry, it really should be a
             // lot smaller than this, but just in case.
-            var entry_buf: [1024 * 4]u8 = undefined;
+            var entry_buf = try allocator.alloc(u8, 1024 * 4);
             var inode = entry.inode();
 
-            // TODO: error checking buffer size
-            const read_bytes = try inode.read(&entry_buf);
+            // When reading, save the last byte for null terminator
+            const read_bytes = try inode.read(entry_buf[0 .. entry_buf.len - 2]);
 
             // Append null byte for use in C
             entry_buf[read_bytes] = '\x00';
@@ -157,7 +346,7 @@ pub const AppImage = struct {
 
     // TODO
     pub fn deinit(self: *AppImage) void {
-        _ = self;
+        self.allocator.free(self.desktop_entry);
         //self.image.deinit();
         //self.allocator.free(self.path);
         //self.allocator.free(self.name);
@@ -173,26 +362,13 @@ pub const AppImage = struct {
         return try md5FromPath(self.path, buf);
     }
 
-    // TODO
-    pub fn wrapArgs_old(ai: *AppImage, allocator: std.mem.Allocator) [][]const u8 {
-        // Need an allocator as the size of `cmd_args` will change size
-
-        //var cmd_args: [][]const u8 = undefined;
-        var cmd_args = allocator.alloc([]const u8, 2) catch unreachable;
-        cmd_args[0] = "test";
-        cmd_args[1] = "test2";
-
-        _ = ai;
-
-        return cmd_args;
-    }
-
     pub fn permissions(ai: *AppImage, allocator: std.mem.Allocator) !Permissions {
         var perms = Permissions{
             .level = 3,
-            .files = null,
+            .filesystem = null,
             .sockets = null,
             .devices = null,
+            .allocator = allocator,
         };
 
         // Find the permissions section of the INI file, then actually
@@ -214,19 +390,33 @@ pub const AppImage = struct {
 
             var list = std.ArrayList([]const u8).init(allocator);
             var sock_list = std.ArrayList(Socket).init(allocator);
+            var file_list = std.ArrayList(FilePermissions).init(allocator);
 
             // Now get the elements
             // TODO: handle quoting
             var element_it = std.mem.tokenize(u8, key_it.next() orelse "", ";");
 
             // TODO: refactor
-            if (!std.mem.eql(u8, key, "Sockets")) {
-                while (element_it.next()) |element| {
-                    try list.append(element);
-                }
-            } else {
+            if (std.mem.eql(u8, key, "Sockets")) {
                 while (element_it.next()) |sock| {
                     try sock_list.append(try Socket.fromString(sock));
+                }
+            } else if (std.mem.eql(u8, key, "Files")) {
+                while (element_it.next()) |element| {
+                    const basename = std.fs.path.basename(element);
+
+                    var split_it = std.mem.split(u8, basename, ":");
+                    const writable = std.mem.eql(u8, split_it.first(), "rw");
+
+                    try file_list.append(.{
+                        .src_path = element,
+                        .dest_path = element,
+                        .writable = writable,
+                    });
+                }
+            } else {
+                while (element_it.next()) |element| {
+                    try list.append(element);
                 }
             }
 
@@ -234,7 +424,7 @@ pub const AppImage = struct {
                 const level_slice = try list.toOwnedSlice();
                 perms.level = try std.fmt.parseInt(u2, level_slice[0], 10);
             } else if (std.mem.eql(u8, key, "Files")) {
-                perms.files = try list.toOwnedSlice();
+                perms.filesystem = try file_list.toOwnedSlice();
             } else if (std.mem.eql(u8, key, "Devices")) {
                 perms.devices = try list.toOwnedSlice();
             } else if (std.mem.eql(u8, key, "Sockets")) {
@@ -248,35 +438,43 @@ pub const AppImage = struct {
         return perms;
     }
 
-    //    pub fn freePermissions(self: *AppImage) void {
-    //        if (self.permissions.files) {
-    //            self.allocator.free(self.permissions.files);
-    //        }
-    //        if (self.permissions.devices) {
-    //            self.allocator.free(self.permissions.devices);
-    //        }
-    //        if (self.perimssions.sockets) {
-    //            self.allocator.free(self.permissions.sockets);
-    //        }
-    //    }
-
-    extern fn aisap_appimage_wraparg_next_go(*c_AppImage, *i32) ?[*:0]const u8;
+    extern fn aisap_appimage_wraparg_next_go(*c_AppImage, *usize) ?[*:0]const u8;
 
     // TODO: implement in Zig
     // This will return `![]const []const u8` once reimplemented
     // Currently returns `![*:null]?[*:0]const u8` for easier C interop
-    pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![*:null]?[*:0]const u8 {
-        var wrapargs_list = std.ArrayList(?[*:0]const u8).init(allocator);
+    pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![][]const u8 {
+        var list = std.ArrayList([]const u8).init(allocator);
 
-        var arg_len: c_int = undefined;
+        var perms = try ai.permissions(allocator);
+        //        defer perms.deinit();
 
-        while (aisap_appimage_wraparg_next_go(ai._internal.?, &arg_len)) |arg| {
-            try wrapargs_list.append(arg);
+        std.debug.print("{}\n", .{perms});
+
+        if (perms.filesystem) |files| {
+            for (files) |*file| {
+                try list.appendSlice(
+                    try file.args(allocator),
+                );
+            }
         }
 
-        try wrapargs_list.append(null);
+        return list.toOwnedSlice();
+    }
 
-        return @ptrCast(wrapargs_list.items.ptr);
+    pub fn wrapArgsZ(ai: *AppImage, allocator: std.mem.Allocator) ![*:null]?[*:0]const u8 {
+        var list = std.ArrayList(?[*:0]const u8).init(allocator);
+
+        const args_slice = try ai.wrapArgs(allocator);
+
+        for (args_slice) |arg| {
+            try list.append(try allocator.dupeZ(u8, arg));
+            allocator.free(arg);
+        }
+
+        try list.append(null);
+
+        return @ptrCast(try list.toOwnedSlice());
     }
 
     pub const MountOptions = struct {

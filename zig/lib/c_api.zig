@@ -46,13 +46,7 @@ export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImag
     ai._zig_parent = zig_ai;
 
     // Init Go AppImage to access its functions until they're replaced
-    const go_index = c.aisap_appimage_init_go(&ai, path);
-
-    if (go_index < 0) err.* = .err;
-
-    ai._go_index = @intCast(go_index);
-
-    err.* = .ok;
+    c.aisap_appimage_init_go(&ai, path, @ptrCast(err));
 
     return ai;
 }
@@ -121,9 +115,11 @@ export fn aisap_appimage_md5(ai: *aisap.c_AppImage, buf: [*]u8, buf_len: usize, 
 extern fn aisap_appimage_wraparg_next_go(*aisap.c_AppImage, *i32) ?[*:0]const u8;
 
 // Returned memory must be freed
-export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage, errno: CAppImageError) [*:null]?[*:0]const u8 {
-    _ = errno;
-    return getParent(ai).wrapArgs(std.heap.c_allocator) catch unreachable;
+export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage, err: *CAppImageError) [*:null]?[*:0]const u8 {
+    return getParent(ai).wrapArgsZ(std.heap.c_allocator) catch {
+        err.* = .err;
+        unreachable;
+    };
 }
 
 // TODO: Re-implement wrap.go in Zig

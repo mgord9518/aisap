@@ -49,10 +49,14 @@ type AppImagePerms struct {
 	Files      []string `json:"filesystem"`  // Grant permission to access files
 	Devices    []string `json:"devices"`     // Access device files (eg: dri, input)
 	Sockets    []string `json:"sockets"`     // Use sockets (eg: x11, pulseaudio, network)
+
 	// TODO: rename to PersistentHome or something
-	NoDataDir    bool   `json:"no_data_dir"` // Whether or not a data dir should be created (only
+	DataDir    bool     `json:"data_dir"` // Whether or not a data dir should be created (only
 	// use if the AppImage saves ZERO data eg: 100% online or a game without
 	// save files)
+
+	// Only intended for unmarshalling, should not be used for other purposes
+	Names []string `json:"names"` 
 }
 
 // FromIni attempts to read permissions from a provided *ini.File, if fail, it
@@ -69,13 +73,13 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 	// Enable saving to a data dir by default. If NoDataDir is true, the AppImage
 	// HOME dir will be in RAM and non-persistent.
 	if e.Section("X-App Permissions").Key("NoDataDir").Value() == "true" {
-		p.NoDataDir = true
+		p.DataDir = false
 	}
 
 	// Phasing out negative bools, I will eventually replace `NoDataDir`
 	// in favor of `DataDir`
 	if e.Section("X-App Permissions").Key("DataDir").Value() == "false" {
-		p.NoDataDir = false
+		p.DataDir = true
 	}
 
 	l, err := strconv.Atoi(level)

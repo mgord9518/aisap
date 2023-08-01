@@ -1,0 +1,1509 @@
+[
+  {
+    "names": [ "0 a.d." ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "aaaaxy" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "apk editor studio" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-templates:rw",
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "appimage pool" ],
+    "level": 2,
+    "filesystem": [
+      "~/Applications:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "wayland",
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "appimageupdate" ],
+    "level": 2,
+    "filesystem": [
+      "~/Applications:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "aranym", "aranym jit", "aranym mmu" ],
+    "level": 3,
+    "filesystem": [
+      "xdg-download:ro",
+      "~/Games:ro",
+      "~/Roms:ro"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "armagetron advanced" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "badlion client" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "balenaetcher" ],
+    "level": 0,
+    "filesystem": null,
+    "devices": null,
+    "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "blender" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-templates:rw",
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "brave" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "bugdom" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "calibre" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:ro"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "chromium" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "conky" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pid"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "cool retro term" ],
+    "level": 2,
+    "filesystem": [
+      "~/.config/nvim:ro",
+      "~/.profile:ro",
+      "~/.bashrc:ro",
+      "~/.zshrc:ro",
+      "~/.viminfo:ro"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "cro-mag rally" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "deemix-gui" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-music:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "densify" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "desmume" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw",
+      "~/Games:rw",
+      "~/Roms:rw"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "discord" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "dolphin emulator" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:ro",
+      "~/Games:ro",
+      "~/Roms:ro"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "dust3d" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-templates:rw",
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "eagle mode" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-publicshare:rw",
+      "xdg-templates:rw",
+      "xdg-desktop:rw",
+      "xdg-documents:rw",
+      "xdg-download:rw",
+      "xdg-music:rw",
+      "xdg-videos:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "edex-ui" ],
+    "level": 2,
+    "filesystem": [
+      "~/.config/nvim:ro",
+      "~/.profile:ro",
+      "~/.bashrc:ro",
+      "~/.zshrc:ro",
+      "~/.viminfo:ro"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "element" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "endless sky" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-templates:rw",
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "eternal lands (appimage)" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "fireboy and watergirl: in the forest temple" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "firefox", "firefox beta", "firefox nightly" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network",
+      "dbus"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "fontforge" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw",
+      "~/.fonts:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "fractale" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "freecad", "freecad conda", "freecad weekly" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-templates:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "gambatte_qt" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw",
+      "~/Games:rw",
+      "~/Roms:rw"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "geometrize" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "gnu image manipulation program" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "go" ],
+    "level": 3,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": null,
+    "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "google chrome" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "hearts" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "henry stickmin 1 breaking the bank" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "henry stickmin 2 escaping the prison" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "henry stickmin 3 stealing the diamond" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "henry stickmin 4 infiltrating the airship" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "henry stickmin 5 fleeing the complex" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "imagemagick" ],
+    "level": 3,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "inkscape" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "iqpuzzle" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "joplin" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "krita" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "leocad" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-templates:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "librewolf" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network",
+      "dbus"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "linedancer" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": false
+  },
+  {
+    "names": [ "liteide" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw",
+      "~/go:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "mgba" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw",
+      "~/Games:rw",
+      "~/Roms:rw"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "microsoft edge" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "minecraft" ],
+    "level": 0,
+    "filesystem": null,
+    "devices": null,
+    "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "minecraft tower defense" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "minetest" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "muwire" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "mypaint" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-pictures:rw",
+      "xdg-templates:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "naev" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "wayland",
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "newton adventure" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "nmeasimulator" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "notepad next" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw",
+      "xdg-documents:rw",
+      "xdg-templates:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "nx-software-center" ],
+    "level": 2,
+    "filesystem": [
+      "~/Applications:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "onlyoffice desktop editors" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "open-typer" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "openblok" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "passy" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "photogimp" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "pix" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-pictures:rw",
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "wayland",
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "pixsrt" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "play 2048" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "pokete" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": null,
+    "sockets": [
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "potato presenter" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "ppsspp" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:ro",
+      "~/Games:ro",
+      "~/Roms:ro"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "python", "python2", "python3" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": null,
+    "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "runelite" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "sengi" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "signal" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "smallbasic" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "space cadet pinball" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "dbus"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "speed dreams" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "spelunky classic hd" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "stacer" ],
+    "level": 0,
+    "filesystem": null,
+    "devices": null,
+    "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "stackandconquer" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "stallboard" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "station" ],
+    "level": 2,
+    "filesystem": [
+      "~/.config/nvim:ro",
+      "~/.profile:ro",
+      "~/.bashrc:ro",
+      "~/.zshrc:ro",
+      "~/.viminfo:ro"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "wayland",
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "stellarium" ],
+    "level": 1,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "stunt car remake" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "subsurface" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-documents:ro"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "supertux 2" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "supertuxkart" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "synthein" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "tapecalc" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "texstudio" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-templates:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "the powder toy" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "thorium browser" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "tiled" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw",
+      "xdg-pictures:rw",
+      "xdg-templates:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "upscayl" ],
+    "level": 1,
+    "filesystem": [
+      "xdg-pictures:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "visual studio code", "vscode" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "waterfox", "waterfox classic" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network",
+      "dbus"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "xonotic" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "yabg" ],
+    "level": 3,
+    "filesystem": null,
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "yuzu" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:ro",
+      "~/Games:ro",
+      "~/Roms:ro"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  }
+]

@@ -8,6 +8,10 @@ const aisap = @import("aisap");
 
 const AppImage = aisap.AppImage;
 
+pub const ParsedStruct = struct {
+    perms: []AppImage.JsonPermissions,
+};
+
 pub fn main() !void {
     var allocator = std.heap.c_allocator;
     var args = std.process.args();
@@ -28,9 +32,11 @@ pub fn main() !void {
 
     var md5_buf: [33]u8 = undefined;
 
+    //    const permissions = AppImage.Permissions.fromName(allocator, ai.name) orelse unreachable;
+
     std.debug.print("{s}\n", .{ai.name});
-    std.debug.print("{s}\n", .{ai.desktop_entry});
-    std.debug.print("{}\n", .{try ai.permissions(allocator)});
+    std.debug.print("desktop {s}\n", .{ai.desktop_entry});
+    //    std.debug.print("{}\n", .{try ai.permissions(allocator)});
 
     std.debug.print("{s}\n", .{
         try ai.md5(&md5_buf),
@@ -40,9 +46,9 @@ pub fn main() !void {
         .path = "/tmp/ligma",
     });
 
-    while (true) {
-        std.time.sleep(10000000000);
-    }
+    //    while (true) {
+    //        std.time.sleep(10000000000);
+    //    }
 
     std.debug.print("OUT OF MOUNT\n", .{});
 }
