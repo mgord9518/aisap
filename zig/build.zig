@@ -66,7 +66,7 @@ pub fn build(b: *std.Build) void {
     lib.addModule("squashfuse", squashfuse_mod);
     lib.addModule("known-folders", known_folders_mod);
 
-    lib.addIncludePath("../include");
+    lib.addIncludePath(.{ .path = "../include" });
 
     lib.linkLibC();
 
