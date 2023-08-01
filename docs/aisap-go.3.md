@@ -28,17 +28,17 @@ Destroy() error
 
 // Mounts the AppImage at a given destination.
 // If no destination is given, the AppImage will be mounted to a temporary
-// directory in '$XDG_RUNTIME_DIR/aisap'
+// directory in '$XDG_RUNTIME_DIR/aisap/mount'
 Mount(dest ...string) error by
 
 // If AppImage.Perms.Level > 0, the AppImage will be sandboxed with
 // AppImage.Perms, if 0, it will run unsandboxed. args are passed directly to
 // the AppImage
-Run(args \[]string) error
+Run(args []string) error
 
 // Identical to AppImage.Run, except AppImage.Perms.Level equaling 0 is an
 // error condition
-Sandbox(args \[]string) error
+Sandbox(args []string) error
 
 // Generates bwrap arguments for sandboxing based on the AppImage's permissions
 WrapArgs() ([]string, error)
@@ -90,13 +90,13 @@ AddFiles(files ...string)
 AddDevices(devices ...string)
 
 // Grant the sandbox access to one or more sockets
-AddSockets(sockets ...Socket) error
+AddSockets(sockets ...string) error
 
 // Revoke access to one more files from the sandbox
 RemoveFiles(files ...string)
 
 // Revoke access to one or more devices from the sandbox
-RemoveSockets(sockets ...Socket)
+RemoveSockets(sockets ...string)
 
 // Revoke access to one or more devices from the sandbox
 RemoveDevices(devices ...string)

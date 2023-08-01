@@ -23,7 +23,7 @@ existing Go programs to include sandboxing should be fairly painless
  3. [aisap Zig implementation](docs/aisap-zig.3.md) (DOCS WIP) (IMPLEMENTATION NOT YET USABLE)
 
 (there's also some very early C bindings, which will be implemented in Zig. I
-will begin working on the bindings as soon as I feel the C API is sufficiently
+will begin working on the docs as soon as I feel the C API is sufficiently
 usable.)
 
 The ultimate goal is to have as many AppImages in
