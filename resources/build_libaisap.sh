@@ -2,6 +2,8 @@
 
 set -e
 
+cd "$(dirname $0)"
+
 echo "Building Go functions for libaisap"
 cd ../cbindings
 go mod tidy
@@ -12,7 +14,7 @@ rm ../libaisap-x86_64.h
 
 echo "Building Zig functions for libaisap"
 cd ../zig
-zig build #-Doptimize=ReleaseSafe
+zig build -Doptimize=ReleaseSafe
 
 # Extract both, then combine them into a single lib
 zig ar -x  ../libaisap-x86_64.a

@@ -13,8 +13,6 @@ fi
 wget 'https://raw.githubusercontent.com/mgord9518/appimage_scripts/main/scripts/get_mkappimage.sh'
 . ./get_mkappimage.sh
 
-echo test
-
 aisapUrl='github.com/mgord9518/aisap'
 aisapRawUrl='raw.githubusercontent.com/mgord9518/aisap/main'
 
@@ -128,12 +126,5 @@ chmod +x "aisap-$VERSION-x86_64_aarch64.shImg"
 wget 'https://raw.githubusercontent.com/mgord9518/shappimage/main/add_integration.sh'
 [ $? -ne 0 ] && exit $?
 sh add_integration.sh ./"aisap-$VERSION-x86_64_aarch64.shImg" 'AppDir' "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*-x86_64_aarch64.shImg.zsync"
-
-# Build library version
-# Functions are partially implemented in Go, partially in Zig.
-# This will eventually be fully replaced with the Zig version, allowing for
-# a much smaller size footprint and easier C integration
-cd ../../resources
-./build_libaisap.sh
 
 exit 0

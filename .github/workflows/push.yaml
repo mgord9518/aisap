@@ -13,11 +13,16 @@ jobs:
     - uses: actions/setup-go@v4
 
     - name: Install deps
-      run: ./resources/install_deps.sh
-
-    - name: Build
       run: |
         git submodule update --recursive --init
+        ./resources/install_deps.sh
+
+    - name: Build libaisap
+      run: |
+        ./resources/build_libaisap.sh
+
+    - name: Build aisap-cli
+      run: |
         ./resources/build.sh
 
     # TODO: Add Zig tests
@@ -37,4 +42,3 @@ jobs:
           *.zsync
           libaisap*.a
           libaisap*.so
-          aisap.h
