@@ -12,6 +12,35 @@ pub const ParsedStruct = struct {
     perms: []AppImage.JsonPermissions,
 };
 
+fn printFilesystem(slice: []AppImage.FilesystemPermissions) void {
+    std.debug.print("[", .{});
+
+    for (slice, 0..) |element, idx| {
+        if (idx != slice.len and idx != 0) {
+            std.debug.print(",", .{});
+        }
+
+        std.debug.print(" {s}", .{element.src_path});
+        std.debug.print(":{s}", .{if (element.writable) "rw" else "ro"});
+    }
+
+    std.debug.print(" ]\n", .{});
+}
+
+fn printSockets(slice: []AppImage.SocketPermissions) void {
+    std.debug.print("[", .{});
+
+    for (slice, 0..) |element, idx| {
+        if (idx != slice.len and idx != 0) {
+            std.debug.print(",", .{});
+        }
+
+        std.debug.print(" {s}", .{@tagName(element)});
+    }
+
+    std.debug.print(" ]\n", .{});
+}
+
 pub fn main() !void {
     var allocator = std.heap.c_allocator;
     var args = std.process.args();
@@ -20,6 +49,7 @@ pub fn main() !void {
     const arg0 = args.next().?;
 
     const arg1 = args.next() orelse {
+        std.debug.print("prints assorted debug info about an AppImage\n", .{});
         std.debug.print("usage: {s} [appimage]\n", .{arg0});
         return;
     };
@@ -32,23 +62,32 @@ pub fn main() !void {
 
     var md5_buf: [33]u8 = undefined;
 
-    //    const permissions = AppImage.Permissions.fromName(allocator, ai.name) orelse unreachable;
+    const permissions = try ai.permissions(
+        allocator,
+    ) orelse {
+        std.debug.print("no permissions found\n", .{});
+        return;
+    };
+
+    std.debug.print("permissions (from: {s}):\n", .{@tagName(permissions.origin)});
+    std.debug.print("  filesystem: ", .{});
+    if (permissions.filesystem) |filesystem| {
+        printFilesystem(filesystem);
+    } else {
+        std.debug.print("[]\n", .{});
+    }
+
+    std.debug.print("  sockets: ", .{});
+    if (permissions.sockets) |sockets| {
+        printSockets(sockets);
+    } else {
+        std.debug.print("[]\n", .{});
+    }
 
     std.debug.print("{s}\n", .{ai.name});
     std.debug.print("desktop {s}\n", .{ai.desktop_entry});
-    //    std.debug.print("{}\n", .{try ai.permissions(allocator)});
 
     std.debug.print("{s}\n", .{
         try ai.md5(&md5_buf),
     });
-
-    try ai.mount(.{
-        .path = "/tmp/ligma",
-    });
-
-    //    while (true) {
-    //        std.time.sleep(10000000000);
-    //    }
-
-    std.debug.print("OUT OF MOUNT\n", .{});
 }

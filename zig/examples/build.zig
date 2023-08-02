@@ -60,8 +60,8 @@ pub fn build(b: *std.build.Builder) void {
     //    exe.addModule("squashfuse", squashfuse_mod);
     exe.addModule("aisap", aisap_mod);
 
-    exe.addIncludePath("../../include");
-    exe.addLibraryPath(".");
+    exe.addIncludePath(.{ .path = "../../include" });
+    exe.addLibraryPath(.{ .path = "." });
 
     squashfuse.linkVendored(exe, .{
         .enable_lz4 = true,

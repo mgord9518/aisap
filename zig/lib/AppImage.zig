@@ -59,11 +59,21 @@ pub const AppImage = struct {
 
     pub const Permissions = struct {
         level: u2,
-        filesystem: ?[]FilePermissions,
+        filesystem: ?[]FilesystemPermissions,
         devices: ?[]const []const u8,
-        sockets: ?[]Socket,
+        sockets: ?[]SocketPermissions,
         data_dir: bool = true,
+        origin: Origin,
+
         allocator: std.mem.Allocator,
+
+        pub const Origin = enum {
+            desktop_entry,
+            profile_database,
+
+            // TODO: will be based on appstream metainfo
+            bundle_id,
+        };
 
         var permissions_database: ?std.StringHashMap(Permissions) = null;
 
@@ -86,10 +96,12 @@ pub const AppImage = struct {
             for (parsed.value) |item| {
                 for (item.names) |name| {
                     const filesystem = if (item.filesystem) |files| blk: {
-                        var file_list = std.ArrayList(FilePermissions).init(allocator);
+                        var file_list = std.ArrayList(
+                            FilesystemPermissions,
+                        ).init(allocator);
 
                         for (files) |file| {
-                            try file_list.append(try FilePermissions.fromString(
+                            try file_list.append(try FilesystemPermissions.fromString(
                                 allocator,
                                 file,
                             ));
@@ -97,11 +109,27 @@ pub const AppImage = struct {
 
                         break :blk try file_list.toOwnedSlice();
                     } else null;
+
+                    const sockets = if (item.sockets) |sockets| blk: {
+                        var socket_list = std.ArrayList(
+                            SocketPermissions,
+                        ).init(allocator);
+
+                        for (sockets) |socket| {
+                            try socket_list.append(try SocketPermissions.fromString(
+                                socket,
+                            ));
+                        }
+
+                        break :blk try socket_list.toOwnedSlice();
+                    } else null;
+
                     try hash_map.put(name, .{
                         .level = item.level,
                         .filesystem = filesystem,
-                        .sockets = null,
+                        .sockets = sockets,
                         .devices = null,
+                        .origin = .profile_database,
                         .allocator = allocator,
                     });
                 }
@@ -112,9 +140,9 @@ pub const AppImage = struct {
 
         /// Returns the permissions based on its (case insensitive) name
         /// The caller should free the returned memory with `Permissions.deinit()`
-        pub fn fromName(allocator: std.mem.Allocator, name: []const u8) ?Permissions {
+        pub fn fromName(allocator: std.mem.Allocator, name: []const u8) !?Permissions {
             if (Permissions.permissions_database == null) {
-                Permissions.permissions_database = initDatabase(allocator) catch unreachable;
+                Permissions.permissions_database = try initDatabase(allocator);
             }
 
             var name_buf: [256]u8 = undefined;
@@ -122,6 +150,103 @@ pub const AppImage = struct {
             const lowercase_name = std.ascii.lowerString(&name_buf, name);
 
             return Permissions.permissions_database.?.get(lowercase_name);
+        }
+
+        pub fn fromDesktopEntry(allocator: std.mem.Allocator, desktop_entry: []const u8) !?Permissions {
+            var perms = Permissions{
+                .level = 3,
+                .filesystem = null,
+                .sockets = null,
+                .devices = null,
+                .origin = .desktop_entry,
+                .allocator = allocator,
+            };
+
+            // Find the permissions section of the INI file, then actually
+            // parse the permissions
+            var line_it = std.mem.tokenize(u8, desktop_entry, "\n");
+            var in_permissions_section = false;
+            var permissions_section_found = false;
+            while (line_it.next()) |line| {
+                if (std.mem.eql(u8, line, "[X-App Permissions]")) {
+                    in_permissions_section = true;
+                    permissions_section_found = true;
+                    continue;
+                } else if (line[0] == '[' and in_permissions_section) {
+                    in_permissions_section = false;
+                    break;
+                }
+
+                if (!in_permissions_section) continue;
+
+                // Obtain the key name
+                // eg `Level=3` becomes `Level`
+                var key_it = std.mem.tokenize(u8, line, "=");
+                const key = key_it.next() orelse "";
+
+                var list = std.ArrayList([]const u8).init(allocator);
+                var sock_list = std.ArrayList(SocketPermissions).init(allocator);
+                var file_list = std.ArrayList(FilesystemPermissions).init(allocator);
+
+                // Now get the elements
+                // TODO: handle quoting
+                var element_it = std.mem.tokenize(u8, key_it.next() orelse "", ";");
+
+                // TODO: refactor
+                if (std.mem.eql(u8, key, "Sockets")) {
+                    while (element_it.next()) |sock| {
+                        try sock_list.append(try SocketPermissions.fromString(sock));
+                    }
+                } else if (std.mem.eql(u8, key, "Files")) {
+                    while (element_it.next()) |element| {
+                        const basename = std.fs.path.basename(element);
+
+                        var split_it = std.mem.split(u8, basename, ":");
+                        const writable = std.mem.eql(u8, split_it.first(), "rw");
+
+                        try file_list.append(.{
+                            .src_path = try allocator.dupeZ(u8, element),
+                            .dest_path = try allocator.dupeZ(u8, element),
+                            .writable = writable,
+                            .allocator = allocator,
+                        });
+                    }
+                } else {
+                    while (element_it.next()) |element| {
+                        try list.append(element);
+                    }
+                }
+
+                if (std.mem.eql(u8, key, "Level")) {
+                    const level_slice = try list.toOwnedSlice();
+                    perms.level = try std.fmt.parseInt(u2, level_slice[0], 10);
+                } else if (std.mem.eql(u8, key, "Filesystem") or std.mem.eql(u8, key, "Files")) {
+                    perms.filesystem = try file_list.toOwnedSlice();
+                } else if (std.mem.eql(u8, key, "Devices")) {
+                    perms.devices = try list.toOwnedSlice();
+                } else if (std.mem.eql(u8, key, "Sockets")) {
+                    perms.sockets = try sock_list.toOwnedSlice();
+                } else if (std.mem.eql(u8, key, "DataDir")) {
+                    perms.data_dir = std.mem.eql(u8, list.items[0], "true");
+                    list.deinit();
+                }
+            }
+
+            if (permissions_section_found) {
+                return perms;
+            }
+
+            if (perms.filesystem) |filesystem| {
+                allocator.free(filesystem);
+            }
+            if (perms.sockets) |sockets| {
+                allocator.free(sockets);
+            }
+            if (perms.devices) |devices| {
+                allocator.free(devices);
+            }
+
+            return null;
         }
 
         pub fn deinit(self: *Permissions) void {
@@ -137,7 +262,7 @@ pub const AppImage = struct {
         }
     };
 
-    pub const FilePermissions = struct {
+    pub const FilesystemPermissions = struct {
         writable: bool,
 
         // The file's real location
@@ -196,11 +321,11 @@ pub const AppImage = struct {
         //            const known_folder = try xdgStringToKnownFolder(top_directory);
         //        }
 
-        /// Converts a file string such as `~/Downloads:rw` into a FilePermissions structure
+        /// Converts a file string such as `~/Downloads:rw` into a FilesystemPermissions structure
         /// Unfortunately, this only requires an allocator because it'll need
         /// to handle XDG prefixes
         /// TODO: handle XDG prefixes
-        pub fn fromString(allocator: std.mem.Allocator, path_string: []const u8) !FilePermissions {
+        pub fn fromString(allocator: std.mem.Allocator, path_string: []const u8) !FilesystemPermissions {
             const basename = std.fs.path.basename(path_string);
 
             var split_it = std.mem.splitBackwards(u8, basename, ":");
@@ -224,13 +349,13 @@ pub const AppImage = struct {
         }
 
         // You probably shouldn't need to call this manually
-        pub fn deinit(self: *FilePermissions) void {
+        pub fn deinit(self: *FilesystemPermissions) void {
             self.allocator.free(self.src_path);
         }
 
         /// Creates bwrap arguments from file
         /// Caller must free returned slice if not null
-        pub fn args(self: *FilePermissions, allocator: std.mem.Allocator) ![]const []const u8 {
+        pub fn toBwrapArgs(self: *FilesystemPermissions, allocator: std.mem.Allocator) ![]const []const u8 {
             var list = std.ArrayList([]const u8).init(allocator);
 
             if (self.writable) {
@@ -248,7 +373,7 @@ pub const AppImage = struct {
         }
     };
 
-    pub const Socket = enum {
+    pub const SocketPermissions = enum {
         alsa,
         audio,
         cgroup,
@@ -264,8 +389,11 @@ pub const AppImage = struct {
         wayland,
         x11,
 
-        pub fn fromString(sock: []const u8) !Socket {
-            return std.meta.stringToEnum(Socket, sock) orelse AppImageError.InvalidSocket;
+        pub fn fromString(sock: []const u8) !SocketPermissions {
+            return std.meta.stringToEnum(
+                SocketPermissions,
+                sock,
+            ) orelse AppImageError.InvalidSocket;
         }
     };
 
@@ -362,79 +490,10 @@ pub const AppImage = struct {
         return try md5FromPath(self.path, buf);
     }
 
-    pub fn permissions(ai: *AppImage, allocator: std.mem.Allocator) !Permissions {
-        var perms = Permissions{
-            .level = 3,
-            .filesystem = null,
-            .sockets = null,
-            .devices = null,
-            .allocator = allocator,
-        };
+    pub fn permissions(ai: *AppImage, allocator: std.mem.Allocator) !?Permissions {
+        var perms = try Permissions.fromDesktopEntry(allocator, ai.desktop_entry);
 
-        // Find the permissions section of the INI file, then actually
-        // parse the permissions
-        var line_it = std.mem.tokenize(u8, ai.desktop_entry, "\n");
-        var in_permissions_section = false;
-        while (line_it.next()) |line| {
-            if (std.mem.eql(u8, line, "[X-App Permissions]")) {
-                in_permissions_section = true;
-                continue;
-            }
-
-            if (!in_permissions_section) continue;
-
-            // Obtain the key name
-            // eg `Level=3` becomes `Level`
-            var key_it = std.mem.tokenize(u8, line, "=");
-            const key = key_it.next() orelse "";
-
-            var list = std.ArrayList([]const u8).init(allocator);
-            var sock_list = std.ArrayList(Socket).init(allocator);
-            var file_list = std.ArrayList(FilePermissions).init(allocator);
-
-            // Now get the elements
-            // TODO: handle quoting
-            var element_it = std.mem.tokenize(u8, key_it.next() orelse "", ";");
-
-            // TODO: refactor
-            if (std.mem.eql(u8, key, "Sockets")) {
-                while (element_it.next()) |sock| {
-                    try sock_list.append(try Socket.fromString(sock));
-                }
-            } else if (std.mem.eql(u8, key, "Files")) {
-                while (element_it.next()) |element| {
-                    const basename = std.fs.path.basename(element);
-
-                    var split_it = std.mem.split(u8, basename, ":");
-                    const writable = std.mem.eql(u8, split_it.first(), "rw");
-
-                    try file_list.append(.{
-                        .src_path = try allocator.dupeZ(u8, element),
-                        .dest_path = try allocator.dupeZ(u8, element),
-                        .writable = writable,
-                        .allocator = allocator,
-                    });
-                }
-            } else {
-                while (element_it.next()) |element| {
-                    try list.append(element);
-                }
-            }
-
-            if (std.mem.eql(u8, key, "Level")) {
-                const level_slice = try list.toOwnedSlice();
-                perms.level = try std.fmt.parseInt(u2, level_slice[0], 10);
-            } else if (std.mem.eql(u8, key, "Files")) {
-                perms.filesystem = try file_list.toOwnedSlice();
-            } else if (std.mem.eql(u8, key, "Devices")) {
-                perms.devices = try list.toOwnedSlice();
-            } else if (std.mem.eql(u8, key, "Sockets")) {
-                perms.sockets = try sock_list.toOwnedSlice();
-            } else if (std.mem.eql(u8, key, "DataDir")) {
-                perms.data_dir = std.mem.eql(u8, list.items[0], "true");
-                list.deinit();
-            }
-        }
+        if (perms == null) perms = try Permissions.fromName(allocator, ai.name);
 
         return perms;
     }
@@ -443,7 +502,6 @@ pub const AppImage = struct {
 
     // TODO: implement in Zig
     // This will return `![]const []const u8` once reimplemented
-    // Currently returns `![*:null]?[*:0]const u8` for easier C interop
     pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![][]const u8 {
         var list = std.ArrayList([]const u8).init(allocator);
 
@@ -455,7 +513,7 @@ pub const AppImage = struct {
         if (perms.filesystem) |files| {
             for (files) |*file| {
                 try list.appendSlice(
-                    try file.args(allocator),
+                    try file.toBwrapArgs(allocator),
                 );
             }
         }
