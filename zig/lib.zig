@@ -30,6 +30,7 @@ fn BWrapErrorFromInt(err: c_int) BWrapError!void {
 extern fn bwrap_main(argc: c_int, argv: [*]const [*:0]const u8) c_int;
 fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
     var result = try allocator.alloc([*:0]const u8, args.len + 1);
+    //defer allocator.free(result);
 
     // Set ARGV0 then iterate through the slice and convert it to a C char**
     result[0] = "bwrap";

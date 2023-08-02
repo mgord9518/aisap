@@ -1,5 +1,5 @@
 const std = @import("std");
-const squashfuse = @import("squashfuse-zig/build.zig");
+const aisap = @import("aisap/zig/build.zig");
 
 pub fn build(b: *std.build.Builder) void {
     // Standard target options allows the person running `zig build` to choose
@@ -19,64 +19,11 @@ pub fn build(b: *std.build.Builder) void {
         .optimize = optimize,
     });
 
-    const exe_options = b.addOptions();
-    exe_options.addOption(bool, "enable_xz", true);
-    exe_options.addOption(bool, "enable_zlib", true);
-    exe_options.addOption(bool, "use_libdeflate", true);
-    exe_options.addOption(bool, "enable_lzo", false);
-    exe_options.addOption(bool, "enable_lz4", true);
-    exe_options.addOption(bool, "enable_zstd", true);
-    exe_options.addOption(bool, "use_zig_zstd", false);
+    // TODO: find if there's some kind of convention here and follow it if so
+    const aisap_module = aisap.module(b);
+    exe.addModule("aisap", aisap_module);
 
-    const squashfuse_mod = b.addModule("squashfuse", .{
-        .source_file = .{ .path = "../squashfuse-zig/lib.zig" },
-        .dependencies = &.{
-            .{
-                .name = "build_options",
-                .module = exe_options.createModule(),
-            },
-        },
-    });
-
-    const known_folders_mod = b.addModule("known-folders", .{
-        .source_file = .{ .path = "../known-folders/known-folders.zig" },
-    });
-
-    const aisap_mod = b.addModule("aisap", .{
-        .source_file = .{ .path = "../lib.zig" },
-        .dependencies = &.{
-            // TODO: handle this in aisap
-            .{
-                .name = "squashfuse",
-                .module = squashfuse_mod,
-            },
-            .{
-                .name = "known-folders",
-                .module = known_folders_mod,
-            },
-        },
-    });
-
-    //    exe.addModule("squashfuse", squashfuse_mod);
-    exe.addModule("aisap", aisap_mod);
-
-    exe.addIncludePath(.{ .path = "../../include" });
-    exe.addLibraryPath(.{ .path = "." });
-
-    squashfuse.linkVendored(exe, .{
-        .enable_lz4 = true,
-        .enable_lzo = false,
-        .enable_zlib = true,
-        .enable_zstd = true,
-        .enable_xz = true,
-
-        .use_libdeflate = true,
-        //        .use_system_fuse = true,
-
-        .squashfuse_dir = "squashfuse-zig",
-    });
-
-    exe.linkSystemLibrary("fuse3");
+    aisap.linkVendored(exe, .{});
 
     b.installArtifact(exe);
 

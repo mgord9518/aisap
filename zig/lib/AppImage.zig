@@ -80,7 +80,7 @@ pub const AppImage = struct {
         // Parses the built-in JSON database into a HashMap
         // TODO: do this comptime
         fn initDatabase(allocator: std.mem.Allocator) !std.StringHashMap(Permissions) {
-            const json_database = @embedFile("../profile_database.json");
+            const json_database = @embedFile("profile_database.json");
 
             const parsed = try std.json.parseFromSlice(
                 []JsonPermissions,
@@ -508,17 +508,19 @@ pub const AppImage = struct {
         var perms = try ai.permissions(allocator);
         //        defer perms.deinit();
 
-        std.debug.print("{}\n", .{perms});
-
-        if (perms.filesystem) |files| {
-            for (files) |*file| {
-                try list.appendSlice(
-                    try file.toBwrapArgs(allocator),
-                );
+        if (perms) |prms| {
+            if (prms.filesystem) |files| {
+                for (files) |*file| {
+                    try list.appendSlice(
+                        try file.toBwrapArgs(allocator),
+                    );
+                }
             }
+
+            return list.toOwnedSlice();
         }
 
-        return list.toOwnedSlice();
+        return &[_][]const u8{};
     }
 
     pub fn wrapArgsZ(ai: *AppImage, allocator: std.mem.Allocator) ![*:null]?[*:0]const u8 {
