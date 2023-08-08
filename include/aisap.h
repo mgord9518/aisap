@@ -10,10 +10,6 @@ typedef struct aisap_appimage {
 	const char*  path;
 	size_t       path_len;
 
-	// For Go implementation (Go does not allow C structs to store Go pointers,
-	// so an index into an array is used)
-	size_t       _go_index;   
-
 	// For Zig implemenation, points to Zig AppImage
 	void*        _zig_parent; 
 } aisap_appimage ;
@@ -82,10 +78,10 @@ extern "C" {
 // work in Zig. 
 // TODO: Make char get passed correctly. This may just be easiest to just
 // make another AppImage run function that accepts char** instead of Go strings
-extern void  aisap_appimage_init_go(aisap_appimage* ai, const char* path, aisap_error* err);
-extern void  aisap_appimage_destroy_go(aisap_appimage* ai);
-extern int   aisap_appimage_run(aisap_appimage* ai, char** args);
-extern int   aisap_appimage_ismounted(aisap_appimage* ai);
+//extern void  aisap_appimage_init_go(aisap_appimage* ai, const char* path, aisap_error* err);
+//extern void  aisap_appimage_destroy_go(aisap_appimage* ai);
+//extern int   aisap_appimage_run(aisap_appimage* ai, char** args);
+//extern int   aisap_appimage_ismounted(aisap_appimage* ai);
 
 // Zig-implemented C functions
 // `aisap_appimage_new` initializes both the Zig and Go AppImage structs, so
@@ -103,6 +99,7 @@ extern aisap_bundle_type aisap_appimage_type(aisap_appimage* ai, aisap_error* er
 extern size_t            aisap_appimage_offset(aisap_appimage* ai, aisap_error* err);
 extern const char*       aisap_appimage_md5(aisap_appimage* ai, char* buf, size_t buf_len, aisap_error* err);
 extern void              aisap_appimage_mount(aisap_appimage* ai, char* path, aisap_error* err);
+extern const char*       aisap_appimage_mount_dir(aisap_appimage* ai);
 
 // THESE FUNCTIONS NOT YET IMPLEMENTED
 //extern uint8_t aisap_appimage_sandbox(aisap_appimage* ai, int argc, char** args);

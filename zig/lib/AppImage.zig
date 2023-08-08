@@ -1,9 +1,12 @@
 const std = @import("std");
 const io = std.io;
 const fs = std.fs;
+const time = std.time;
+const mem = std.mem;
 const span = std.mem.span;
 const expect = std.testing.expect;
 const os = std.os;
+const ChildProcess = std.ChildProcess;
 
 const Md5 = std.crypto.hash.Md5;
 
@@ -13,13 +16,7 @@ const KnownFolder = known_folders.KnownFolder;
 const squashfuse = @import("squashfuse");
 pub const SquashFs = squashfuse.SquashFs;
 
-const mountHelper = @import("mount.zig");
-
-pub const c = @cImport({
-    @cInclude("aisap.h");
-});
-
-pub const c_AppImage = c.aisap_appimage;
+const fuse_helper = @import("mount.zig");
 
 pub const AppImageError = error{
     Error, // Generic error
@@ -36,10 +33,8 @@ pub const AppImage = struct {
     desktop_entry: [:0]const u8,
     image: SquashFs = undefined,
     kind: Kind,
+    mount_dir: ?[:0]const u8 = null,
     allocator: std.mem.Allocator,
-
-    // This will only get populated if using the C bindings
-    _internal: ?*c_AppImage = null,
 
     pub const Kind = enum(i3) {
         shimg = -2,
@@ -250,6 +245,10 @@ pub const AppImage = struct {
         }
 
         pub fn deinit(self: *Permissions) void {
+            self.allocator.free(self.desktop_entry);
+            self.allocator.free(self.name);
+            self.allocator.free(self.path);
+            self.image.deinit();
             if (self.files) |files| {
                 self.allocator.free(files);
             }
@@ -475,9 +474,10 @@ pub const AppImage = struct {
     // TODO
     pub fn deinit(self: *AppImage) void {
         self.allocator.free(self.desktop_entry);
-        //self.image.deinit();
-        //self.allocator.free(self.path);
-        //self.allocator.free(self.name);
+        self.unmount() catch unreachable;
+        self.allocator.free(self.path);
+        self.allocator.free(self.name);
+        self.image.deinit();
         //self.freePermissions();
     }
 
@@ -497,8 +497,6 @@ pub const AppImage = struct {
 
         return perms;
     }
-
-    extern fn aisap_appimage_wraparg_next_go(*c_AppImage, *usize) ?[*:0]const u8;
 
     // TODO: implement in Zig
     // This will return `![]const []const u8` once reimplemented
@@ -543,38 +541,113 @@ pub const AppImage = struct {
         foreground: bool = false,
     };
 
-    // TODO: refactor
-    fn getMountDir(ai: *AppImage, buf: []u8) ![]const u8 {
-        var allocator_buf: [4096]u8 = undefined;
-        var fba = std.heap.FixedBufferAllocator.init(&allocator_buf);
-        const allocator = fba.allocator();
-
-        const runtime_dir = try known_folders.getPath(allocator, .runtime) orelse unreachable;
+    fn generateMountDirPath(ai: *AppImage, allocator: std.mem.Allocator) ![:0]const u8 {
+        const runtime_dir = try known_folders.getPath(
+            allocator,
+            .runtime,
+        ) orelse unreachable;
 
         var md5_buf: [33]u8 = undefined;
-        return try std.fmt.bufPrint(buf, "{s}/aisap/mount/{s}", .{ runtime_dir, try ai.md5(&md5_buf) });
+
+        return try std.fmt.allocPrintZ(
+            allocator,
+            "{s}/aisap/mount/{s}",
+            .{
+                runtime_dir,
+                try ai.md5(&md5_buf),
+            },
+        );
     }
 
     pub fn mount(ai: *AppImage, opts: MountOptions) !void {
-        var buf: [os.PATH_MAX]u8 = undefined;
+        ai.mount_dir = if (opts.path) |path| blk: {
+            break :blk try ai.allocator.dupeZ(
+                u8,
+                path,
+            );
+        } else blk: {
+            break :blk try ai.generateMountDirPath(
+                ai.allocator,
+            );
+        };
 
-        //        const cwd = fs.cwd();
-        //        cwd.makePath(runtime_dir) catch |err| {
-        //            if (err != os.MakeDirError.PathAlreadyExists) {}
-        //        };
+        errdefer {
+            ai.allocator.free(ai.mount_dir.?);
+            ai.mount_dir = null;
+        }
 
-        const mount_dir = opts.path orelse try ai.getMountDir(&buf);
+        const cwd = fs.cwd();
+
+        // ai.mount_dir defined above, this shouldn't ever be null
+        cwd.makePath(ai.mount_dir.?) catch |err| {
+            if (err != os.MakeDirError.PathAlreadyExists) {}
+        };
 
         const off = try ai.offset();
 
         if (opts.foreground) {
-            try mountHelper.mountImage(ai.path, mount_dir, off);
+            try fuse_helper.mountImage(ai.path, ai.mount_dir.?, off);
         } else {
             _ = try std.Thread.spawn(
                 .{},
-                mountHelper.mountImage,
-                .{ ai.path, mount_dir, off },
+                fuse_helper.mountImage,
+                .{ ai.path, ai.mount_dir.?, off },
             );
+
+            // Values in nanoseconds
+            var waited: usize = 0;
+            const wait_step = 1000;
+            const wait_max = 500_000;
+
+            var buf: [4096]u8 = undefined;
+
+            var mounts = try cwd.openFile("/proc/mounts", .{});
+            defer mounts.close();
+
+            var buf_reader = std.io.bufferedReader(mounts.reader());
+            var in_stream = buf_reader.reader();
+
+            // Wait until we see the directory as a mountpoint
+            // This will need to be redone, but it works for the time being
+            while (waited < wait_max) {
+                time.sleep(wait_step);
+
+                // Loop through every line of `/proc/mounts` trying to see
+                // when the mount is established
+                // Not seeking back to the start of the file will avoid reading
+                // previous data multiple times
+                while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
+                    var split_it = mem.split(u8, line, " ");
+
+                    if (mem.eql(u8, split_it.first(), "aisap_squashfuse")) {
+                        // This should never fail as `/proc/mounts` should
+                        // always be formatted correctly
+                        const line_mount_dir = split_it.next().?;
+
+                        // Found our mountpoint in `/proc/mounts`
+                        if (mem.eql(u8, line_mount_dir, ai.mount_dir.?)) {
+                            return;
+                        }
+                    }
+                }
+
+                waited += wait_step;
+            }
+        }
+    }
+
+    pub fn unmount(ai: *AppImage) !void {
+        if (ai.mount_dir) |mount_dir| {
+            var umount = ChildProcess.init(&[_][]const u8{
+                "fusermount",
+                "-u",
+                mount_dir,
+            }, ai.allocator);
+
+            _ = try umount.spawnAndWait();
+
+            ai.allocator.free(mount_dir);
+            ai.mount_dir = null;
         }
     }
 

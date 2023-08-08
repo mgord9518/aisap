@@ -15,18 +15,19 @@ pub const LinkOptions = struct {
     use_libdeflate: bool = true,
 };
 
-// TODO: maybe this should just be named `link`?
-pub fn linkVendored(exe: *std.Build.Step.Compile, opts: LinkOptions) void {
+pub fn link(exe: *std.Build.Step.Compile, opts: LinkOptions) void {
     const prefix = thisDir();
 
     exe.addIncludePath(.{ .path = prefix ++ "/../include" });
 
-    squashfuse.linkVendored(exe, .{
+    squashfuse.link(exe, .{
         .enable_lz4 = opts.enable_lz4,
         .enable_lzo = opts.enable_lzo,
         .enable_zlib = opts.enable_zlib,
         .enable_zstd = opts.enable_zstd,
         .enable_xz = opts.enable_xz,
+
+        .enable_fuse = true,
 
         .use_libdeflate = opts.use_libdeflate,
     });
@@ -59,7 +60,7 @@ pub fn module(b: *std.Build) *std.Build.Module {
         .source_file = .{ .path = prefix ++ "/known-folders/known-folders.zig" },
     });
 
-    return b.addModule("aisap", .{
+    return b.createModule(.{
         .source_file = .{ .path = prefix ++ "/lib.zig" },
         .dependencies = &.{
             .{
@@ -115,21 +116,13 @@ pub fn build(b: *std.Build) void {
 
     lib.addIncludePath(.{ .path = prefix ++ "/../include" });
 
-    squashfuse.linkVendored(lib, .{
-        .enable_lz4 = true,
-        .enable_lzo = true,
-        .enable_zlib = true,
-        .enable_zstd = true,
-        .enable_xz = true,
+    link(lib, .{});
 
-        .use_libdeflate = true,
-    });
-
-    const known_folders_mod = b.addModule("known-folders", .{
+    const known_folders_module = b.addModule("known-folders", .{
         .source_file = .{ .path = "known-folders/known-folders.zig" },
     });
 
-    const squashfuse_mod = b.addModule("squashfuse", .{
+    const squashfuse_module = b.addModule("squashfuse", .{
         .source_file = .{ .path = "squashfuse-zig/lib.zig" },
         .dependencies = &.{
             .{
@@ -139,8 +132,8 @@ pub fn build(b: *std.Build) void {
         },
     });
 
-    lib.addModule("squashfuse", squashfuse_mod);
-    lib.addModule("known-folders", known_folders_mod);
+    lib.addModule("squashfuse", squashfuse_module);
+    lib.addModule("known-folders", known_folders_module);
 
     const pie = b.option(bool, "pie", "build as a PIE (position independent executable)") orelse true;
     lib.pie = pie;

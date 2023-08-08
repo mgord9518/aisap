@@ -5,9 +5,7 @@ const os = std.os;
 const linux = os.linux;
 
 const c = @cImport({
-    @cDefine("_FILE_OFFSET_BITS", "64"); // Required for FUSE
-    @cDefine("FUSE_USE_VERSION", "30");
-    @cInclude("fuse3/fuse.h");
+    @cInclude("fuse.h");
 });
 
 pub const FuseError = error{

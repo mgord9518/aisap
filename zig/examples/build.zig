@@ -23,7 +23,7 @@ pub fn build(b: *std.build.Builder) void {
     const aisap_module = aisap.module(b);
     exe.addModule("aisap", aisap_module);
 
-    aisap.linkVendored(exe, .{});
+    aisap.link(exe, .{});
 
     b.installArtifact(exe);
 
