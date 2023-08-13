@@ -50,7 +50,7 @@ type AppImage struct {
 
 // Current version of aisap
 const (
-	Version = "0.9.3-alpha"
+	Version = "0.9.4-alpha"
 )
 
 // Create a new AppImage object from a path
@@ -352,8 +352,17 @@ func (ai *AppImage) getEntry() (io.Reader, error) {
 			return nil, NoDesktopFile
 		}
 
-		return ai.reader.Open(fp[0])
+		entry, err := ai.reader.Open(fp[0])
+
+		r := entry.(*squashfs.File)
+
+		if r.IsSymlink() {
+			r = r .GetSymlinkFile()
+		}
+
+		return r, err
 	}
+
 
 	return r, err
 }

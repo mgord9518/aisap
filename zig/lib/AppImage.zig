@@ -396,10 +396,19 @@ pub const AppImage = struct {
         }
     };
 
-    // TODO: Use this to replace the Go implemenation
-    // Once the Zig version is up to par, the Zig -> C bindings will call to
-    // the parent pointer's methods. This cannot currently be done as Go
-    // doesn't allow Go pointers to be passed to C
+    pub fn open(ai: *AppImage, path: []const u8) !SquashFs.Inode {
+        var root_inode = ai.image.getRootInode();
+        var it = try root_inode.walk(ai.allocator);
+        while (try it.next()) |entry| {
+            if (!std.mem.eql(u8, entry.path, path)) continue;
+
+            return entry.inode();
+        }
+
+        // TODO: error
+        unreachable;
+    }
+
     pub fn init(allocator: std.mem.Allocator, path: []const u8) !AppImage {
         // Create the AppImage type for the C binding
         var ai = AppImage{
@@ -424,6 +433,7 @@ pub const AppImage = struct {
 
             // Skip any files not ending in `.desktop`
             const extension = split_it.first();
+
             if (!std.mem.eql(u8, extension, "desktop")) continue;
 
             // Also skip any files without an extension
@@ -432,7 +442,16 @@ pub const AppImage = struct {
             // Read the first 4KiB of the desktop entry, it really should be a
             // lot smaller than this, but just in case.
             var entry_buf = try allocator.alloc(u8, 1024 * 4);
+
             var inode = entry.inode();
+
+            // If the entry is a symlink, follow it before attempting to read
+            if (inode.kind == .sym_link) {
+                var path_buf: [std.os.PATH_MAX]u8 = undefined;
+                const real_inode_path = try inode.readLink(&path_buf);
+
+                inode = try ai.open(real_inode_path);
+            }
 
             // When reading, save the last byte for null terminator
             const read_bytes = try inode.read(entry_buf[0 .. entry_buf.len - 2]);
