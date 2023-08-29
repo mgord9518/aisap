@@ -11,7 +11,7 @@ const c = @cImport({
     @cInclude("aisap.h");
 });
 
-const aisap = @import("AppImage.zig");
+const aisap = @import("appimage.zig");
 const AppImage = aisap.AppImage;
 
 const CAppImageError = enum(u8) {

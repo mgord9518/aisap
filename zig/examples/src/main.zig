@@ -70,6 +70,7 @@ pub fn main() !void {
     };
 
     std.debug.print("permissions (from: {s}):\n", .{@tagName(permissions.origin)});
+    std.debug.print("  level: {d}\n", .{permissions.level});
     std.debug.print("  filesystem: ", .{});
     if (permissions.filesystem) |filesystem| {
         printFilesystem(filesystem);
@@ -87,7 +88,9 @@ pub fn main() !void {
     std.debug.print("{s}\n", .{ai.name});
     std.debug.print("desktop {s}\n", .{ai.desktop_entry});
 
-    std.debug.print("{s}\n", .{
+    std.debug.print("md5: {s}\n", .{
         try ai.md5(&md5_buf),
     });
+
+    std.debug.print("wrapargs: {s}\n", .{try ai.wrapArgs(allocator)});
 }

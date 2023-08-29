@@ -8,7 +8,7 @@ const c = @cImport({
     @cInclude("aisap.h");
 });
 
-pub const AppImage = @import("lib/AppImage.zig").AppImage;
+pub const AppImage = @import("lib/appimage.zig").AppImage;
 
 pub const BWrapError = error{
     GeneralError,

@@ -191,7 +191,9 @@ fn squash_readlink(p: [*:0]const u8, b: [*]u8, len: usize) callconv(.C) E {
 
     if (entry.kind != .sym_link) return .invalid_argument;
 
-    inode.readLink(buf) catch return .io;
+    const link_path = inode.readLink(buf) catch return .io;
+
+    @memcpy(buf[0..link_path.len], link_path);
 
     return .success;
 }
