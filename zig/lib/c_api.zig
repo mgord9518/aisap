@@ -178,6 +178,8 @@ export fn aisap_appimage_offset(ai: *c.aisap_appimage, errno: *CAppImageError) u
     return off;
 }
 
+// libappimage API
+// TODO: make adding this a conditional build flag
 /// This function allocates memory on the heap, the caller is responsible
 /// for freeing it
 export fn appimage_get_md5(path: [*:0]const u8) [*:0]const u8 {

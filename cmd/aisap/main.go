@@ -37,7 +37,6 @@ import (
 	cli         "github.com/mgord9518/cli"
 	check       "github.com/mgord9518/aisap/spooky"
 	flag        "github.com/spf13/pflag"
-	helpers     "github.com/mgord9518/aisap/helpers"
 	ini         "gopkg.in/ini.v1"
 	clr         "github.com/gookit/color"
 )
@@ -152,9 +151,10 @@ func main() {
 
     // Fail if socket is invalid
     if err != nil {
-        clr.Println("<yellow>notice</>:")
-        cli.List("valid sockets are", permissions.ValidSockets(), 18)
-        fmt.Println()
+		// TODO: re-add socket list
+		//        clr.Println("<yellow>notice</>:")
+		//        cli.List("valid sockets are", permissions.ValidSockets(), 18)
+		//        fmt.Println()
         cli.Fatal(invalidSocketSet, err)
         return
     }
@@ -234,12 +234,17 @@ func main() {
 			}
 		}
 
-		spookySockets := []string{
+		spookySockets := []permissions.Socket{
 			"session",
 			"x11",
 		}
-		if _, present := helpers.ContainsAny(ai.Perms.Sockets, spookySockets); present {
-			cli.Warning("sockets used by this app could be used to escape the sandbox")
+
+		for _, sock := range ai.Perms.Sockets {
+			for _, spookySock := range spookySockets {
+				if sock == spookySock {
+					cli.Warning("sockets used by this app could be used to escape the sandbox")
+				}
+			}
 		}
 
 		return

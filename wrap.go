@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	permissions "github.com/mgord9518/aisap/permissions"
 	helpers "github.com/mgord9518/aisap/helpers"
 	xdg     "github.com/adrg/xdg"
 )
@@ -375,24 +376,37 @@ func parseSockets(ai *AppImage) []string {
 		"x11":        {},
 	}
 
-	for soc, _ := range(sockets) {
-		if _, present := helpers.Contains(ai.Perms.Sockets, soc); present {
+	for socketString, _ := range(sockets) {
+		var present = false
+		for _, sock := range ai.Perms.Sockets {
+			if sock == permissions.Socket(socketString) {
+				present = true
+			}
+		}
+
+		if present {
 			// Don't give access to X11 if wayland is running on the machine
 			// and the app supports it
-			if _, waylandApp := helpers.Contains(ai.Perms.Sockets, "wayland");
-			waylandEnabled && waylandApp && soc == "x11" {
+			var waylandApp = false
+			for _, sock := range ai.Perms.Sockets {
+				if sock == permissions.Socket("wayland") {
+					waylandApp = true
+				}
+			}
+
+			if waylandEnabled && waylandApp && socketString == "x11" {
 				continue
 			}
 
 			// If level 1, do not try to share /etc files again
-			if soc == "network" && ai.Perms.Level == 1 {
+			if socketString == "network" && ai.Perms.Level == 1 {
 				s = append(s, "--share-net")
 				continue
 			}
 
-			s = append(s, sockets[soc]...)
+			s = append(s, sockets[socketString]...)
 		} else {
-			s = append(s, unsocks[soc]...)
+			s = append(s, unsocks[socketString]...)
 		}
 	}
 

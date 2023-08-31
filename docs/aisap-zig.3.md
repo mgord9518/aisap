@@ -28,15 +28,15 @@ AppImage.init(
 
 AppImage methods:
 
-```c
+```zig
 // Unmounts (if applicable) and cleans up the AppImage object
 deinit(ai: *AppImage) void
 
 // Returns the byte offset of the application bundle's filesystem image
 offset(ai: *const AppImage) !u64
 
-// Returns a base-16 encoded MD5sum of the application bundle's path, formatted in `buf`
-// `buf` must be at least 33 bytes in size
+// Returns a null-terminated, hex-encoded MD5sum of the application bundle's
+// path, formatted in `buf`. `buf` must be at least 33 bytes in size
 md5(ai: *const AppImage, buf: []u8) ![:0]const u8
 
 // NOT YET IMPLEMENTED
@@ -45,11 +45,9 @@ md5(ai: *const AppImage, buf: []u8) ![:0]const u8
 wrapArgs(ai: *const AppImage, allocator: std.mem.Allocator) ![]const [:0]const u8
 
 // Returns the active permissions of the AppImage
-permissions(ai: *const AppImage, allocator: std.mem.Allocator) ! Permissions
+permissions(ai: *const AppImage, allocator: std.mem.Allocator) !Permissions
 
 // NOT YET IMPLEMENTED
 // This method will automatically create a temporary file in $XDG_RUNTIME_DIR/aisap and mount the application bundle's filesystem image to it
 mount(ai: *AppImage) !void
 ```
-
-# DESCRIPTION

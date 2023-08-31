@@ -245,12 +245,8 @@ pub const AppImage = struct {
         }
 
         pub fn deinit(self: *Permissions) void {
-            self.allocator.free(self.desktop_entry);
-            self.allocator.free(self.name);
-            self.allocator.free(self.path);
-            self.image.deinit();
-            if (self.files) |files| {
-                self.allocator.free(files);
+            if (self.filesystem) |filesystem| {
+                self.allocator.free(filesystem);
             }
             if (self.sockets) |sockets| {
                 self.allocator.free(sockets);
@@ -497,7 +493,6 @@ pub const AppImage = struct {
         self.allocator.free(self.path);
         self.allocator.free(self.name);
         self.image.deinit();
-        //self.freePermissions();
     }
 
     // Find the offset of the internal read-only filesystem
@@ -527,11 +522,14 @@ pub const AppImage = struct {
         var list = std.ArrayList([]const u8).init(allocator);
 
         var perms = try ai.permissions(allocator);
-        //        defer perms.deinit();
 
-        var home = try known_folders.getPath(allocator, .home) orelse return WrapArgsError.HomeNotFound;
+        var home = try known_folders.getPath(allocator, .home) orelse {
+            return WrapArgsError.HomeNotFound;
+        };
 
-        if (perms) |prms| {
+        if (perms) |*prms| {
+            defer prms.deinit();
+
             if (prms.level > 0) {
                 var md5_buf: [33]u8 = undefined;
                 const ai_md5 = try ai.md5(&md5_buf);
@@ -545,7 +543,6 @@ pub const AppImage = struct {
                     "--setenv",      "TMPDIR",                             "/tmp",
                     "--setenv",      "HOME",                               home,
                     "--setenv",      "ARGV0",                              fs.path.basename(ai.path),
-                    "--setenv",      "APPDIR",                             "--ro-bind-try",
 
                     // If these directories are symlinks, they will be resolved,
                     // otherwise
@@ -561,6 +558,7 @@ pub const AppImage = struct {
                     "--ro-bind-try", try resolve(allocator, "/usr/lib32"), "/usr/lib32",
                     "--ro-bind-try", try resolve(allocator, "/usr/lib64"), "/usr/lib64",
 
+                    "--setenv",      "APPDIR",
                     try std.fmt.allocPrint(
                         allocator,
                         "/tmp/.mount_{s}",
@@ -664,7 +662,7 @@ pub const AppImage = struct {
                     "--proc",  "/proc",
                     "--dir",   "/app",
 
-                    "--bind",
+                    "--bind",  ai.path,
                     try std.fmt.allocPrint(
                         allocator,
                         "/app/{s}",
@@ -680,6 +678,11 @@ pub const AppImage = struct {
                             (try known_folders.getPath(allocator, .cache)).?,
                             ai_md5,
                         },
+                    ),
+                    try std.fmt.allocPrint(
+                        allocator,
+                        "{s}/.cache",
+                        .{home},
                     ),
 
                     "--die-with-parent",
@@ -824,14 +827,35 @@ pub const AppImage = struct {
                     },
                     3 => &[_][]const u8{},
                 });
-            }
 
-            if (prms.filesystem) |files| {
-                for (files) |*file| {
-                    try list.appendSlice(
-                        try file.toBwrapArgs(allocator),
-                    );
+                if (prms.data_dir) {
+                    //                    try list.appendSlice(
+                    //                        "--bind",
+                    //                        ai.
+                    //                    );
+                } else {
+                    try list.appendSlice(&[_][]const u8{
+                        "--tmpfs",
+                        home,
+                    });
                 }
+
+                if (prms.filesystem) |files| {
+                    for (files) |*file| {
+                        try list.appendSlice(
+                            try file.toBwrapArgs(allocator),
+                        );
+                    }
+                }
+
+                try list.appendSlice(&[_][]const u8{
+                    "--",
+                    try std.fmt.allocPrint(
+                        allocator,
+                        "/tmp/.mount_{s}/AppRun",
+                        .{ai_md5},
+                    ),
+                });
             }
 
             return list.toOwnedSlice();
@@ -982,7 +1006,7 @@ pub const AppImage = struct {
     //    }
 };
 
-// Helper function to resolve symlinks, leaving normal files alone
+// If path is a symlink, return its target. Otherwise, just return the path
 fn resolve(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
     const cwd = fs.cwd();
     var file = cwd.openFile(path, .{}) catch return path;

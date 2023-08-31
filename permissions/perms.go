@@ -26,29 +26,57 @@ type File struct {
 	Writable bool
 }
 
-type Socket int
+type Socket string
+
+func SocketFromString(socketString string) (Socket, error) {
+	socket, present := SocketMap[socketString]
+
+	if !present {
+		return socket, InvalidSocket
+	}
+
+    return socket, nil
+}
 
 const (
-    x11 = Socket(0)
-	alsa
-	audio
-	pulseaudio
-	wayland
-	dbus
-	cgroup
-	network
-	pid
-	pipewire
-	session
-	user
-	uts
+	X11        Socket = "x11"
+	Alsa       Socket = "alsa"
+	Audio      Socket = "audio"
+	PulseAudio Socket = "pulseaudio"
+	Wayland    Socket = "wayland"
+	Dbus       Socket = "dbus"
+	Cgroup     Socket = "cgroup"
+	Network    Socket = "network"
+	Pid        Socket = "pid"
+	Pipewire   Socket = "pipewire"
+	Session    Socket = "session"
+	User       Socket = "user"
+	Uts        Socket = "uts"
+)
+
+var (
+	SocketMap = map[string]Socket{
+		"x11":        X11,
+		"alsa":       Alsa,
+		"audio":      Audio,
+		"pulseaudio": PulseAudio,
+		"wayland":    Wayland,
+		"dbus":       Dbus,
+		"cgroup":     Cgroup,
+		"network":    Network,
+		"pid":        Pid,
+		"pipewire":   Pipewire,
+		"session":    Session,
+		"user":       User,
+		"uts":        Uts,
+	}
 )
 
 type AppImagePerms struct {
 	Level        int    `json:"level"`       // How much access to system files
 	Files      []string `json:"filesystem"`  // Grant permission to access files
 	Devices    []string `json:"devices"`     // Access device files (eg: dri, input)
-	Sockets    []string `json:"sockets"`     // Use sockets (eg: x11, pulseaudio, network)
+	Sockets    []Socket `json:"sockets"`     // Use sockets (eg: x11, pulseaudio, network)
 
 	// TODO: rename to PersistentHome or something
 	DataDir    bool     `json:"data_dir"` // Whether or not a data dir should be created (only
@@ -140,16 +168,6 @@ func FromReader(r io.Reader) (*AppImagePerms, error) {
 	return FromIni(e)
 }
 
-func IsSocketValid(socket string) bool {
-    _, present := helpers.Contains(ValidSockets(), socket)
-
-    return present
-}
-
-func ValidSockets() []string {
-    return []string{ "x11", "alsa", "audio", "pulseaudio", "wayland", "dbus", "cgroup", "network", "pid", "pipewire", "session", "user", "uts" }
-}
-
 func (p *AppImagePerms) AddFiles(s ...string) {
 	// Remove previous files of the same name if they exist
 	p.RemoveFiles(s...)
@@ -163,19 +181,22 @@ func (p *AppImagePerms) AddDevices(s ...string) {
 	p.Devices = append(p.Devices, helpers.CleanDevices(s)...)
 }
 
-func (p *AppImagePerms) AddSockets(s ...string) error {
-	if len(s) == 0 { return nil}
+func (p *AppImagePerms) AddSockets(socketStrings ...string) error {
+	if len(socketStrings) == 0 { return nil}
 
-	p.RemoveSockets(s...)
+	p.RemoveSockets(socketStrings...)
 
-	for i := range(s) {
-		if IsSocketValid(s[i]) {
-			p.Sockets = append(p.Sockets, s[i])
-			return nil
+	for i := range(socketStrings) {
+		socket, err := SocketFromString(socketStrings[i])
+		
+		if err != nil {
+			return err
 		}
+
+		p.Sockets = append(p.Sockets, socket)
 	}
 
-	return InvalidSocket
+	return nil
 }
 
 func (p *AppImagePerms) removeFile(str string) {
@@ -209,9 +230,12 @@ func (p *AppImagePerms) RemoveDevices(s ...string) {
 	}
 }
 
+// TODO: switch to Socket type
 func (p *AppImagePerms) removeSocket(str string) {
-	if i, present := helpers.Contains(p.Sockets, str); present {
-		p.Sockets = append(p.Sockets[:i], p.Sockets[i+1:]...)
+	for i, socket := range p.Sockets {
+		if str == string(socket) {
+			p.Sockets = append(p.Sockets[:i], p.Sockets[i+1:]...)
+		}
 	}
 }
 
