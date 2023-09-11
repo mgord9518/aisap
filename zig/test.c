@@ -47,11 +47,13 @@ int main(int argc, char** argv) {
 
 	printf("  mount_dir: %s\n", aisap_appimage_mount_dir(&ai));
 
-	printf("  wrapargs: %s", aisap_appimage_wrapargs(&ai, &err)[0]);
+	char** wrap_args = aisap_appimage_wrapargs(&ai, &err);
 	if (err) {
 		printf("%d\n", err);
 		return err;
 	}
+
+//	printf("  wrapargs: %s\n", wrap_args[0]);
 
 	printf("\n");
 

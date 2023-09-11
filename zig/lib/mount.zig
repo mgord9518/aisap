@@ -16,7 +16,9 @@ const linux = std.os.linux;
 // Struct for holding our FUSE info
 const Squash = struct {
     image: SquashFs,
-    file_tree: std.StringArrayHashMap(SquashFs.Inode.Walker.Entry),
+    file_tree: std.StringArrayHashMap(
+        SquashFs.Inode.Walker.Entry,
+    ),
 };
 
 // TODO: replace fuse.main because it prints errors on fail
@@ -37,7 +39,9 @@ pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
             src,
             .{ .offset = offset },
         ),
-        .file_tree = std.StringArrayHashMap(SquashFs.Inode.Walker.Entry).init(allocator),
+        .file_tree = std.StringArrayHashMap(
+            SquashFs.Inode.Walker.Entry,
+        ).init(allocator),
     };
 
     var root_inode = squash.image.getRootInode();

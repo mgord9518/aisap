@@ -86,7 +86,8 @@ pub fn main() !void {
     }
 
     std.debug.print("{s}\n", .{ai.name});
-    std.debug.print("desktop {s}\n", .{ai.desktop_entry});
+    std.debug.print("desktop: {s}\n", .{ai.desktop_entry});
+    std.debug.print("type: {}\n", .{ai.kind});
 
     std.debug.print("md5: {s}\n", .{
         try ai.md5(&md5_buf),

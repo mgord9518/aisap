@@ -109,7 +109,7 @@ export fn aisap_appimage_md5(ai: *c.aisap_appimage, buf: [*]u8, buf_len: usize, 
 export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage, err: *CAppImageError) [*:null]?[*:0]const u8 {
     return getParent(ai).wrapArgsZ(std.heap.c_allocator) catch {
         err.* = .err;
-        unreachable;
+        return undefined;
     };
 }
 

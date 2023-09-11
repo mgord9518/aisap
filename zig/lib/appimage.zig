@@ -37,10 +37,14 @@ pub const AppImage = struct {
     allocator: std.mem.Allocator,
 
     pub const Kind = enum(i3) {
+        // Non-standard, shell script implementation built on SquashFS image
         shimg = -2,
 
+        // Standard, built on ISO-9660 disk image
         type1 = 1,
-        type2,
+
+        // Standard, built on SquashFS image
+        type2 = 2,
     };
 
     const JsonPermissions = struct {
@@ -411,12 +415,20 @@ pub const AppImage = struct {
             // Name is defined when parsing desktop entry
             .name = undefined,
             .path = try allocator.dupeZ(u8, path),
-            .kind = .type2,
+            .kind = undefined,
             .desktop_entry = undefined,
             .allocator = allocator,
         };
 
         const off = try ai.offset();
+
+        var appimage_file = try fs.cwd().openFile(path, .{});
+        defer appimage_file.close();
+
+        var header_buf: [19]u8 = undefined;
+        _ = try appimage_file.read(header_buf[0..]);
+
+        ai.kind = try kindFromHeaderData(&header_buf);
 
         // Open the SquashFS image for reading
         ai.image = try SquashFs.init(allocator, ai.path, .{ .offset = off });
@@ -516,7 +528,7 @@ pub const AppImage = struct {
         HomeNotFound,
     };
 
-    // TODO: implement in Zig
+    // TODO: finish implementing in Zig
     // TODO: free allocated memory. Currently, this should just be allocated using an arena
     pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![]const []const u8 {
         var list = std.ArrayList([]const u8).init(allocator);
@@ -864,14 +876,19 @@ pub const AppImage = struct {
         return &[_][]const u8{};
     }
 
+    /// Returns a `char**` for use in C
     pub fn wrapArgsZ(ai: *AppImage, allocator: std.mem.Allocator) ![*:null]?[*:0]const u8 {
         var list = std.ArrayList(?[*:0]const u8).init(allocator);
 
-        const args_slice = try ai.wrapArgs(allocator);
+        var arena = std.heap.ArenaAllocator.init(allocator);
+        var arena_allocator = arena.allocator();
+        defer arena.deinit();
+
+        const args_slice = try ai.wrapArgs(arena_allocator);
 
         for (args_slice) |arg| {
             try list.append(try allocator.dupeZ(u8, arg));
-            allocator.free(arg);
+            //allocator.free(arg);
         }
 
         try list.append(null);
@@ -1044,12 +1061,13 @@ pub fn offsetFromPath(path: []const u8) !u64 {
     // Get header
     // Buffer of 19 as it is shImg's header size.
     // Normal AppImages can be detected by reading 10 bytes
-    var hdr_buf: [19]u8 = undefined;
-    _ = try f.read(hdr_buf[0..]);
+    var header_buf: [19]u8 = undefined;
+    _ = try f.read(header_buf[0..]);
     try f.seekTo(0);
 
-    // TODO: function to detect type
-    if (std.mem.eql(u8, hdr_buf[0..], "#!/bin/sh\n#.shImg.#")) {
+    const kind = try kindFromHeaderData(&header_buf);
+
+    if (kind == .shimg) {
         // Read shImg offset
         var buf_reader = io.bufferedReader(f.reader());
         var in_stream = buf_reader.reader();
@@ -1074,8 +1092,44 @@ pub fn offsetFromPath(path: []const u8) !u64 {
         }
     }
 
-    // Read ELF offset
-    const hdr = try std.elf.Header.read(f);
+    if (kind == .type1 or kind == .type2) {
+        // Read ELF offset
+        const hdr = try std.elf.Header.read(f);
 
-    return hdr.shoff + hdr.shentsize * hdr.shnum;
+        return hdr.shoff + hdr.shentsize * hdr.shnum;
+    }
+
+    unreachable;
 }
+
+pub const AppImageHeaderError = error{
+    NotEnoughData,
+    InvalidHeader,
+    UnknownAppImageVersion,
+};
+
+/// Returns the bundle's type using header information.
+/// The header_data must be at least 19 bytes
+pub fn kindFromHeaderData(header_data: []const u8) !AppImage.Kind {
+    if (header_data.len < 4) {
+        return AppImageHeaderError.NotEnoughData;
+    }
+
+    if (header_data.len >= 19 and std.mem.eql(u8, header_data[0..19], "#!/bin/sh\n#.shImg.#")) {
+        return .shimg;
+    } else if (std.mem.eql(u8, header_data[0..4], "\x7fELF")) {
+        // ELF file, now we need to check if it has the special AppImage
+        // magic bytes
+
+        if (std.mem.eql(u8, header_data[8..10], "AI")) {
+            return .type2;
+        }
+    }
+
+    return AppImageHeaderError.InvalidHeader;
+}
+
+// TODO: call system bwrap and eventually build bwrap as a library
+//pub fn bwrap(allocator: std.mem.Allocator, args: []const u8) !void {}
+
+// TODO: get bundle's supported architecture list

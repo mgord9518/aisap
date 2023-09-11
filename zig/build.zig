@@ -18,6 +18,29 @@ pub const LinkOptions = struct {
 pub fn link(exe: *std.Build.Step.Compile, opts: LinkOptions) void {
     const prefix = thisDir();
 
+    //    exe.addCSourceFiles(&[_][]const u8{
+    //        prefix ++ "/bubblewrap/bubblewrap.c",
+    //    }, &[_][]const u8{});
+
+    // TODO: vendor libcap
+    //    exe.addIncludePath(.{ .path = prefix ++ "/bubblewrap/libcap/libcap" });
+    //    exe.addIncludePath(.{ .path = prefix ++ "/bubblewrap/libcap/libcap/include" });
+    //
+    //    exe.addCSourceFiles(&[_][]const u8{
+    //        prefix ++ "/bubblewrap/bubblewrap.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_alloc.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_extint.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_file.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_flag.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_proc.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_test.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/cap_text.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/empty.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/execable.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/_makenames.c",
+    //        prefix ++ "/bubblewrap/libcap/libcap/psx_exec.c",
+    //    }, &[_][]const u8{});
+
     exe.addIncludePath(.{ .path = prefix ++ "/../include" });
 
     squashfuse.link(exe, .{
