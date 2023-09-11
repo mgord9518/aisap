@@ -1121,8 +1121,18 @@ pub fn kindFromHeaderData(header_data: []const u8) !AppImage.Kind {
         // ELF file, now we need to check if it has the special AppImage
         // magic bytes
 
+        if (header_data.len < 11) {
+            return AppImageHeaderError.NotEnoughData;
+        }
+
         if (std.mem.eql(u8, header_data[8..10], "AI")) {
-            return .type2;
+            // Immediately following the "AI" bytes is the AppImage version
+            return switch (header_data[10]) {
+                1 => .type1,
+                2 => .type2,
+
+                else => AppImageHeaderError.UnknownAppImageVersion,
+            };
         }
     }
 
