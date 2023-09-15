@@ -4,9 +4,9 @@
 # which will generate the `test` executable, which prints debug information
 # about an AppImage
 
- zig cc -static \
-	-o test test.c \
-	../libaisap-x86_64.a \
- 	-I../include
+$CC -static \
+    -o test test.c \
+    ../libaisap-x86_64.a \
+    -I../include
 
-#	-lfuse3 \
+#    -lfuse3 \

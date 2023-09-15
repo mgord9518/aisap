@@ -8,7 +8,9 @@ const c = @cImport({
     @cInclude("aisap.h");
 });
 
-pub const AppImage = @import("lib/appimage.zig").AppImage;
+const aisap = @import("lib/appimage.zig");
+pub const AppImage = aisap.AppImage;
+pub const bwrap = aisap.bwrap;
 
 pub const BWrapError = error{
     GeneralError,
@@ -28,7 +30,7 @@ fn BWrapErrorFromInt(err: c_int) BWrapError!void {
 // Compile in bwrap and call it as if it were a library
 // The C symbol must first be exposed
 extern fn bwrap_main(argc: c_int, argv: [*]const [*:0]const u8) c_int;
-fn bwrap(allocator: *std.mem.Allocator, args: []const []const u8) !void {
+fn bwrape(allocator: *std.mem.Allocator, args: []const []const u8) !void {
     var result = try allocator.alloc([*:0]const u8, args.len + 1);
     //defer allocator.free(result);
 

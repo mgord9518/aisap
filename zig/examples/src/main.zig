@@ -93,5 +93,17 @@ pub fn main() !void {
         try ai.md5(&md5_buf),
     });
 
-    std.debug.print("wrapargs: {s}\n", .{try ai.wrapArgs(allocator)});
+    try ai.mount(.{});
+
+    const wrapArgs = try ai.wrapArgs(allocator);
+
+    try aisap.bwrap(allocator, wrapArgs);
+
+    printWrapArgs(wrapArgs);
+}
+
+fn printWrapArgs(args: []const []const u8) void {
+    for (args) |arg| {
+        std.debug.print("{s} ", .{arg});
+    }
 }

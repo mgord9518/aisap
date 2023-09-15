@@ -281,6 +281,11 @@ func parseSockets(ai *AppImage) []string {
 
 	// These vars will only be used if x11 socket is granted access
 	xAuthority := os.Getenv("XAUTHORITY")
+
+    if xAuthority == "" {
+        xAuthority = xdg.Home + "/.Xauthority"
+    }
+
 	xDisplay := strings.ReplaceAll(os.Getenv("DISPLAY"), ":", "")
 	tempDir, present := os.LookupEnv("TMPDIR")
 	if !present {

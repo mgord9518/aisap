@@ -526,11 +526,16 @@ pub const AppImage = struct {
 
     const WrapArgsError = error{
         HomeNotFound,
+        BundleNotMounted,
     };
 
     // TODO: finish implementing in Zig
     // TODO: free allocated memory. Currently, this should just be allocated using an arena
     pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![]const []const u8 {
+        if (ai.mount_dir == null) {
+            return WrapArgsError.BundleNotMounted;
+        }
+
         var list = std.ArrayList([]const u8).init(allocator);
 
         var perms = try ai.permissions(allocator);
@@ -563,7 +568,7 @@ pub const AppImage = struct {
                     "--ro-bind-try", try resolve(allocator, "/sbin"),      "/sbin",
                     "--ro-bind-try", try resolve(allocator, "/lib"),       "/lib",
                     "--ro-bind-try", try resolve(allocator, "/lib32"),     "/lib32",
-                    "--ro-bind-try", try resolve(allocator, "/lib64"),     "/lib32",
+                    "--ro-bind-try", try resolve(allocator, "/lib64"),     "/lib64",
                     "--ro-bind-try", try resolve(allocator, "/usr/bin"),   "/usr/bin",
                     "--ro-bind-try", try resolve(allocator, "/usr/sbin"),  "/usr/sbin",
                     "--ro-bind-try", try resolve(allocator, "/usr/lib"),   "/usr/lib",
@@ -663,18 +668,18 @@ pub const AppImage = struct {
                         "/run/user/{d}",
                         .{user.uid},
                     ),
+                    "--perms",    "0700", //
                     "--dir",
                     try std.fmt.allocPrint(
                         allocator,
                         "/run/user/{d}",
                         .{user.uid},
                     ),
-                    "--perms", "0700", //
-                    "--dev",   "/dev",
-                    "--proc",  "/proc",
-                    "--dir",   "/app",
+                    "--dev",      "/dev",
+                    "--proc",     "/proc",
+                    "--dir",      "/app",
 
-                    "--bind",  ai.path,
+                    "--bind",     ai.path,
                     try std.fmt.allocPrint(
                         allocator,
                         "/app/{s}",
@@ -682,7 +687,7 @@ pub const AppImage = struct {
                     ),
 
                     // TODO: fallback if no cache
-                    "--bind",
+                    "--bind-try",
                     try std.fmt.allocPrint(
                         allocator,
                         "{s}/appimage/{s}",
@@ -858,6 +863,20 @@ pub const AppImage = struct {
                             try file.toBwrapArgs(allocator),
                         );
                     }
+                }
+
+                if (ai.mount_dir) |mount_dir| {
+                    try list.appendSlice(&[_][]const u8{
+                        "--bind",
+                        mount_dir,
+                        try std.fmt.allocPrint(
+                            allocator,
+                            "/tmp/.mount_{s}",
+                            .{
+                                ai_md5,
+                            },
+                        ),
+                    });
                 }
 
                 try list.appendSlice(&[_][]const u8{
@@ -1139,7 +1158,24 @@ pub fn kindFromHeaderData(header_data: []const u8) !AppImage.Kind {
     return AppImageHeaderError.InvalidHeader;
 }
 
-// TODO: call system bwrap and eventually build bwrap as a library
-//pub fn bwrap(allocator: std.mem.Allocator, args: []const u8) !void {}
+// TODO: eventually build bwrap as a library
+pub fn bwrap(allocator: std.mem.Allocator, args: []const []const u8) !void {
+    var result = try allocator.alloc([]const u8, args.len + 1);
+    defer allocator.free(result);
+
+    result[0] = "bwrap";
+
+    // Set ARGV0 then iterate through the slice and convert it to a C char**
+    for (args, 1..) |arg, idx| {
+        result[idx] = arg;
+    }
+
+    var exec_result = try ChildProcess.exec(.{
+        .allocator = allocator,
+        .argv = result,
+    });
+
+    std.debug.print("{s}\n", .{exec_result.stdout});
+}
 
 // TODO: get bundle's supported architecture list
