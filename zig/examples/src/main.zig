@@ -42,7 +42,7 @@ fn printSockets(slice: []AppImage.SocketPermissions) void {
 }
 
 pub fn main() !void {
-    var allocator = std.heap.c_allocator;
+    var allocator = std.heap.page_allocator;
     var args = std.process.args();
 
     // Skip arg[0]
@@ -96,10 +96,11 @@ pub fn main() !void {
     try ai.mount(.{});
 
     const wrapArgs = try ai.wrapArgs(allocator);
-
-    try aisap.bwrap(allocator, wrapArgs);
-
     printWrapArgs(wrapArgs);
+
+    try ai.sandbox(.{
+        //.args = &[_][]const u8{"build"},
+    });
 }
 
 fn printWrapArgs(args: []const []const u8) void {

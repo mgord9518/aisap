@@ -53,9 +53,18 @@ int main(int argc, char** argv) {
 		return err;
 	}
 
-//	printf("  wrapargs: %s\n", wrap_args[0]);
-
+	printf("  wrapargs:\n");
+    char** i = wrap_args;
+    for (char* str = *i; str; str = *++i) {
+        printf("%s ", str);
+    }
 	printf("\n");
+
+    aisap_appimage_sandbox(&ai, argc - 2, argv + 2, &err);
+	if (err) {
+		printf("%d\n", err);
+		return err;
+	}
 
 	// Test libappimage API:
 	printf("libappimage API:\n");

@@ -4,9 +4,11 @@
 # which will generate the `test` executable, which prints debug information
 # about an AppImage
 
+# TODO: also build `test.c` in `build.zig`
+
 $CC -static \
     -o test test.c \
-    ../libaisap-x86_64.a \
-    -I../include
+    ../../libaisap-x86_64.a \
+    -I../../include
 
 #    -lfuse3 \

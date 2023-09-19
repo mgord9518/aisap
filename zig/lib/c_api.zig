@@ -29,11 +29,19 @@ export fn aisap_appimage_new(path: [*:0]const u8, err: *CAppImageError) c.aisap_
     return aisap_appimage_newn(path, path_len, err);
 }
 
-export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImageError) c.aisap_appimage {
+export fn aisap_appimage_newn(
+    path: [*]const u8,
+    path_len: usize,
+    err: *CAppImageError,
+) c.aisap_appimage {
     var allocator = std.heap.c_allocator;
 
     var ai: c.aisap_appimage = undefined;
-    var zig_ai = allocator.create(AppImage) catch unreachable;
+    var zig_ai = allocator.create(AppImage) catch {
+        err.* = .err;
+        return ai;
+    };
+
     zig_ai.* = AppImage.init(allocator, path[0..path_len]) catch {
         err.* = .err;
         return ai;
@@ -50,9 +58,9 @@ export fn aisap_appimage_newn(path: [*]const u8, path_len: usize, err: *CAppImag
 }
 
 export fn aisap_appimage_mount_dir(ai: *c.aisap_appimage) ?[*:0]const u8 {
-    var zai = getParent(ai);
+    var zig_ai = getParent(ai);
 
-    if (zai.mount_dir) |mount_dir| {
+    if (zig_ai.mount_dir) |mount_dir| {
         return mount_dir;
     }
 
@@ -60,14 +68,23 @@ export fn aisap_appimage_mount_dir(ai: *c.aisap_appimage) ?[*:0]const u8 {
 }
 
 // TODO: error handling
-export fn aisap_appimage_mount(ai: *c.aisap_appimage, path: ?[*:0]const u8, err: *CAppImageError) void {
+export fn aisap_appimage_mount(
+    ai: *c.aisap_appimage,
+    path: ?[*:0]const u8,
+    err: *CAppImageError,
+) void {
     const path_len = if (path) |p| std.mem.len(p) else 0;
 
     aisap_appimage_mountn(ai, path, path_len, err);
 }
 
 // TODO: error handling
-export fn aisap_appimage_mountn(ai: *c.aisap_appimage, path: ?[*]const u8, path_len: usize, err: *CAppImageError) void {
+export fn aisap_appimage_mountn(
+    ai: *c.aisap_appimage,
+    path: ?[*]const u8,
+    path_len: usize,
+    err: *CAppImageError,
+) void {
     _ = err;
 
     if (path) |p| {
@@ -87,8 +104,16 @@ export fn aisap_appimage_destroy(ai: *c.aisap_appimage) void {
     getParent(ai).deinit();
 }
 
-export fn aisap_appimage_md5(ai: *c.aisap_appimage, buf: [*]u8, buf_len: usize, errno: *CAppImageError) [*:0]const u8 {
-    return (aisap.md5FromPath(ai.path[0..ai.path_len], buf[0..buf_len]) catch |err| {
+export fn aisap_appimage_md5(
+    ai: *c.aisap_appimage,
+    buf: [*]u8,
+    buf_len: usize,
+    errno: *CAppImageError,
+) [*:0]const u8 {
+    return (aisap.md5FromPath(
+        ai.path[0..ai.path_len],
+        buf[0..buf_len],
+    ) catch |err| {
         errno.* = switch (err) {
             // This should be the only error ever given from this function
             aisap.AppImageError.NoSpaceLeft => .no_space_left,
@@ -105,8 +130,13 @@ export fn aisap_appimage_md5(ai: *c.aisap_appimage, buf: [*]u8, buf_len: usize, 
 //}
 //
 
+// This function typically shouldn't be called on its own. Instead,
+// `aisap_appimage_sandbox` should be preferred
 // Returned memory must be freed
-export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage, err: *CAppImageError) [*:null]?[*:0]const u8 {
+export fn aisap_appimage_wrapargs(
+    ai: *c.aisap_appimage,
+    err: *CAppImageError,
+) [*:null]?[*:0]const u8 {
     return getParent(ai).wrapArgsZ(std.heap.c_allocator) catch {
         err.* = .err;
         return undefined;
@@ -114,49 +144,50 @@ export fn aisap_appimage_wrapargs(ai: *c.aisap_appimage, err: *CAppImageError) [
 }
 
 // TODO: Re-implement wrap.go in Zig
+//extern fn bwrap_main(argc: c_int, argv: [*]const [*:0]const u8) i32;
 
-extern fn bwrap_main(argc: c_int, argv: [*]const [*:0]const u8) i32;
+export fn aisap_appimage_sandbox(
+    ai: *c.aisap_appimage,
+    argc: usize,
+    argv: [*:null]const ?[*:0]const u8,
+    err: *CAppImageError,
+) void {
+    var zig_ai = getParent(ai);
 
-//fn aisap_appimage_sandbox(ai: *c.aisap_appimage, argc: i32, args: [*c]const [*c]const u8) i32 {
-//    var buf: [10000]u8 = undefined;
-//    var fba = std.heap.FixedBufferAllocator.init(&buf);
-//    var allocator = fba.allocator();
-//
-//    _ = argc;
-//    _ = args;
-//
-//    // Build char** from the aisap-Go `WrapArgs` method. This will be replaced
-//    // once I can re-implement it in Zig
-//    var list = ArrayList([]const u8).init(allocator);
-//    var len: i32 = undefined;
-//    defer list.deinit();
-//
-//    // Since this is just bwrap's main() function renamed and built into a lib,
-//    // argv[0] should be set to `bwrap`
-//    var it: i32 = 0;
-//
-//    list.append("bwrap") catch return 3;
-//    while (aisap_appimage_wraparg_next_go(ai, &len)) |arg| {
-//        var str: []const u8 = undefined;
-//        str.len = @intCast(len);
-//        str.ptr = arg;
-//
-//        list.append(str) catch return 3;
-//        it += 1;
-//    }
-//
-//    for (list.items) |str| {
-//        std.debug.print("{s} {d}", .{ str, it });
-//    }
-//
-//    // TODO: add args to command before executing
-//    _ = args;
-//    _ = argc;
-//
-//    _ = std.ChildProcess.exec(.{ .allocator = allocator, .argv = list.items }) catch return 127;
-//
-//    return 0;
-//}
+    if (argc > 0) {
+        var args = zig_ai.allocator.alloc([]const u8, argc) catch {
+            err.* = .err;
+            return;
+        };
+        defer zig_ai.allocator.free(args);
+
+        var i: usize = 0;
+        while (i < argc) {
+            const arg = argv[i] orelse {
+                // TODO: argc should never be longer than the length of argv,
+                // so maybe a panic would be better here?
+                args.len = i;
+
+                break;
+            };
+
+            args[i] = std.mem.sliceTo(arg, '\x00');
+            i += 1;
+        }
+
+        zig_ai.sandbox(.{
+            .args = args,
+        }) catch {
+            err.* = .err;
+        };
+
+        return;
+    }
+
+    zig_ai.sandbox(.{}) catch {
+        err.* = .err;
+    };
+}
 
 /// Get the SquashFS image offset of the AppImage
 /// Offset is stored in `off`, returns error code
