@@ -49,8 +49,11 @@ type AppImage struct {
 }
 
 // Current version of aisap
-const (
-	Version = "0.9.7-alpha"
+// Defined in `zig/build.zig.zon`
+// When using aisap as a library, `--ldflags="-X github.com/mgord9518/aisap.Version=[VERSION HERE]"`
+// should be updated to the value contained in build.zig.zon
+var (
+	Version = "UNDEFINED"
 )
 
 // Create a new AppImage object from a path

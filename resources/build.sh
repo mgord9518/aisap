@@ -3,6 +3,7 @@
 
 [ -z "$ARCH" ] && ARCH=$(uname -m)
 PATH="$PATH:$HOME/.local/bin"
+export VERSION=$(cat zig/build.zig.zon | grep '.version' | cut -d'"' -f2)
 
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'
@@ -31,7 +32,10 @@ replace github.com/mgord9518/aisap/helpers => ../../helpers
 ' >> go.mod
 go mod tidy
 
-CGO_ENABLED=0 go build -ldflags '-s -w' -o '../../AppDir/usr/bin'
+CGO_ENABLED=0 go build \
+    -o '../../AppDir/usr/bin' \
+    --ldflags="-sw -X github.com/mgord9518/aisap.Version=$VERSION"
+
 [ $? -ne 0 ] && exit $?
 cd ../..
 
@@ -69,7 +73,6 @@ ln -s './usr/bin/aisap' 'AppDir/AppRun'
 
 # Build the AppImage
 export ARCH="$ARCH"
-export VERSION=$('AppDir/usr/bin/aisap' --version)
 
 # Set arch
 sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64/' 'AppDir/io.github.mgord9518.aisap.desktop'
