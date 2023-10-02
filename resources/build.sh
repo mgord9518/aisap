@@ -34,7 +34,7 @@ go mod tidy
 
 CGO_ENABLED=0 go build \
     -o '../../AppDir/usr/bin' \
-    --ldflags="-sw -X github.com/mgord9518/aisap.Version=$VERSION"
+    --ldflags="-s -w -X github.com/mgord9518/aisap.Version=$VERSION"
 
 [ $? -ne 0 ] && exit $?
 cd ../..
