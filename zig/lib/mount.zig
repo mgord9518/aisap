@@ -58,190 +58,149 @@ pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
         try squash.file_tree.put(new_path, entry);
     }
 
-    try fuse.main(allocator, args, &fuse_ops, squash);
+    try fuse.main(allocator, args, FuseOperations, squash);
 }
 
-export const fuse_ops = fuse.Operations{
-    .init = squash_init,
-    .getattr = squash_getattr,
-    .getxattr = squash_getxattr,
-    .open = squash_open,
-    .opendir = squash_opendir,
-    .release = squash_release,
-    .releasedir = squash_releasedir,
-    .create = squash_create,
-    .read = squash_read,
-    .readdir = squash_readdir,
-    .readlink = squash_readlink,
-};
+const FuseOperations = struct {
+    pub fn read(path: [:0]const u8, buf: []u8, offset: u64, _: *fuse.FileInfo) fuse.MountError!usize {
+        var squash = fuse.privateDataAs(Squash);
 
-fn squash_init(nfo: *fuse.ConnectionInfo, conf: *fuse.Config) callconv(.C) ?*anyopaque {
-    _ = nfo;
-    _ = conf;
+        var entry = squash.file_tree.get(path[0..]) orelse return fuse.MountError.NoEntry;
+        var inode = entry.inode();
+        inode.seekTo(offset) catch return fuse.MountError.Io;
 
-    return fuse.context().private_data;
-}
+        const read_bytes = inode.read(buf) catch return fuse.MountError.Io;
 
-fn squash_read(p: [*:0]const u8, b: [*]u8, len: usize, o: std.os.linux.off_t, fi: *fuse.FileInfo) callconv(.C) c_int {
-    _ = fi;
+        return read_bytes;
+    }
 
-    var buf = b[0..len];
+    pub fn create(_: [:0]const u8, _: std.fs.File.Mode, _: *fuse.FileInfo) fuse.MountError!void {
+        return fuse.MountError.ReadOnly;
+    }
 
-    const path = std.mem.span(p);
-    var squash = fuse.privateDataAs(Squash);
-    const offset: usize = @intCast(o);
+    pub fn openDir(path: [:0]const u8, fi: *fuse.FileInfo) fuse.MountError!void {
+        var squash = fuse.privateDataAs(Squash);
 
-    var entry = squash.file_tree.get(path[0..]) orelse return @intFromEnum(E.no_entry);
-    var inode = entry.inode();
-    inode.seekTo(offset) catch return @intFromEnum(E.io);
+        if (std.mem.eql(u8, path, "/")) {
+            var inode = squash.image.getRootInode();
 
-    const read_bytes = inode.read(buf) catch return @intFromEnum(E.io);
+            fi.handle = @intFromPtr(&inode.internal);
 
-    return @intCast(read_bytes);
-}
+            return;
+        }
 
-fn squash_create(_: [*:0]const u8, _: std.os.linux.mode_t, _: *fuse.FileInfo) callconv(.C) E {
-    return .read_only;
-}
+        var entry = squash.file_tree.get(path[0..]) orelse return fuse.MountError.NoEntry;
+        var inode = entry.inode();
 
-fn squash_opendir(p: [*:0]const u8, fi: *fuse.FileInfo) callconv(.C) E {
-    const path = std.mem.span(p);
-    var squash = fuse.privateDataAs(Squash);
-
-    if (std.mem.eql(u8, path, "/")) {
-        var inode = squash.image.getRootInode();
+        if (entry.kind != .directory) return fuse.MountError.NotDir;
 
         fi.handle = @intFromPtr(&inode.internal);
-
-        return .success;
     }
 
-    var entry = squash.file_tree.get(path[0..]) orelse return .no_entry;
-    var inode = entry.inode();
-
-    if (entry.kind != .directory) return .not_dir;
-
-    fi.handle = @intFromPtr(&inode.internal);
-
-    return .success;
-}
-
-fn squash_release(_: [*:0]const u8, fi: *fuse.FileInfo) callconv(.C) E {
-    fi.handle = 0;
-    return .success;
-}
-
-const squash_releasedir = squash_release;
-
-fn squash_readdir(p: [*:0]const u8, filler: fuse.FillDir, _: linux.off_t, fi: *fuse.FileInfo, flags: fuse.ReadDirFlags) callconv(.C) E {
-    _ = flags;
-    _ = fi;
-
-    var squash = fuse.privateDataAs(Squash);
-    var path = std.mem.span(p);
-
-    var root_inode = squash.image.getRootInode();
-    var root_st = root_inode.statC() catch return .io;
-
-    // Populate the current and parent directories
-    filler.add(".", &root_st) catch return .io;
-    filler.add("..", null) catch return .io;
-
-    // Skip ahead to where the parent dir is in the hashmap
-    var dir_idx: usize = undefined;
-    if (std.mem.eql(u8, path, "/")) {
-        dir_idx = 0;
-    } else {
-        dir_idx = squash.file_tree.getIndex(path) orelse return .no_entry;
+    pub fn release(_: [:0]const u8, fi: *fuse.FileInfo) fuse.MountError!void {
+        fi.handle = 0;
     }
 
-    const keys = squash.file_tree.keys();
+    pub fn releaseDir(_: [:0]const u8, fi: *fuse.FileInfo) fuse.MountError!void {
+        fi.handle = 0;
+    }
 
-    for (keys[dir_idx..]) |key| {
-        const dirname = std.fs.path.dirname(key) orelse continue;
+    pub fn readDir(path: [:0]const u8, filler: fuse.FillDir, _: *fuse.FileInfo, _: fuse.ReadDirFlags) fuse.MountError!void {
+        var squash = fuse.privateDataAs(Squash);
 
-        if (key.len <= path.len) continue;
-        if (!std.mem.eql(u8, path, key[0..path.len])) break;
+        var root_inode = squash.image.getRootInode();
+        var root_st = root_inode.statC() catch return fuse.MountError.Io;
 
-        if (std.mem.eql(u8, path, dirname)) {
-            var entry = squash.file_tree.get(key) orelse return .no_entry;
-            var inode = squash.image.getInode(entry.id) catch return .io;
+        // Populate the current and parent directories
+        try filler.add(".", &root_st);
+        try filler.add("..", null);
 
-            // Load file info into buffer
-            var st = inode.statC() catch return .io;
+        // Skip ahead to where the parent dir is in the hashmap
+        var dir_idx: usize = undefined;
+        if (std.mem.eql(u8, path, "/")) {
+            dir_idx = 0;
+        } else {
+            dir_idx = squash.file_tree.getIndex(path) orelse return fuse.MountError.NoEntry;
+        }
 
-            var skip_slash: usize = 0;
-            if (path.len > 1) skip_slash = 1;
+        const keys = squash.file_tree.keys();
 
-            // This cast is normally not safe, but I've explicitly added a null
-            // byte after the key slices upon creation
-            const path_terminated: [*:0]const u8 = @ptrCast(key[dirname.len + skip_slash ..].ptr);
+        for (keys[dir_idx..]) |key| {
+            const dirname = std.fs.path.dirname(key) orelse continue;
 
-            try filler.add(path_terminated, &st);
+            if (key.len <= path.len) continue;
+            if (!std.mem.eql(u8, path, key[0..path.len])) break;
+
+            if (std.mem.eql(u8, path, dirname)) {
+                var entry = squash.file_tree.get(key) orelse return fuse.MountError.NoEntry;
+                var inode = squash.image.getInode(entry.id) catch return fuse.MountError.Io;
+
+                // Load file info into buffer
+                var st = inode.statC() catch return fuse.MountError.Io;
+
+                var skip_slash: usize = 0;
+                if (path.len > 1) skip_slash = 1;
+
+                // This cast is normally not safe, but I've explicitly added a null
+                // byte after the key slices upon creation
+                const path_terminated: [*:0]const u8 = @ptrCast(key[dirname.len + skip_slash ..].ptr);
+
+                try filler.add(path_terminated, &st);
+            }
         }
     }
 
-    return .success;
-}
+    pub fn readLink(path: [:0]const u8, buf: []u8) fuse.MountError![]const u8 {
+        var squash = fuse.privateDataAs(Squash);
 
-fn squash_readlink(p: [*:0]const u8, b: [*]u8, len: usize) callconv(.C) E {
-    var buf = b[0..len];
+        var entry = squash.file_tree.get(path) orelse return fuse.MountError.NoEntry;
+        var inode = entry.inode();
 
-    const path = std.mem.span(p);
-    var squash = fuse.privateDataAs(Squash);
+        if (entry.kind != .sym_link) return fuse.MountError.InvalidArgument;
 
-    var entry = squash.file_tree.get(path) orelse return .no_entry;
-    var inode = entry.inode();
-
-    if (entry.kind != .sym_link) return .invalid_argument;
-
-    _ = inode.readLinkZ(buf) catch return .io;
-
-    return .success;
-}
-
-fn squash_open(p: [*:0]const u8, fi: *fuse.FileInfo) callconv(.C) E {
-    const path = std.mem.span(p);
-    var squash = fuse.privateDataAs(Squash);
-
-    const entry = squash.file_tree.get(path) orelse return .no_entry;
-
-    if (entry.kind == .directory) return .is_dir;
-
-    fi.handle = @intFromPtr(&entry.inode().internal);
-    fi.keep_cache = true;
-
-    return .success;
-}
-
-// TODO
-fn squash_getxattr(p: [*:0]const u8, r: [*:0]const u8, b: [*]u8, len: usize) callconv(.C) E {
-    var buf = b[0..len];
-
-    _ = p;
-    _ = r;
-    _ = buf;
-
-    return .success;
-}
-
-fn squash_getattr(p: [*:0]const u8, stbuf: *std.os.linux.Stat, _: *fuse.FileInfo) callconv(.C) E {
-    const path = std.mem.span(p);
-    var squash = fuse.privateDataAs(Squash);
-
-    // Load from the root inode
-    if (std.mem.eql(u8, path, "/")) {
-        var inode = squash.image.getRootInode();
-        stbuf.* = inode.statC() catch return .io;
-
-        return .success;
+        return inode.readLink(buf) catch return fuse.MountError.Io;
     }
 
-    // Otherwise, grab the entry from our filetree hashmap
-    var entry = squash.file_tree.get(path) orelse return .no_entry;
-    var inode = entry.inode();
+    pub fn open(path: [:0]const u8, fi: *fuse.FileInfo) fuse.MountError!void {
+        var squash = fuse.privateDataAs(Squash);
 
-    stbuf.* = inode.statC() catch return .io;
+        const entry = squash.file_tree.get(path) orelse {
+            return fuse.MountError.NoEntry;
+        };
 
-    return .success;
-}
+        if (entry.kind == .directory) {
+            return fuse.MountError.IsDir;
+        }
+
+        fi.handle = @intFromPtr(&entry.inode().internal);
+        fi.keep_cache = true;
+    }
+
+    // TODO
+    pub fn getXAttr(path: [:0]const u8, name: [:0]const u8, buf: []u8) fuse.MountError!void {
+        _ = path;
+        _ = name;
+        _ = buf;
+    }
+
+    pub fn getAttr(path: [:0]const u8, _: *fuse.FileInfo) fuse.MountError!std.os.linux.Stat {
+        var squash = fuse.privateDataAs(Squash);
+
+        // Load from the root inode
+        if (std.mem.eql(u8, path, "/")) {
+            var inode = squash.image.getRootInode();
+
+            return inode.statC() catch {
+                return fuse.MountError.Io;
+            };
+        }
+
+        // Otherwise, grab the entry from our filetree hashmap
+        var entry = squash.file_tree.get(path) orelse return fuse.MountError.NoEntry;
+        var inode = entry.inode();
+
+        return inode.statC() catch {
+            return fuse.MountError.Io;
+        };
+    }
+};

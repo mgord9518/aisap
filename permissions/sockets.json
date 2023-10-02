@@ -1,0 +1,161 @@
+{
+    "alsa": [
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/usr/share/alsa",
+            "dest": "/usr/share/alsa"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/alsa",
+            "dest": "/etc/alsa"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/group",
+            "dest": "/etc/group"
+        },
+        {
+            "flag": "--dev-bind",
+            "resolve_symlink": true,
+            "src": "/dev/snd",
+            "dest": "/dev/snd"
+        }
+    ],
+    "cgroup": [],
+    "dbus": [
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "$XDG_RUNTIME_DIR/bus",
+            "dest": "/run/user/$UID/bus"
+        }
+    ],
+    "ipc": [],
+    "network": [
+        {
+            "flag": "--share-net"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/ca-certificates",
+            "dest": "/etc/ca-certificates"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/resolv.conf",
+            "dest": "/etc/resolv.conf"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/ssl",
+            "dest": "/etc/ssl"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/pki",
+            "dest": "/etc/pki"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/usr/share/ca-certificates",
+            "dest": "/usr/share/ca-certificates"
+        }
+    ],
+    "pid": [],
+    "pipewire": [
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "$XDG_RUNTIME_DIR/pipewire-0",
+            "dest": "/run/user/$UID/pipewire-0"
+        }
+    ],
+    "pulseaudio": [
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "$XDG_RUNTIME_DIR/pulse",
+            "dest": "/run/user/$UID/pulse"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/etc/pulse",
+            "dest": "/etc/pulse"
+        }
+    ],
+    "session": [],
+    "user": [],
+    "uts": [],
+    "wayland": [
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY",
+            "dest": "/run/user/$UID/wayland-0"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/usr/share/X11",
+            "dest": "/usr/share/X11"
+        },
+        {
+            "flag": "--setenv",
+            "src": "WAYLAND_DISPLAY",
+            "dest": "wayland-0"
+        },
+        {
+            "flag": "--setenv",
+            "src": "_JAVA_AWT_WM_NONPARENTING",
+            "dest": "1"
+        },
+        {
+            "flag": "--setenv",
+            "src": "MOZ_ENABLE_WAYLAND",
+            "dest": "1"
+        },
+        {
+            "flag": "--setenv",
+            "src": "XDG_SESSION_TYPE",
+            "dest": "wayland"
+        }
+    ],
+    "x11": [
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "$XAUTHORITY",
+            "dest": "$HOME/.Xauthority"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+
+            "_COMMENT_": "TODO: represent display correctly",
+            "src": "$TMPDIR/.X11-unix/X$DISPLAY",
+
+            "dest": "/usr/share/X11"
+        },
+        {
+            "flag": "--ro-bind-try",
+            "resolve_symlink": true,
+            "src": "/usr/share/X11",
+            "dest": "/usr/share/X11"
+        },
+        {
+            "flag": "--setenv",
+            "src": "XAUTHORITY",
+            "dest": "$HOME/.Xauthority"
+        }
+    ]
+}

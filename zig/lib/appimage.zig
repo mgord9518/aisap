@@ -63,6 +63,7 @@ pub const AppImage = struct {
         sockets: ?[]SocketPermissions,
         data_dir: bool = true,
         origin: Origin,
+        needs_deinit: bool,
 
         allocator: std.mem.Allocator,
 
@@ -130,6 +131,7 @@ pub const AppImage = struct {
                         .devices = null,
                         .origin = .profile_database,
                         .allocator = allocator,
+                        .needs_deinit = false,
                     });
                 }
             }
@@ -159,6 +161,7 @@ pub const AppImage = struct {
                 .devices = null,
                 .origin = .desktop_entry,
                 .allocator = allocator,
+                .needs_deinit = true,
             };
 
             // Find the permissions section of the INI file, then actually
@@ -249,14 +252,16 @@ pub const AppImage = struct {
         }
 
         pub fn deinit(self: *Permissions) void {
-            if (self.filesystem) |filesystem| {
-                self.allocator.free(filesystem);
-            }
-            if (self.sockets) |sockets| {
-                self.allocator.free(sockets);
-            }
-            if (self.devices) |devices| {
-                self.allocator.free(devices);
+            if (self.needs_deinit) {
+                if (self.filesystem) |filesystem| {
+                    self.allocator.free(filesystem);
+                }
+                if (self.sockets) |sockets| {
+                    self.allocator.free(sockets);
+                }
+                if (self.devices) |devices| {
+                    self.allocator.free(devices);
+                }
             }
         }
     };

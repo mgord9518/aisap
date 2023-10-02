@@ -358,7 +358,7 @@ func parseSockets(ai *AppImage) []string {
 			"--ro-bind-try", xAuthority,                      xdg.Home+"/.Xauthority",
 			"--ro-bind-try", tempDir+"/.X11-unix/X"+xDisplay, "/tmp/.X11-unix/X"+xDisplay,
 			"--ro-bind-try", ai.resolve("/usr/share/X11"),    "/usr/share/X11",
-			"--setenv",      "DISPLAY",         ":"+xDisplay,
+			//"--setenv",      "DISPLAY",         ":"+xDisplay,
 			"--setenv",      "QT_QPA_PLATFORM", "xcb",
 			"--setenv",      "XAUTHORITY",      xdg.Home+"/.Xauthority",
 		},
