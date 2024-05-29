@@ -6,9 +6,8 @@
 
 # TODO: also build `test.c` in `build.zig`
 
-$CC -static \
+zig cc -static \
     -o test test.c \
-    ../../libaisap-x86_64.a \
-    -I../../include
-
-#    -lfuse3 \
+    ../zig-out/lib/libaisap.a \
+    -I../../include \
+    -lfuse3

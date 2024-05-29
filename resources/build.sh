@@ -59,8 +59,8 @@ chmod +x 'AppDir/usr/bin/squashfuse'
 [ $? -ne 0 ] && exit $?
 
 # Download bwrap binary
-wget "https://github.com/mgord9518/portable_bwrap/releases/download/nightly/bwrap-static.$ARCH" -O 'AppDir/usr/bin/bwrap'
-chmod +x 'AppDir/usr/bin/bwrap'
+wget -O - "https://github.com/mgord9518/portable_bwrap/releases/download/continuous/bwrap-linux-$ARCH.tar.xz" \
+    | tar -C 'AppDir/usr/bin' -Jx bwrap
 [ $? -ne 0 ] && exit $?
 
 # Download excludelist

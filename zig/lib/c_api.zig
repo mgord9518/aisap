@@ -37,7 +37,7 @@ export fn aisap_appimage_newn(
     var allocator = std.heap.c_allocator;
 
     var ai: c.aisap_appimage = undefined;
-    var zig_ai = allocator.create(AppImage) catch {
+    const zig_ai = allocator.create(AppImage) catch {
         err.* = .err;
         return ai;
     };
@@ -58,7 +58,7 @@ export fn aisap_appimage_newn(
 }
 
 export fn aisap_appimage_mount_dir(ai: *c.aisap_appimage) ?[*:0]const u8 {
-    var zig_ai = getParent(ai);
+    const zig_ai = getParent(ai);
 
     if (zig_ai.mount_dir) |mount_dir| {
         return mount_dir;
@@ -214,11 +214,11 @@ export fn aisap_appimage_offset(ai: *c.aisap_appimage, errno: *CAppImageError) u
 /// This function allocates memory on the heap, the caller is responsible
 /// for freeing it
 export fn appimage_get_md5(path: [*:0]const u8) [*:0]const u8 {
-    var buf = std.heap.page_allocator.alloc(u8, Md5.digest_length * 2 + 1) catch unreachable;
+    const buf = std.heap.page_allocator.alloc(u8, Md5.digest_length * 2 + 1) catch unreachable;
     return (aisap.md5FromPath(std.mem.span(path), buf) catch unreachable).ptr;
 }
 
-export fn appimage_get_payload_offset(path: [*:0]const u8) std.os.off_t {
+export fn appimage_get_payload_offset(path: [*:0]const u8) std.posix.off_t {
     // TODO: handle this error
     return @intCast(
         aisap.offsetFromPath(std.mem.span(path)) catch unreachable,

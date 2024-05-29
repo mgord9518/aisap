@@ -15,89 +15,6 @@ pub const LinkOptions = struct {
     use_libdeflate: bool = true,
 };
 
-pub fn link(exe: *std.Build.Step.Compile, opts: LinkOptions) void {
-    const prefix = thisDir();
-
-    //    exe.addCSourceFiles(&[_][]const u8{
-    //        prefix ++ "/bubblewrap/bubblewrap.c",
-    //    }, &[_][]const u8{});
-
-    // TODO: vendor libcap
-    //    exe.addIncludePath(.{ .path = prefix ++ "/bubblewrap/libcap/libcap" });
-    //    exe.addIncludePath(.{ .path = prefix ++ "/bubblewrap/libcap/libcap/include" });
-    //
-    //    exe.addCSourceFiles(&[_][]const u8{
-    //        prefix ++ "/bubblewrap/bubblewrap.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_alloc.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_extint.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_file.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_flag.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_proc.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_test.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/cap_text.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/empty.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/execable.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/_makenames.c",
-    //        prefix ++ "/bubblewrap/libcap/libcap/psx_exec.c",
-    //    }, &[_][]const u8{});
-
-    exe.addIncludePath(.{ .path = prefix ++ "/../include" });
-
-    squashfuse.link(exe, .{
-        .enable_lz4 = opts.enable_lz4,
-        .enable_lzo = opts.enable_lzo,
-        .enable_zlib = opts.enable_zlib,
-        .enable_zstd = opts.enable_zstd,
-        .enable_xz = opts.enable_xz,
-
-        .enable_fuse = true,
-
-        .use_libdeflate = opts.use_libdeflate,
-    });
-}
-
-/// Returns a build module for aisap with deps pre-wrapped
-pub fn module(b: *std.Build) *std.Build.Module {
-    const prefix = thisDir();
-
-    const lib_options = b.addOptions();
-    lib_options.addOption(bool, "enable_xz", true);
-    lib_options.addOption(bool, "enable_zlib", true);
-    lib_options.addOption(bool, "use_libdeflate", true);
-    lib_options.addOption(bool, "enable_lzo", false);
-    lib_options.addOption(bool, "enable_lz4", true);
-    lib_options.addOption(bool, "enable_zstd", true);
-    lib_options.addOption(bool, "use_zig_zstd", false);
-
-    const squashfuse_module = b.addModule("squashfuse", .{
-        .source_file = .{ .path = prefix ++ "/squashfuse-zig/lib.zig" },
-        .dependencies = &.{
-            .{
-                .name = "build_options",
-                .module = lib_options.createModule(),
-            },
-        },
-    });
-
-    const known_folders_module = b.addModule("known-folders", .{
-        .source_file = .{ .path = prefix ++ "/known-folders/known-folders.zig" },
-    });
-
-    return b.createModule(.{
-        .source_file = .{ .path = prefix ++ "/lib.zig" },
-        .dependencies = &.{
-            .{
-                .name = "squashfuse",
-                .module = squashfuse_module,
-            },
-            .{
-                .name = "known-folders",
-                .module = known_folders_module,
-            },
-        },
-    });
-}
-
 pub inline fn thisDir() []const u8 {
     return comptime std.fs.path.dirname(@src().file) orelse unreachable;
 }
@@ -121,8 +38,8 @@ pub fn build(b: *std.Build) void {
 
     const lib_options = b.addOptions();
     lib_options.addOption(bool, "enable_xz", true);
-    lib_options.addOption(bool, "enable_zlib", true);
-    lib_options.addOption(bool, "use_libdeflate", true);
+    //lib_options.addOption(bool, "enable_zlib", true);
+    //lib_options.addOption(bool, "use_libdeflate", false);
     lib_options.addOption(bool, "enable_lzo", false);
     lib_options.addOption(bool, "enable_lz4", true);
     lib_options.addOption(bool, "enable_zstd", true);
@@ -139,27 +56,47 @@ pub fn build(b: *std.Build) void {
 
     lib.addIncludePath(.{ .path = prefix ++ "/../include" });
 
-    link(lib, .{});
-
     const known_folders_module = b.addModule("known-folders", .{
-        .source_file = .{ .path = "known-folders/known-folders.zig" },
+        .root_source_file = .{ .path = "known-folders/known-folders.zig" },
     });
 
-    const squashfuse_module = b.addModule("squashfuse", .{
-        .source_file = .{ .path = "squashfuse-zig/lib.zig" },
-        .dependencies = &.{
-            .{
-                .name = "build_options",
-                .module = lib_options.createModule(),
-            },
-        },
+    const squashfuse_dep = b.dependency("squashfuse", .{
+        .target = target,
+        .optimize = optimize,
+
+        // These options will be renamed in the future
+        .@"enable-fuse" = true,
+        .@"enable-zlib" = true,
+        .@"use-zig-zlib" = true,
+        //.@"use-libdeflate" = true,
+        .@"enable-xz" = false,
+        .@"enable-lzma" = false,
+        .@"enable-lzo" = false,
+        .@"enable-lz4" = false,
+        .@"enable-zstd" = false,
     });
 
-    lib.addModule("squashfuse", squashfuse_module);
-    lib.addModule("known-folders", known_folders_module);
+    //lib.linkLibrary(squashfuse_dep.artifact("deflate"));
 
-    const pie = b.option(bool, "pie", "build as a PIE (position independent executable)") orelse true;
-    lib.pie = pie;
+    const fuse_dep = b.dependency("fuse", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    lib.root_module.addImport(
+        "squashfuse",
+        squashfuse_dep.module("squashfuse"),
+    );
+
+    lib.root_module.addImport(
+        "fuse",
+        fuse_dep.module("fuse"),
+    );
+
+    lib.root_module.addImport("known-folders", known_folders_module);
+
+    //    const pie = b.option(bool, "pie", "build as a PIE (position independent executable)") orelse true;
+    //    lib.pie = pie;
 
     lib.linkLibC();
 

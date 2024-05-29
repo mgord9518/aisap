@@ -1,4 +1,5 @@
 const std = @import("std");
+const posix = std.posix;
 const io = std.io;
 const fs = std.fs;
 const span = std.mem.span;
@@ -9,17 +10,9 @@ const Md5 = std.crypto.hash.Md5;
 const squashfuse = @import("squashfuse");
 pub const SquashFs = squashfuse.SquashFs;
 
-const fuse = @import("fuse.zig");
+const fuse = @import("fuse");
 const E = fuse.E;
 const linux = std.os.linux;
-
-// Struct for holding our FUSE info
-const Squash = struct {
-    image: SquashFs,
-    file_tree: std.StringArrayHashMap(
-        SquashFs.Inode.Walker.Entry,
-    ),
-};
 
 // TODO: replace fuse.main because it prints errors on fail
 pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
@@ -33,7 +26,7 @@ pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
         try allocator.dupeZ(u8, dest),
     };
 
-    var squash = Squash{
+    var squash = FuseOperations.Squash{
         .image = try SquashFs.init(
             allocator,
             src,
@@ -58,18 +51,26 @@ pub fn mountImage(src: []const u8, dest: []const u8, offset: usize) !void {
         try squash.file_tree.put(new_path, entry);
     }
 
-    try fuse.main(allocator, args, FuseOperations, squash);
+    try fuse.run(allocator, args, FuseOperations, squash);
 }
+pub const FuseOperations = struct {
+    // Struct for holding our FUSE info
+    pub const Squash = struct {
+        image: SquashFs,
+        file_tree: std.StringArrayHashMap(SquashFs.Inode.Walker.Entry),
+    };
 
-const FuseOperations = struct {
+    pub var squash: Squash = undefined;
+
     pub fn read(path: [:0]const u8, buf: []u8, offset: u64, _: *fuse.FileInfo) fuse.MountError!usize {
-        var squash = fuse.privateDataAs(Squash);
-
         var entry = squash.file_tree.get(path[0..]) orelse return fuse.MountError.NoEntry;
         var inode = entry.inode();
         inode.seekTo(offset) catch return fuse.MountError.Io;
 
-        const read_bytes = inode.read(buf) catch return fuse.MountError.Io;
+        const read_bytes = inode.read(buf) catch |err| {
+            std.debug.print("ERROR: {!}\n", .{err});
+            return fuse.MountError.Io;
+        };
 
         return read_bytes;
     }
@@ -79,8 +80,6 @@ const FuseOperations = struct {
     }
 
     pub fn openDir(path: [:0]const u8, fi: *fuse.FileInfo) fuse.MountError!void {
-        var squash = fuse.privateDataAs(Squash);
-
         if (std.mem.eql(u8, path, "/")) {
             var inode = squash.image.getRootInode();
 
@@ -106,8 +105,6 @@ const FuseOperations = struct {
     }
 
     pub fn readDir(path: [:0]const u8, filler: fuse.FillDir, _: *fuse.FileInfo, _: fuse.ReadDirFlags) fuse.MountError!void {
-        var squash = fuse.privateDataAs(Squash);
-
         var root_inode = squash.image.getRootInode();
         var root_st = root_inode.statC() catch return fuse.MountError.Io;
 
@@ -132,7 +129,7 @@ const FuseOperations = struct {
             if (!std.mem.eql(u8, path, key[0..path.len])) break;
 
             if (std.mem.eql(u8, path, dirname)) {
-                var entry = squash.file_tree.get(key) orelse return fuse.MountError.NoEntry;
+                const entry = squash.file_tree.get(key) orelse return fuse.MountError.NoEntry;
                 var inode = squash.image.getInode(entry.id) catch return fuse.MountError.Io;
 
                 // Load file info into buffer
@@ -151,8 +148,6 @@ const FuseOperations = struct {
     }
 
     pub fn readLink(path: [:0]const u8, buf: []u8) fuse.MountError![]const u8 {
-        var squash = fuse.privateDataAs(Squash);
-
         var entry = squash.file_tree.get(path) orelse return fuse.MountError.NoEntry;
         var inode = entry.inode();
 
@@ -162,8 +157,6 @@ const FuseOperations = struct {
     }
 
     pub fn open(path: [:0]const u8, fi: *fuse.FileInfo) fuse.MountError!void {
-        var squash = fuse.privateDataAs(Squash);
-
         const entry = squash.file_tree.get(path) orelse {
             return fuse.MountError.NoEntry;
         };
@@ -183,9 +176,7 @@ const FuseOperations = struct {
         _ = buf;
     }
 
-    pub fn getAttr(path: [:0]const u8, _: *fuse.FileInfo) fuse.MountError!std.os.linux.Stat {
-        var squash = fuse.privateDataAs(Squash);
-
+    pub fn getAttr(path: [:0]const u8, _: *fuse.FileInfo) fuse.MountError!posix.Stat {
         // Load from the root inode
         if (std.mem.eql(u8, path, "/")) {
             var inode = squash.image.getRootInode();

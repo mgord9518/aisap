@@ -60,11 +60,11 @@ int main(int argc, char** argv) {
     }
     printf("\n");
 
-    aisap_appimage_sandbox(&ai, argc - 2, argv + 2, &err);
-    if (err) {
-        printf("%d\n", err);
-        return err;
-    }
+//    aisap_appimage_sandbox(&ai, argc - 2, argv + 2, &err);
+//    if (err) {
+//        printf("%d\n", err);
+//        return err;
+//    }
 
     // Test libappimage API:
     printf("libappimage API:\n");

@@ -18,6 +18,8 @@ pub const SquashFs = squashfuse.SquashFs;
 
 const fuse_helper = @import("mount.zig");
 
+const config_parser = @import("profiles.zig").ProfileParser;
+
 pub const AppImageError = error{
     Error, // Generic error
     InvalidMagic,
@@ -399,6 +401,153 @@ pub const AppImage = struct {
                 sock,
             ) orelse AppImageError.InvalidSocket;
         }
+
+        pub const SocketOptions = struct {
+            uid: u32,
+            runtime_dir: []const u8,
+        };
+
+        fn appendDir(
+            allocator: std.mem.Allocator,
+            str1: []const u8,
+            str2: []const u8,
+        ) ![]const u8 {
+            return try std.fmt.allocPrint(
+                allocator,
+                "{s}/{s}",
+                .{ str1, str2 },
+            );
+        }
+
+        /// Generates bwrap args from socket. Memory is cleared on each call
+        /// to the method
+        pub fn toBwrapArgs(
+            socket: SocketPermissions,
+            allocator: std.mem.Allocator,
+            opts: SocketOptions,
+        ) ![]const []const u8 {
+            const uid_string = try std.fmt.allocPrint(
+                allocator,
+                "{d}",
+                .{opts.uid},
+            );
+            defer allocator.free(uid_string);
+
+            return switch (socket) {
+                .alsa => &[_][]const u8{
+                    "--ro-bind-try", "/usr/share/alsa", "/usr/share/alsa",
+                    "--ro-bind-try", "/etc/alsa",       "/etc/alsa",
+                    "--ro-bind-try", "/etc/group",      "/etc/group",
+                    "--dev-bind",    "/dev/snd",        "/dev/snd",
+                },
+                .audio => blk: {
+                    const runtime_pulse_dir = try std.fmt.allocPrint(
+                        allocator,
+                        "{s}/pulse",
+                        .{opts.runtime_dir},
+                    );
+                    defer allocator.free(runtime_pulse_dir);
+
+                    const dest_pulse_dir = try std.fmt.allocPrint(
+                        allocator,
+                        "/run/user/{d}/pulse",
+                        .{opts.uid},
+                    );
+                    defer allocator.free(dest_pulse_dir);
+
+                    var list = std.ArrayList([]const u8).init(allocator);
+
+                    try list.appendSlice(
+                        &[_][]const u8{
+                            "--ro-bind-try", runtime_pulse_dir,       dest_pulse_dir,
+                            "--ro-bind-try", "/usr/share/alsa",       "/usr/share/alsa",
+                            "--ro-bind-try", "/usr/share/pulseaudio", "/usr/share/pulseaudio",
+                            "--ro-bind-try", "/etc/alsa",             "/etc/alsa",
+                            "--ro-bind-try", "/etc/group",            "/etc/group",
+                            "--ro-bind-try", "/etc/pulse",            "/etc/pulse",
+                            "--dev-bind",    "/dev/snd",              "/dev/snd",
+                        },
+                    );
+
+                    break :blk try list.toOwnedSlice();
+                },
+                .cgroup => &[_][]const u8{},
+                .dbus => blk: {
+                    const runtime_bus_dir = try appendDir(
+                        allocator,
+                        opts.runtime_dir,
+                        "bus",
+                    );
+                    defer allocator.free(runtime_bus_dir);
+
+                    const dest_bus_dir = try std.fmt.allocPrint(
+                        allocator,
+                        "/run/user/{d}/bus",
+                        .{opts.uid},
+                    );
+                    defer allocator.free(dest_bus_dir);
+
+                    var list = std.ArrayList([]const u8).init(allocator);
+
+                    try list.appendSlice(
+                        &[_][]const u8{
+                            "--ro-bind-try", runtime_bus_dir,         dest_bus_dir,
+                            "--ro-bind-try", "/usr/share/alsa",       "/usr/share/alsa",
+                            "--ro-bind-try", "/usr/share/pulseaudio", "/usr/share/pulseaudio",
+                            "--ro-bind-try", "/etc/alsa",             "/etc/alsa",
+                            "--ro-bind-try", "/etc/group",            "/etc/group",
+                            "--ro-bind-try", "/etc/pulse",            "/etc/pulse",
+                            "--dev-bind",    "/dev/snd",              "/dev/snd",
+                        },
+                    );
+
+                    break :blk try list.toOwnedSlice();
+                },
+                .ipc => &[_][]const u8{},
+                .network => allocator.dupe([]const u8, &[_][]const u8{
+                    "--ro-bind-try", "/etc/ca-certificates",       "/etc/ca-certificates",
+                    "--ro-bind-try", "/etc/resolv.conf",           "/etc/resolv.conf",
+                    "--ro-bind-try", "/etc/ssl",                   "/etc/ssl",
+                    "--ro-bind-try", "/etc/pki",                   "/etc/pki",
+                    "--ro-bind-try", "/usr/share/ca-certificates", "/usr/share/ca-certificates",
+                    "--share-net",
+                }),
+                .pid => &[_][]const u8{},
+                .pipewire => blk: {
+                    const runtime_pipewire_dir = try appendDir(
+                        allocator,
+                        opts.runtime_dir,
+                        "pipewire-0",
+                    );
+                    defer allocator.free(runtime_pipewire_dir);
+
+                    const dest_pipewire_dir = try std.fmt.allocPrint(
+                        allocator,
+                        "/run/user/{d}/pipewire-0",
+                        .{opts.uid},
+                    );
+                    defer allocator.free(dest_pipewire_dir);
+
+                    var list = std.ArrayList([]const u8).init(allocator);
+
+                    try list.appendSlice(
+                        &[_][]const u8{
+                            "--ro-bind-try", runtime_pipewire_dir,    dest_pipewire_dir,
+                            "--ro-bind-try", "/usr/share/alsa",       "/usr/share/alsa",
+                            "--ro-bind-try", "/usr/share/pulseaudio", "/usr/share/pulseaudio",
+                            "--ro-bind-try", "/etc/alsa",             "/etc/alsa",
+                            "--ro-bind-try", "/etc/group",            "/etc/group",
+                            "--ro-bind-try", "/etc/pulse",            "/etc/pulse",
+                            "--dev-bind",    "/dev/snd",              "/dev/snd",
+                        },
+                    );
+
+                    break :blk try list.toOwnedSlice();
+                },
+                .session, .user, .uts => &[_][]const u8{},
+                else => &[_][]const u8{},
+            };
+        }
     };
 
     pub fn open(ai: *AppImage, path: []const u8) !SquashFs.Inode {
@@ -439,8 +588,10 @@ pub const AppImage = struct {
         ai.image = try SquashFs.init(allocator, ai.path, .{ .offset = off });
 
         var desktop_entry_found = false;
-        var root_inode = try ai.image.getInode(ai.image.internal.sb.root_inode);
+        var root_inode = ai.image.getRootInode();
+
         var it = try root_inode.iterate();
+
         while (try it.next()) |entry| {
             var split_it = std.mem.splitBackwards(u8, entry.name, ".");
 
@@ -460,7 +611,7 @@ pub const AppImage = struct {
 
             // If the entry is a symlink, follow it before attempting to read
             if (inode.kind == .sym_link) {
-                var path_buf: [std.os.PATH_MAX]u8 = undefined;
+                var path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
                 const real_inode_path = try inode.readLink(&path_buf);
 
                 inode = try ai.open(real_inode_path);
@@ -550,7 +701,7 @@ pub const AppImage = struct {
 
         if (perms.level == 0) return WrapArgsError.SandboxLevelTooLow;
 
-        var home = try known_folders.getPath(allocator, .home) orelse {
+        const home = try known_folders.getPath(allocator, .home) orelse {
             return WrapArgsError.HomeNotFound;
         };
 
@@ -562,7 +713,7 @@ pub const AppImage = struct {
             const ai_md5 = try ai.md5(&md5_buf);
 
             // TODO: fallback if `LOGNAME` not present
-            const logname = os.getenv("LOGNAME") orelse "";
+            const logname = std.posix.getenv("LOGNAME") orelse "";
             const user = try std.process.getUserInfo(logname);
 
             // Bwrap args for AppImages regardless of level
@@ -875,6 +1026,19 @@ pub const AppImage = struct {
                 }
             }
 
+            if (perms.sockets) |sockets| {
+                for (sockets) |socket| {
+                    const socket_slice = try socket.toBwrapArgs(allocator, .{
+                        // TODO: DO NOT HARD CODE
+                        .runtime_dir = "/run/user/1000",
+                        .uid = 1000,
+                    });
+                    defer allocator.free(socket_slice);
+
+                    try list.appendSlice(socket_slice);
+                }
+            }
+
             if (ai.mount_dir) |mount_dir| {
                 try list.appendSlice(&[_][]const u8{
                     "--bind",
@@ -907,7 +1071,7 @@ pub const AppImage = struct {
         var list = std.ArrayList(?[*:0]const u8).init(allocator);
 
         var arena = std.heap.ArenaAllocator.init(allocator);
-        var arena_allocator = arena.allocator();
+        const arena_allocator = arena.allocator();
         defer arena.deinit();
 
         const args_slice = try ai.wrapArgs(arena_allocator);
@@ -966,7 +1130,7 @@ pub const AppImage = struct {
 
         // ai.mount_dir defined above, this shouldn't ever be null
         cwd.makePath(ai.mount_dir.?) catch |err| {
-            if (err != os.MakeDirError.PathAlreadyExists) {}
+            if (err != error.PathAlreadyExists) {}
         };
 
         const off = try ai.offset();
@@ -1045,7 +1209,7 @@ pub const AppImage = struct {
     // This can't be finished until AppImage.wrapArgs works correctly
     pub fn sandbox(ai: *AppImage, opts: SandboxOptions) !void {
         var arena = std.heap.ArenaAllocator.init(ai.allocator);
-        var arena_allocator = arena.allocator();
+        const arena_allocator = arena.allocator();
         defer arena.deinit();
 
         const wrap_args = try ai.wrapArgs(arena_allocator);
@@ -1072,8 +1236,8 @@ fn resolve(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
 
     if (stat.kind != .sym_link) return path;
 
-    var buf = try allocator.alloc(u8, std.os.PATH_MAX);
-    return std.os.readlink(path, buf);
+    const buf = try allocator.alloc(u8, std.fs.MAX_PATH_BYTES);
+    return std.posix.readlink(path, buf);
 }
 
 pub fn md5FromPath(path: []const u8, buf: []u8) ![:0]const u8 {
@@ -1184,8 +1348,8 @@ pub fn kindFromHeaderData(header_data: []const u8) !AppImage.Kind {
 // This shouldn't typically be called on its own. Instead, `AppImage.sandbox`
 // should be preferred
 pub fn bwrap(allocator: std.mem.Allocator, args: []const []const u8) !void {
-    var stdout = std.io.getStdOut();
-    var stderr = std.io.getStdErr();
+    const stdout = std.io.getStdOut();
+    const stderr = std.io.getStdErr();
 
     var child = ChildProcess.init(args, allocator);
     child.stdout = stdout;
