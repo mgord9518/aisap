@@ -188,6 +188,25 @@
     "data_dir": true
   },
   {
+    "names": [ "cemu" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:ro",
+      "~/Games:ro",
+      "~/Roms:ro"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
     "names": [ "chromium" ],
     "level": 2,
     "filesystem": [
@@ -250,6 +269,22 @@
   },
   {
     "names": [ "deemix-gui" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-music:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
+    "names": [ "deadbeef", "deadbeef nightly" ],
     "level": 2,
     "filesystem": [
       "xdg-music:rw"
@@ -1126,6 +1161,25 @@
     "data_dir": true
   },
   {
+    "names": [ "ryujinx" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:ro",
+      "~/Games:ro",
+      "~/Roms:ro"
+    ],
+    "devices": [
+      "dri",
+      "input"
+    ],
+    "sockets": [
+      "x11",
+      "alsa",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
     "names": [ "sengi" ],
     "level": 1,
     "filesystem": null,
@@ -1488,7 +1542,7 @@
     "data_dir": true
   },
   {
-    "names": [ "yuzu" ],
+    "names": [ "yuzu", "suyu", "sudachi" ],
     "level": 2,
     "filesystem": [
       "xdg-download:ro",
