@@ -6,6 +6,7 @@ Comment=(EXPERIMENTAL) Sandbox helper for AppImages
 Exec=aisap
 Icon=io.github.mgord9518.aisap
 Terminal=true
+NoDisplay=true
 Categories=System;Security;
 X-AppImage-Version=
 X-AppImage-Architecture=
