@@ -1,6 +1,6 @@
 .{
     .name = "aisap",
-    .version = "0.9.9-alpha",
+    .version = "0.9.10-alpha",
     .paths = [][]const u8 {""},
     .dependencies = .{
         .squashfuse = .{
@@ -9,7 +9,7 @@
         },
         .fuse = .{
             .url = "https://github.com/mgord9518/libfuse-zig/archive/refs/tags/continuous.tar.gz",
-            .hash = "12200be40def11e7699ec3db554818fd00e19fa331d45f762c2a89a46981ded91079",
+            .hash = "1220c5f5640bdf55d07c1cd67986a39df1c41fff641f58e975a7cf6a470ae5b2461b",
         },
     },
 }

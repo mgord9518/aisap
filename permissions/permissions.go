@@ -98,17 +98,12 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 	devicePerms := e.Section("X-App Permissions").Key("Devices").Value()
 	socketPerms := e.Section("X-App Permissions").Key("Sockets").Value()
 
-	// Enable saving to a data dir by default. If NoDataDir is true, the AppImage
-	// HOME dir will be in RAM and non-persistent.
-	if e.Section("X-App Permissions").Key("NoDataDir").Value() == "true" {
-		p.DataDir = false
-	}
-
-	// Phasing out negative bools, I will eventually replace `NoDataDir`
-	// in favor of `DataDir`
+	// Enable saving to a data dir by default
 	if e.Section("X-App Permissions").Key("DataDir").Value() == "false" {
+		p.DataDir = false
+	} else {
 		p.DataDir = true
-	}
+    }
 
 	l, err := strconv.Atoi(level)
 	if err != nil || l < 0 || l > 3 {

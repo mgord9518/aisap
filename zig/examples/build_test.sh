@@ -9,5 +9,8 @@
 zig cc -static \
     -o test test.c \
     ../zig-out/lib/libaisap.a \
-    -I../../include \
-    -lfuse3
+    ../zig-out/lib/libzstd.a \
+    ../zig-out/lib/libdeflate.a \
+    ../zig-out/lib/liblz4.a \
+    ../zig-out/lib/libfuse.a \
+    -I../../include

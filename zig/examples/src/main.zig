@@ -42,7 +42,7 @@ fn printSockets(slice: []AppImage.SocketPermissions) void {
 }
 
 pub fn main() !void {
-    var allocator = std.heap.page_allocator;
+    const allocator = std.heap.page_allocator;
     var args = std.process.args();
 
     // Skip arg[0]

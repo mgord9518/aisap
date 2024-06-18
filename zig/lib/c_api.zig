@@ -134,10 +134,12 @@ export fn aisap_appimage_md5(
 // `aisap_appimage_sandbox` should be preferred
 // Returned memory must be freed
 export fn aisap_appimage_wrapargs(
-    ai: *c.aisap_appimage,
+    c_ai: *c.aisap_appimage,
     err: *CAppImageError,
 ) [*:null]?[*:0]const u8 {
-    return getParent(ai).wrapArgsZ(std.heap.c_allocator) catch {
+    const ai = getParent(c_ai);
+
+    return ai.wrapArgsZ(ai.allocator) catch {
         err.* = .err;
         return undefined;
     };
@@ -155,7 +157,9 @@ export fn aisap_appimage_sandbox(
     var zig_ai = getParent(ai);
 
     if (argc > 0) {
-        var args = zig_ai.allocator.alloc([]const u8, argc) catch {
+        var args = zig_ai.allocator.alloc([]const u8, argc) catch |e| {
+            std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
+
             err.* = .err;
             return;
         };
@@ -177,14 +181,16 @@ export fn aisap_appimage_sandbox(
 
         zig_ai.sandbox(.{
             .args = args,
-        }) catch {
+        }) catch |e| {
+            std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
             err.* = .err;
         };
 
         return;
     }
 
-    zig_ai.sandbox(.{}) catch {
+    zig_ai.sandbox(.{}) catch |e| {
+        std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
         err.* = .err;
     };
 }
@@ -214,8 +220,17 @@ export fn aisap_appimage_offset(ai: *c.aisap_appimage, errno: *CAppImageError) u
 /// This function allocates memory on the heap, the caller is responsible
 /// for freeing it
 export fn appimage_get_md5(path: [*:0]const u8) [*:0]const u8 {
-    const buf = std.heap.page_allocator.alloc(u8, Md5.digest_length * 2 + 1) catch unreachable;
-    return (aisap.md5FromPath(std.mem.span(path), buf) catch unreachable).ptr;
+    const allocator = std.heap.c_allocator;
+
+    const buf = allocator.alloc(
+        u8,
+        Md5.digest_length * 2 + 1,
+    ) catch unreachable;
+
+    return (aisap.md5FromPath(
+        std.mem.span(path),
+        buf,
+    ) catch unreachable).ptr;
 }
 
 export fn appimage_get_payload_offset(path: [*:0]const u8) std.posix.off_t {

@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     const char* md5_string = aisap_appimage_md5(&ai, buf, sizeof(buf), &err);
 
     if (err) {
-        printf("%d\n", err);
+        printf("md5 err%d\n", err);
         return err;
     }
 
@@ -47,24 +47,28 @@ int main(int argc, char** argv) {
 
     printf("  mount_dir: %s\n", aisap_appimage_mount_dir(&ai));
 
-    char** wrap_args = aisap_appimage_wrapargs(&ai, &err);
+    if (false) {
+        char** wrap_args = aisap_appimage_wrapargs(&ai, &err);
+        if (err) {
+            printf("wrapargs err %d\n", err);
+            return err;
+        }
+
+        printf("  wrapargs:\n");
+        char** i = wrap_args;
+        for (char* str = *i; str; str = *++i) {
+            printf("%s ", str);
+        }
+        printf("\n");
+    }
+
+    //getchar();
+
+    aisap_appimage_sandbox(&ai, argc - 2, argv + 2, &err);
     if (err) {
-        printf("%d\n", err);
+        printf("sandbox error %d\n", err);
         return err;
     }
-
-    printf("  wrapargs:\n");
-    char** i = wrap_args;
-    for (char* str = *i; str; str = *++i) {
-        printf("%s ", str);
-    }
-    printf("\n");
-
-//    aisap_appimage_sandbox(&ai, argc - 2, argv + 2, &err);
-//    if (err) {
-//        printf("%d\n", err);
-//        return err;
-//    }
 
     // Test libappimage API:
     printf("libappimage API:\n");

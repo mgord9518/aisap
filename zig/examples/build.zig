@@ -1,7 +1,7 @@
 const std = @import("std");
 const aisap = @import("aisap/zig/build.zig");
 
-pub fn build(b: *std.build.Builder) void {
+pub fn build(b: *std.Build) void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -20,10 +20,14 @@ pub fn build(b: *std.build.Builder) void {
     });
 
     // TODO: find if there's some kind of convention here and follow it if so
-    const aisap_module = aisap.module(b);
-    exe.addModule("aisap", aisap_module);
+    //const aisap_module = aisap.module(b);
+    //exe.addModule("aisap", aisap_module);
 
-    aisap.link(exe, .{});
+    exe.root_module.addAnonymousImport("aisap", .{
+        .root_source_file = .{ .path = "../lib.zig" },
+    });
+
+    //aisap.link(exe, .{});
 
     b.installArtifact(exe);
 

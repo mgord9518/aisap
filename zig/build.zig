@@ -67,16 +67,14 @@ pub fn build(b: *std.Build) void {
         // These options will be renamed in the future
         .@"enable-fuse" = true,
         .@"enable-zlib" = true,
-        .@"use-zig-zlib" = true,
-        //.@"use-libdeflate" = true,
-        .@"enable-xz" = false,
-        .@"enable-lzma" = false,
+        //.@"use-zig-zlib" = true,
+        .@"use-libdeflate" = true,
+        .@"enable-xz" = true,
+        .@"enable-lzma" = true,
         .@"enable-lzo" = false,
-        .@"enable-lz4" = false,
-        .@"enable-zstd" = false,
+        .@"enable-lz4" = true,
+        .@"enable-zstd" = true,
     });
-
-    //lib.linkLibrary(squashfuse_dep.artifact("deflate"));
 
     const fuse_dep = b.dependency("fuse", .{
         .target = target,
@@ -104,6 +102,10 @@ pub fn build(b: *std.Build) void {
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
     b.installArtifact(lib);
+    b.installArtifact(squashfuse_dep.artifact("deflate"));
+    b.installArtifact(squashfuse_dep.artifact("zstd"));
+    b.installArtifact(squashfuse_dep.artifact("lz4"));
+    b.installArtifact(fuse_dep.artifact("fuse"));
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.

@@ -6,6 +6,7 @@ const mem = std.mem;
 const span = std.mem.span;
 const expect = std.testing.expect;
 const os = std.os;
+const posix = std.posix;
 const ChildProcess = std.ChildProcess;
 
 const Md5 = std.crypto.hash.Md5;
@@ -699,7 +700,7 @@ pub const AppImage = struct {
         };
         defer perms.deinit();
 
-        if (perms.level == 0) return WrapArgsError.SandboxLevelTooLow;
+        //if (perms.level == 0) return WrapArgsError.SandboxLevelTooLow;
 
         const home = try known_folders.getPath(allocator, .home) orelse {
             return WrapArgsError.HomeNotFound;
@@ -1138,16 +1139,47 @@ pub const AppImage = struct {
         if (opts.foreground) {
             try fuse_helper.mountImage(ai.path, ai.mount_dir.?, off);
         } else {
-            _ = try std.Thread.spawn(
-                .{},
-                fuse_helper.mountImage,
-                .{ ai.path, ai.mount_dir.?, off },
-            );
+            const pid = try posix.fork();
+            if (pid == 0) {
+                //            _ = try std.Thread.spawn(
+                //                .{},
+                //                fuse_helper.mountImage,
+                //                .{ ai.path, ai.mount_dir.?, off },
+                //            );
+
+                if (true) {
+                    try fuse_helper.mountImage(
+                        ai.path,
+                        ai.mount_dir.?,
+                        off,
+                    );
+                } else {
+                    const offset_string = try std.fmt.allocPrint(
+                        ai.allocator,
+                        "-ooffset={d}",
+                        .{off},
+                    );
+                    defer ai.allocator.free(offset_string);
+
+                    var proc = ChildProcess.init(&[_][]const u8{
+                        "squashfuse",
+                        offset_string,
+                        ai.path,
+                        ai.mount_dir.?,
+                    }, ai.allocator);
+
+                    _ = try proc.spawnAndWait();
+                }
+
+                std.debug.print("UNMOUNT\n\n", .{});
+
+                posix.exit(0);
+            }
 
             // Values in nanoseconds
             var waited: usize = 0;
             const wait_step = 1000;
-            const wait_max = 500_000;
+            const wait_max = 500_0000;
 
             var buf: [4096]u8 = undefined;
 
@@ -1213,6 +1245,11 @@ pub const AppImage = struct {
         defer arena.deinit();
 
         const wrap_args = try ai.wrapArgs(arena_allocator);
+
+        std.debug.print("DEBUG {s} {s}", .{
+            @src().fn_name,
+            wrap_args,
+        });
 
         if (opts.args) |args| {
             var list = std.ArrayList([]const u8).init(arena_allocator);
