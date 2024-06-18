@@ -119,7 +119,7 @@ mksquashfs AppDir sfs -root-owned -no-exports -noI -b 1M -comp lz4 -Xhc -nopad
 [ $? -ne 0 ] && exit $?
 
 # Download shImg runtime
-wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-static-x86_64-aarch64" -O runtime
+wget "https://github.com/mgord9518/shappimage/releases/download/continuous/runtime-lz4-x86_64-aarch64" -O runtime
 [ $? -ne 0 ] && exit $?
 
 cat runtime sfs > "aisap-$VERSION-x86_64_aarch64.shImg"
