@@ -50,9 +50,9 @@ pub fn build(b: *std.Build) void {
 
     lib.addIncludePath(b.path("../include"));
 
-    const known_folders_module = b.addModule("known-folders", .{
-        .root_source_file = b.path("known-folders/known-folders.zig"),
-    });
+    //    const known_folders_module = b.addModule("known-folders", .{
+    //        .root_source_file = b.path("known-folders/known-folders.zig"),
+    //    });
 
     const squashfuse_dep = b.dependency("squashfuse", .{
         .target = target,
@@ -75,17 +75,45 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const known_folders_dep = b.dependency("known_folders", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
     lib.root_module.addImport(
         "squashfuse",
         squashfuse_dep.module("squashfuse"),
     );
 
     lib.root_module.addImport(
+        "known-folders",
+        known_folders_dep.module("known-folders"),
+    );
+
+    _ = b.addModule("aisap", .{
+        .root_source_file = b.path("lib.zig"),
+        .imports = &.{
+            .{
+                .name = "squashfuse",
+                .module = squashfuse_dep.module("squashfuse"),
+            },
+            .{
+                .name = "known-folders",
+                .module = known_folders_dep.module("known-folders"),
+            },
+            .{
+                .name = "fuse",
+                .module = fuse_dep.module("fuse"),
+            },
+        },
+    });
+
+    lib.root_module.addImport(
         "fuse",
         fuse_dep.module("fuse"),
     );
 
-    lib.root_module.addImport("known-folders", known_folders_module);
+    //    lib.root_module.addImport("known-folders", known_folders_module);
 
     //    const pie = b.option(bool, "pie", "build as a PIE (position independent executable)") orelse true;
     //    lib.pie = pie;

@@ -1,0 +1,12 @@
+.{
+    .name = "aisap",
+    .version = "0.9.10-alpha",
+    .paths = [][]const u8 {""},
+    .dependencies = .{
+        .aisap = .{
+            //.url = "https://github.com/mgord9518/aisap/archive/refs/tags/continuous.tar.gz",
+            //.hash = "12204d3ea2c1cffc4e98b21a2809d58476ababeebe711dc84edfe15fe507f2c227db",
+            .path = "../"
+        },
+    },
+}

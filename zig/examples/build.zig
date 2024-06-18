@@ -14,7 +14,7 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "example",
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -23,9 +23,33 @@ pub fn build(b: *std.Build) void {
     //const aisap_module = aisap.module(b);
     //exe.addModule("aisap", aisap_module);
 
-    exe.root_module.addAnonymousImport("aisap", .{
-        .root_source_file = .{ .path = "../lib.zig" },
+    const aisap_dep = b.dependency("aisap", .{
+        .target = target,
+        .optimize = optimize,
+
+        //        // These options will be renamed in the future
+        //        .@"enable-fuse" = true,
+        //        .@"enable-zlib" = true,
+        //        //.@"use-zig-zlib" = true,
+        //        .@"use-libdeflate" = true,
+        //        .@"enable-xz" = true,
+        //        .@"enable-lzma" = true,
+        //        .@"enable-lzo" = false,
+        //        .@"enable-lz4" = true,
+        //        .@"enable-zstd" = true,
     });
+
+    //    exe.root_module.addAnonymousImport("aisap", .{
+    //        .root_source_file = .{ .path = "../lib.zig" },
+    //    });
+    exe.root_module.addImport("aisap", aisap_dep.module("aisap"));
+
+    exe.linkLibrary(aisap_dep.artifact("zstd"));
+    exe.linkLibrary(aisap_dep.artifact("lz4"));
+    exe.linkLibrary(aisap_dep.artifact("deflate"));
+    exe.linkLibrary(aisap_dep.artifact("fuse"));
+
+    exe.linkLibC();
 
     //aisap.link(exe, .{});
 
@@ -42,7 +66,7 @@ pub fn build(b: *std.Build) void {
 
     // TODO: add tests
     const exe_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
     });
