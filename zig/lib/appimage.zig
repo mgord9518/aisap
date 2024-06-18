@@ -7,7 +7,6 @@ const span = std.mem.span;
 const expect = std.testing.expect;
 const os = std.os;
 const posix = std.posix;
-const ChildProcess = std.ChildProcess;
 
 const Md5 = std.crypto.hash.Md5;
 
@@ -1161,7 +1160,7 @@ pub const AppImage = struct {
                     );
                     defer ai.allocator.free(offset_string);
 
-                    var proc = ChildProcess.init(&[_][]const u8{
+                    var proc = std.process.Child.init(&[_][]const u8{
                         "squashfuse",
                         offset_string,
                         ai.path,
@@ -1221,7 +1220,7 @@ pub const AppImage = struct {
 
     pub fn unmount(ai: *AppImage) !void {
         if (ai.mount_dir) |mount_dir| {
-            var umount = ChildProcess.init(&[_][]const u8{
+            var umount = std.process.Child.init(&[_][]const u8{
                 "fusermount",
                 "-u",
                 mount_dir,
@@ -1388,7 +1387,7 @@ pub fn bwrap(allocator: std.mem.Allocator, args: []const []const u8) !void {
     const stdout = std.io.getStdOut();
     const stderr = std.io.getStdErr();
 
-    var child = ChildProcess.init(args, allocator);
+    var child = std.process.Child.init(args, allocator);
     child.stdout = stdout;
     child.stderr = stderr;
     _ = try child.spawnAndWait();
