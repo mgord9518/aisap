@@ -1,7 +1,5 @@
 const std = @import("std");
 
-pub const squashfuse = @import("squashfuse-zig/build.zig");
-
 pub const LinkOptions = struct {
     enable_zstd: bool = true,
     enable_lz4: bool = true,
