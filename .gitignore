@@ -8,3 +8,4 @@ a.out
 zig-*
 *.bak
 test
+cmd/tablegen/tablegen

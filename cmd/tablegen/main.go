@@ -29,7 +29,15 @@ func main() {
 		profile := profiles.Profiles()[profileKeys[i]]
 
 		// Name
-		fmt.Printf("|%s", profile.Names[0])
+		fmt.Printf("|")
+
+		for i, name := range profile.Names {
+			fmt.Printf("%s", name)
+
+			if i < len(profile.Names) - 1 {
+				fmt.Printf(", ")
+			}
+		}
 
 		// Level
 		fmt.Printf("|%d", profile.Level)
