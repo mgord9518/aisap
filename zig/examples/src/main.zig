@@ -62,7 +62,7 @@ pub fn main() !void {
 
     var md5_buf: [33]u8 = undefined;
 
-    const permissions = try ai.permissions(
+    var permissions = try ai.permissions(
         allocator,
     ) orelse {
         std.debug.print("no permissions found\n", .{});
@@ -85,6 +85,9 @@ pub fn main() !void {
         std.debug.print("[]\n", .{});
     }
 
+    permissions.level = 3;
+    try AppImage.SocketPermissions.initDatabase(allocator);
+
     std.debug.print("{s}\n", .{ai.name});
     std.debug.print("desktop: {s}\n", .{ai.desktop_entry});
     std.debug.print("type: {}\n", .{ai.kind});
@@ -93,12 +96,14 @@ pub fn main() !void {
         try ai.md5(&md5_buf),
     });
 
-    try ai.mount(.{});
+    try ai.mount(.{
+        .foreground = false,
+    });
 
-    const wrapArgs = try ai.wrapArgs(allocator);
-    printWrapArgs(wrapArgs);
+    //const wrapArgs = try ai.wrapArgs(allocator, permissions);
+    //printWrapArgs(wrapArgs);
 
-    try ai.sandbox(.{
+    try ai.sandbox(permissions, .{
         //.args = &[_][]const u8{"build"},
     });
 }
