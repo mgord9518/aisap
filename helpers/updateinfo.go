@@ -2,15 +2,17 @@ package helpers
 
 import (
 	"bufio"
-	"strings"
 	"bytes"
-	"errors"
 	"debug/elf"
+	"errors"
+	"strings"
 )
 
 func ReadUpdateInfo(src string) (string, error) {
 	format, err := GetAppImageType(src)
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 
 	if format == 2 || format == 1 {
 		return readUpdateInfoFromElf(src)
@@ -49,7 +51,9 @@ func readUpdateInfoFromElf(src string) (string, error) {
 
 func readUpdateInfoFromShappimage(src string) (string, error) {
 	f, err := ExtractResourceReader(src, "update_info")
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -59,6 +63,6 @@ func readUpdateInfoFromShappimage(src string) (string, error) {
 			return scanner.Text(), nil
 		}
 	}
-	
+
 	return "", errors.New("unable to find update information in shImg")
 }

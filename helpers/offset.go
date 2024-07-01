@@ -2,20 +2,22 @@ package helpers
 
 import (
 	"bufio"
+	"debug/elf"
 	"encoding/binary"
 	"errors"
-	"debug/elf"
 	"io"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 // GetOffset takes an AppImage (either ELF or shappimage), returning the offset
 // of its SquashFS archive
 func GetOffset(src string) (int, error) {
 	format, err := GetAppImageType(src)
-	if err != nil { return -1, err }
+	if err != nil {
+		return -1, err
+	}
 
 	if format == -2 {
 		return getShappImageSize(src)
@@ -33,19 +35,23 @@ func GetOffset(src string) (int, error) {
 func getShappImageSize(src string) (int, error) {
 	f, err := os.Open(src)
 	defer f.Close()
-	if err != nil { return -1, err }
+	if err != nil {
+		return -1, err
+	}
 
 	_, err = f.Stat()
-	if err != nil { return -1, err }
+	if err != nil {
+		return -1, err
+	}
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
 		if len(scanner.Text()) > 10 && scanner.Text()[0:11] == "sfs_offset=" &&
-		len(strings.Split(scanner.Text(), "=")) == 2 {
+			len(strings.Split(scanner.Text(), "=")) == 2 {
 
 			offHex := strings.Split(scanner.Text(), "=")[1]
-			offHex  = strings.ReplaceAll(offHex, "'", "")
-			offHex  = strings.ReplaceAll(offHex, "\"", "")
+			offHex = strings.ReplaceAll(offHex, "'", "")
+			offHex = strings.ReplaceAll(offHex, "\"", "")
 			o, err := strconv.Atoi(offHex)
 
 			return int(o), err
@@ -63,7 +69,9 @@ func getElfSize(src string) (int, error) {
 	f, _ := os.Open(src)
 	defer f.Close()
 	e, err := elf.NewFile(f)
-	if err != nil { return -1, err }
+	if err != nil {
+		return -1, err
+	}
 
 	// Find offsets based on arch
 	sr := io.NewSectionReader(f, 0, 1<<63-1)
@@ -74,23 +82,31 @@ func getElfSize(src string) (int, error) {
 		hdr := new(elf.Header64)
 
 		_, err = sr.Seek(0, 0)
-		if err != nil { return -1, err }
+		if err != nil {
+			return -1, err
+		}
 		err = binary.Read(sr, e.ByteOrder, hdr)
-		if err != nil { return -1, err }
+		if err != nil {
+			return -1, err
+		}
 
-		shoff	  = int(hdr.Shoff)
-		shnum	  = int(hdr.Shnum)
+		shoff = int(hdr.Shoff)
+		shnum = int(hdr.Shnum)
 		shentsize = int(hdr.Shentsize)
 	case elf.ELFCLASS32:
 		hdr := new(elf.Header32)
 
 		_, err = sr.Seek(0, 0)
-		if err != nil { return -1, err }
+		if err != nil {
+			return -1, err
+		}
 		err := binary.Read(sr, e.ByteOrder, hdr)
-		if err != nil { return -1, err }
+		if err != nil {
+			return -1, err
+		}
 
-		shoff     = int(hdr.Shoff)
-		shnum     = int(hdr.Shnum)
+		shoff = int(hdr.Shoff)
+		shnum = int(hdr.Shnum)
 		shentsize = int(hdr.Shentsize)
 	default:
 		return 0, nil
@@ -106,10 +122,14 @@ func getElfSize(src string) (int, error) {
 func GetAppImageType(src string) (int, error) {
 	f, err := os.Open(src)
 	defer f.Close()
-	if err != nil { return -1, err }
+	if err != nil {
+		return -1, err
+	}
 
 	_, err = f.Stat()
-	if err != nil { return -1, err }
+	if err != nil {
+		return -1, err
+	}
 
 	if HasMagic(f, "\x7fELF", 0) {
 		if HasMagic(f, "AI\x01", 8) {
@@ -134,11 +154,13 @@ func GetAppImageType(src string) (int, error) {
 // if identical, return true
 func HasMagic(r io.ReadSeeker, str string, offset int) bool {
 	magic := make([]byte, len(str))
-	
+
 	r.Seek(int64(offset), io.SeekStart)
 
 	_, err := io.ReadFull(r, magic[:])
-	if err != nil { return false }
+	if err != nil {
+		return false
+	}
 
 	for i := 0; i < len(str); i++ {
 		if magic[i] != str[i] {

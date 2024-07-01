@@ -1,11 +1,11 @@
 package profiles
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
-	"encoding/json"
 
-	helpers     "github.com/mgord9518/aisap/helpers"
+	helpers "github.com/mgord9518/aisap/helpers"
 	permissions "github.com/mgord9518/aisap/permissions"
 
 	_ "embed"
@@ -29,7 +29,7 @@ func FromName(name string) (*permissions.AppImagePerms, error) {
 		return &p, nil
 	}
 
-	return &permissions.AppImagePerms{ Level: -1 }, errors.New("cannot find permissions for app `" + name + "`")
+	return &permissions.AppImagePerms{Level: -1}, errors.New("cannot find permissions for app `" + name + "`")
 }
 
 //go:embed profile_database.json

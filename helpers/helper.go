@@ -5,13 +5,13 @@ import (
 	"bufio"
 	"errors"
 	"io"
-	"path/filepath"
-   	"math/rand"
+	"math/rand"
+	"os"
+	"os/exec"
 	"path"
+	"path/filepath"
 	"strconv"
-   	"strings"
-   	"os"
-   	"os/exec"
+	"strings"
 
 	xdg "github.com/adrg/xdg"
 )
@@ -26,8 +26,10 @@ func SplitKey(str string) []string {
 }
 
 func Contains(s []string, str string) (int, bool) {
-	for i, val := range(s) {
-		if val == str { return i, true }
+	for i, val := range s {
+		if val == str {
+			return i, true
+		}
 	}
 
 	return -1, false
@@ -35,9 +37,11 @@ func Contains(s []string, str string) (int, bool) {
 
 // Checks if an array contains any of the elements from another array
 func ContainsAny(s []string, s2 []string) (int, bool) {
-	for i := range(s2) {
+	for i := range s2 {
 		n, present := Contains(s, s2[i])
-		if present { return n, true }
+		if present {
+			return n, true
+		}
 	}
 
 	return -1, false
@@ -102,7 +106,7 @@ func CleanFile(str string) string {
 }
 
 func CleanFiles(s []string) []string {
-	for i := range(s) {
+	for i := range s {
 		s[i] = CleanFile(s[i])
 	}
 
@@ -118,7 +122,7 @@ func CleanDevice(str string) string {
 }
 
 func CleanDevices(s []string) []string {
-	for i := range(s) {
+	for i := range s {
 		s[i] = CleanDevice(s[i])
 	}
 
@@ -226,24 +230,32 @@ func ExpandGenericDir(str string) string {
 func ExtractResource(aiPath string, src string, dest string) error {
 	inF, err := ExtractResourceReader(aiPath, src)
 	defer inF.Close()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	outF, err := os.Create(dest)
 	defer outF.Close()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
-	 _, err = io.Copy(outF, inF)
+	_, err = io.Copy(outF, inF)
 	return err
 }
 
 func ExtractResourceReader(aiPath string, src string) (io.ReadCloser, error) {
 	zr, err := zip.OpenReader(aiPath)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
-	for _, f := range(zr.File) {
+	for _, f := range zr.File {
 		if f.Name == filepath.Join(".APPIMAGE_RESOURCES", src) {
 			rc, err := f.Open()
-			if err != nil { return nil, err }
+			if err != nil {
+				return nil, err
+			}
 
 			return rc, nil
 		}
@@ -253,7 +265,7 @@ func ExtractResourceReader(aiPath string, src string) (io.ReadCloser, error) {
 }
 
 // Get the home directory using `/etc/passwd`, discarding the $HOME variable.
-// This is used in aisap so that its config files can be stored in 
+// This is used in aisap so that its config files can be stored in
 func RealHome() (string, error) {
 	uid := strconv.Itoa(os.Getuid())
 
@@ -277,7 +289,9 @@ func RealHome() (string, error) {
 // Finds full path of running executable
 func GetWorkDir() (string, error) {
 	e, err := os.Executable()
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 
 	return path.Dir(e), nil
 }
@@ -285,12 +299,16 @@ func GetWorkDir() (string, error) {
 // Returns full path of command and true if in PATH or working directory
 func CommandExists(str string) (string, bool) {
 	wd, err := GetWorkDir()
-	if err != nil { return "", false }
+	if err != nil {
+		return "", false
+	}
 
 	cmd, err := exec.LookPath(filepath.Join(wd, str))
 	if err != nil {
 		cmd, err = exec.LookPath(str)
-		if err != nil { return "", false }
+		if err != nil {
+			return "", false
+		}
 	}
 
 	return cmd, true

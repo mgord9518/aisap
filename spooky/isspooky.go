@@ -46,13 +46,13 @@ func IsSpooky(str string) bool {
 	slice := strings.Split(str, ":")
 	s1 := strings.Join(slice[:len(slice)-1], ":")
 
-	for _, val := range(spookyFiles) {
+	for _, val := range spookyFiles {
 		if s1 == val {
 			return true
 		}
 	}
 
-	for _, val := range(spookyDirs) {
+	for _, val := range spookyDirs {
 		if len(s1) < len(val) {
 			continue
 		}

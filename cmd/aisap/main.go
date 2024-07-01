@@ -32,17 +32,17 @@ import (
 	"os/signal"
 	"syscall"
 
-	aisap       "github.com/mgord9518/aisap"
+	clr "github.com/gookit/color"
+	aisap "github.com/mgord9518/aisap"
 	permissions "github.com/mgord9518/aisap/permissions"
-	cli         "github.com/mgord9518/cli"
-	check       "github.com/mgord9518/aisap/spooky"
-	flag        "github.com/spf13/pflag"
-	ini         "gopkg.in/ini.v1"
-	clr         "github.com/gookit/color"
+	check "github.com/mgord9518/aisap/spooky"
+	cli "github.com/mgord9518/cli"
+	flag "github.com/spf13/pflag"
+	ini "gopkg.in/ini.v1"
 )
 
 var (
-	ai   *aisap.AppImage
+	ai    *aisap.AppImage
 	argv0 string
 
 	invalidBundle          = errors.New("failed to open bundle:")
@@ -51,8 +51,8 @@ var (
 	invalidPerms           = errors.New("failed to get permissions from profile:")
 	invalidPermLevel       = errors.New("failed to set permissions level (this shouldn't happen!):")
 	invalidFallbackProfile = errors.New("failed to set fallback profile:")
-    invalidSocketSet       = errors.New("failed to set socket:")
-    cantRun                = errors.New("failed to run application:")
+	invalidSocketSet       = errors.New("failed to set socket:")
+	cantRun                = errors.New("failed to run application:")
 )
 
 // Process flags
@@ -66,6 +66,12 @@ func main() {
 
 	if err != nil {
 		cli.Fatal(invalidBundle, err)
+		return
+	}
+
+	perms, err := ai.Permissions()
+	if err != nil {
+		cli.Fatal(invalidPerms, err)
 		return
 	}
 
@@ -127,41 +133,38 @@ func main() {
 			return
 		}
 
-		ai.Perms, err = permissions.FromReader(f)
+		perms, err = permissions.FromReader(f)
 		if err != nil {
 			cli.Fatal(invalidPerms, err)
 			return
 		}
 
-		if err != nil {
-			cli.Fatal(invalidPerms, err)
-			return
-		}
 	}
 
 	// Add (and remove) permissions as passed from flags. eg: `--add-file`
 	// Note: If *not* using XDG standard names (eg: `xdg-desktop`) you MUST
 	// Provide the full filepath when using `AddFiles`
-	ai.Perms.RemoveFiles(rmFile...)
-	ai.Perms.RemoveDevices(rmDevice...)
-	ai.Perms.RemoveSockets(rmSocket...)
-	ai.Perms.AddFiles(addFile...)
-	ai.Perms.AddDevices(addDevice...)
-	err = ai.Perms.AddSockets(addSocket...)
+	perms.RemoveFiles(rmFile...)
+	perms.RemoveDevices(rmDevice...)
+	perms.RemoveSockets(rmSocket...)
+	perms.AddFiles(addFile...)
+	perms.AddDevices(addDevice...)
+	err = perms.AddSockets(addSocket...)
 
-    // Fail if socket is invalid
-    if err != nil {
+	// Fail if socket is invalid
+	if err != nil {
 		// TODO: re-add socket list
 		//        clr.Println("<yellow>notice</>:")
 		//        cli.List("valid sockets are", permissions.ValidSockets(), 18)
 		//        fmt.Println()
-        cli.Fatal(invalidSocketSet, err)
-        return
-    }
+
+		cli.Fatal(invalidSocketSet, err)
+		return
+	}
 
 	// If the `--level` flag is used, set the AppImage to that level
 	if *level > -1 && *level <= 3 {
-		err := ai.Perms.SetLevel(*level)
+		err := perms.SetLevel(*level)
 		if err != nil {
 			cli.Fatal(invalidPermLevel, err)
 			return
@@ -171,7 +174,7 @@ func main() {
 	noProfile := false
 
 	// Fallback on `--fallback-profile` if set, otherwise just set base level to 3
-	if ai.Perms.Level < 0 || ai.Perms.Level > 3 {
+	if perms.Level < 0 || perms.Level > 3 {
 		if *fallbackProfile != "" {
 			f, err := ini.LoadSources(ini.LoadOptions{
 				IgnoreInlineComment: true,
@@ -182,9 +185,9 @@ func main() {
 				return
 			}
 
-			ai.Perms, err = permissions.FromIni(f)
+			perms, err = permissions.FromIni(f)
 		} else {
-			ai.Perms.Level = 3
+			perms.Level = 3
 		}
 
 		noProfile = true
@@ -211,11 +214,11 @@ func main() {
 			fmt.Println()
 		}
 
-		cli.ListPerms(ai.Perms)
+		cli.ListPerms(perms)
 
 		fmt.Println()
 
-		if ai.Perms.Level == 0 {
+		if perms.Level == 0 {
 			cli.Warning("this app requests to be unsandboxed!")
 			cli.Warning("use the CLI flag <cyan>--level</> <gray>[</><green>1</><gray>..</><green>3</><gray>]</> to sandbox it anyway")
 			return
@@ -226,7 +229,7 @@ func main() {
 		}
 
 		// Warns if the AppImage contains potential escape vectors or suspicious files
-		for _, v := range(ai.Perms.Files) {
+		for _, v := range perms.Files {
 			if check.IsSpooky(v) {
 
 				cli.Warning("this app requests files/ directories that could be used to escape sandboxing")
@@ -239,7 +242,7 @@ func main() {
 			"x11",
 		}
 
-		for _, sock := range ai.Perms.Sockets {
+		for _, sock := range perms.Sockets {
 			for _, spookySock := range spookySockets {
 				if sock == spookySock {
 					cli.Warning("sockets used by this app could be used to escape the sandbox")
@@ -251,10 +254,10 @@ func main() {
 	}
 
 	err = ai.Mount()
-    if err != nil {
-        cli.Fatal(err, err)
-        return
-    }
+	if err != nil {
+		cli.Fatal(err, err)
+		return
+	}
 
 	if *rootDir != "" {
 		ai.SetRootDir(*rootDir)
@@ -265,7 +268,7 @@ func main() {
 	}
 
 	if *noDataDir {
-		ai.Perms.DataDir = false
+		perms.DataDir = false
 	}
 
 	if flagUsed("trust") {
@@ -278,15 +281,14 @@ func main() {
 	}
 
 	if *verbose {
-		wrapArg, _ := ai.WrapArgs([]string{})
-		cli.Notify("running with sandbox base level", ai.Perms.Level)
+		wrapArg, _ := ai.WrapArgs(perms, []string{})
+		cli.Notify("running with sandbox base level", perms.Level)
 		cli.Notify("bwrap flags:", wrapArg)
 	}
 
-	err = ai.Run(flag.Args()[1:])
-
+	err = ai.Sandbox(perms, flag.Args()[1:])
 	if err != nil {
-		fmt.Fprintln(os.Stdout, "exited non-zero status:", err)
+		fmt.Fprintln(os.Stdout, "sandbox error:", err)
 		return
 	}
 }

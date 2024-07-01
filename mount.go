@@ -3,15 +3,15 @@ package aisap
 import (
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	"errors"
-	"fmt"
 
+	xdg "github.com/adrg/xdg"
 	helpers "github.com/mgord9518/aisap/helpers"
-	xdg     "github.com/adrg/xdg"
 )
 
 // mount mounts the requested AppImage `src` to `dest`
@@ -28,7 +28,7 @@ func mount(src string, dest string, offset int) error {
 
 	// Convert the offset to a string and mount using squashfuse
 	o := strconv.Itoa(offset)
-	mnt := exec.Command(squashfuse, "-o", "offset=" + o, src, dest)
+	mnt := exec.Command(squashfuse, "-o", "offset="+o, src, dest)
 	mnt.Stderr = errBuf
 
 	if mnt.Run() != nil {
@@ -59,11 +59,15 @@ func (ai *AppImage) Mount(dest ...string) error {
 
 	var err error
 
-	ai.tempDir, err = helpers.MakeTemp(xdg.RuntimeDir + "/aisap/tmp", ai.md5)
-	if err != nil { return err }
+	ai.tempDir, err = helpers.MakeTemp(xdg.RuntimeDir+"/aisap/tmp", ai.md5)
+	if err != nil {
+		return err
+	}
 
-	ai.mountDir, err = helpers.MakeTemp(xdg.RuntimeDir + "/aisap/mount", ai.md5)
-	if err != nil { return err }
+	ai.mountDir, err = helpers.MakeTemp(xdg.RuntimeDir+"/aisap/mount", ai.md5)
+	if err != nil {
+		return err
+	}
 
 	fmt.Println(ai.mountDir)
 	fmt.Println(ai.tempDir)
@@ -94,7 +98,9 @@ func (ai *AppImage) Destroy() error {
 	}
 
 	err := unmountDir(ai.MountDir())
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	ai.mountDir = ""
 

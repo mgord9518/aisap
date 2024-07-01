@@ -6,7 +6,7 @@ All items in this list are based on the name of their appropriate AppImage's
 desktop entry, as some of the same apps may have different names depending on
 the version, there is also a list of aliases that link to the original profile
 
-## Current supported applications (105)
+## Current supported applications (121)
 |name|level|devices|sockets|filesystem|
 |-|-|-|-|-|
 |0 a.d.|3|dri|x11, alsa, network||
@@ -14,7 +14,9 @@ the version, there is also a list of aliases that link to the original profile
 |apk editor studio|1|dri|x11|xdg-templates:rw, xdg-download:rw|
 |appimage pool|2|dri|wayland, x11, network|~/Applications:rw|
 |appimageupdate|2|dri|x11, network|~/Applications:rw|
-|aranym jit|3|dri, input|x11, audio, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
+|aranym|3|dri, input|x11, audio, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
+|aranym|3|dri, input|x11, audio, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
+|aranym|3|dri, input|x11, audio, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
 |armagetron advanced|3|dri, input|x11, audio, network||
 |badlion client|2|dri|x11, audio, network||
 |balenaetcher|0||||
@@ -22,10 +24,13 @@ the version, there is also a list of aliases that link to the original profile
 |brave|2|dri|x11, pulseaudio, network|xdg-download:rw|
 |bugdom|1|dri|x11, audio, network||
 |calibre|2|dri|x11|xdg-documents:ro|
+|cemu|2|dri, input|x11, alsa, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
 |chromium|2|dri|x11, pulseaudio, network|xdg-download:rw|
 |conky|1|dri|x11, pid||
 |cool retro term|2|dri|x11, network|~/.config/nvim:ro, ~/.profile:ro, ~/.bashrc:ro, ~/.zshrc:ro, ~/.viminfo:ro|
 |cro-mag rally|3|dri|x11, alsa||
+|deadbeef|2|dri|x11, audio, network|xdg-music:rw|
+|deadbeef|2|dri|x11, audio, network|xdg-music:rw|
 |deemix-gui|2|dri|x11, audio, network|xdg-music:rw|
 |densify|2|dri|x11|xdg-documents:rw|
 |desmume|2|dri, input|x11, alsa|xdg-download:rw, ~/Games:rw, ~/Roms:rw|
@@ -39,9 +44,13 @@ the version, there is also a list of aliases that link to the original profile
 |eternal lands (appimage)|1|dri|x11, audio, network||
 |fireboy and watergirl: in the forest temple|1|dri|x11, pulseaudio||
 |firefox|2|dri|x11, pulseaudio, network, dbus|xdg-download:rw|
+|firefox|2|dri|x11, pulseaudio, network, dbus|xdg-download:rw|
+|firefox|2|dri|x11, pulseaudio, network, dbus|xdg-download:rw|
 |fontforge|2|dri|x11|xdg-documents:rw, ~/.fonts:rw|
 |fractale|2|dri|x11||
-|freecad conda|1|dri|x11|xdg-documents:rw, xdg-templates:rw|
+|freecad|1|dri|x11|xdg-documents:rw, xdg-templates:rw|
+|freecad|1|dri|x11|xdg-documents:rw, xdg-templates:rw|
+|freecad|1|dri|x11|xdg-documents:rw, xdg-templates:rw|
 |gambatte_qt|2|dri, input|x11, alsa|xdg-download:rw, ~/Games:rw, ~/Roms:rw|
 |geometrize|2|dri|x11|xdg-pictures:rw|
 |gnu image manipulation program|1|dri|x11|xdg-pictures:rw|
@@ -85,8 +94,11 @@ the version, there is also a list of aliases that link to the original profile
 |pokete|3||alsa, network||
 |potato presenter|2|dri|x11|xdg-documents:rw|
 |ppsspp|2|dri|x11, audio|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
-|python3.10.1|3||||
+|python|3||||
+|python|3||||
+|python|3||||
 |runelite|1|dri|x11, audio, network||
+|ryujinx|2|dri, input|x11, alsa, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
 |sengi|1|dri|x11, audio, network||
 |signal|2|dri|x11, network||
 |smallbasic|2|dri|x11|xdg-documents:rw|
@@ -100,8 +112,10 @@ the version, there is also a list of aliases that link to the original profile
 |stellarium|1|dri|x11||
 |stunt car remake|3|dri|x11, alsa||
 |subsurface|1|dri|x11|xdg-documents:ro|
+|yuzu|2|dri, input|x11, alsa, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
 |supertux 2|3|dri, input|x11, audio, network||
 |supertuxkart|3|dri, input|x11, audio, network||
+|yuzu|2|dri, input|x11, alsa, network|xdg-download:ro, ~/Games:ro, ~/Roms:ro|
 |synthein|3|dri|x11, alsa||
 |tapecalc|2|dri|x11||
 |texstudio|1|dri|x11|xdg-documents:rw, xdg-templates:rw|
@@ -110,6 +124,8 @@ the version, there is also a list of aliases that link to the original profile
 |tiled|2|dri|x11|xdg-documents:rw, xdg-pictures:rw, xdg-templates:rw|
 |upscayl|1|dri|x11|xdg-pictures:rw|
 |visual studio code|2|dri|x11, network|xdg-documents:rw|
+|visual studio code|2|dri|x11, network|xdg-documents:rw|
+|waterfox|2|dri|x11, pulseaudio, network, dbus|xdg-download:rw|
 |waterfox|2|dri|x11, pulseaudio, network, dbus|xdg-download:rw|
 |xonotic|3|dri|x11, alsa, network||
 |yabg|3|dri, input|x11, pulseaudio||

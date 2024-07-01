@@ -4,33 +4,33 @@ import (
 	"fmt"
 	"os"
 
-	flag  "github.com/spf13/pflag"
-	clr   "github.com/gookit/color"
+	clr "github.com/gookit/color"
 	aisap "github.com/mgord9518/aisap"
+	flag "github.com/spf13/pflag"
 )
 
 type arrayFlags []string
 
 var (
 	// Normal flags
-	help      = flag.BoolP("help",       "h", false, "display this help menu")
+	help      = flag.BoolP("help", "h", false, "display this help menu")
 	listPerms = flag.BoolP("list-perms", "l", false, "print all permissions to be granted to the app")
-	verbose   = flag.BoolP("verbose",    "v", false, "make output more verbose")
+	verbose   = flag.BoolP("verbose", "v", false, "make output more verbose")
 
 	// Long-only flags
-	color            = flag.Bool  ("color",             true,  "whether to show color (default true)")
-	example          = flag.Bool  ("example",           false, "print out examples")
-	level            = flag.Int   ("level",             -1,    "change the permissions level")
-	rootDir          = flag.String("root-dir",          "",    "use a different filesystem root for system files")
-	dataDir          = flag.String("data-dir",          "",    "change the AppImage's sandbox home location")
-	noDataDir        = flag.Bool  ("no-data-dir",       false, "force AppImage's HOME to be a tmpfs (default false)")
-	extractIcon      = flag.String("extract-icon",      "",    "extract the AppImage's icon")
-	extractThumbnail = flag.String("extract-thumbnail", "",    "extract the AppImage's thumbnail preview")
-	profile          = flag.String("profile",           "",    "use a profile from a desktop entry")
-	fallbackProfile  = flag.String("fallback-profile",  "",    "set profile to fallback on if one isn't found")
-	version          = flag.Bool  ("version",           false, "show the version and quit")
-	trustOnce        = flag.Bool  ("trust-once",        false, "trust the AppImage for one run")
-	trust            = flag.Bool  ("trust",             false, "set whether the AppImage is trusted or not")
+	color            = flag.Bool("color", true, "whether to show color (default true)")
+	example          = flag.Bool("example", false, "print out examples")
+	level            = flag.Int("level", -1, "change the permissions level")
+	rootDir          = flag.String("root-dir", "", "use a different filesystem root for system files")
+	dataDir          = flag.String("data-dir", "", "change the AppImage's sandbox home location")
+	noDataDir        = flag.Bool("no-data-dir", false, "force AppImage's HOME to be a tmpfs (default false)")
+	extractIcon      = flag.String("extract-icon", "", "extract the AppImage's icon")
+	extractThumbnail = flag.String("extract-thumbnail", "", "extract the AppImage's thumbnail preview")
+	profile          = flag.String("profile", "", "use a profile from a desktop entry")
+	fallbackProfile  = flag.String("fallback-profile", "", "set profile to fallback on if one isn't found")
+	version          = flag.Bool("version", false, "show the version and quit")
+	trustOnce        = flag.Bool("trust-once", false, "trust the AppImage for one run")
+	trust            = flag.Bool("trust", false, "set whether the AppImage is trusted or not")
 
 	addFile   arrayFlags
 	addDevice arrayFlags
@@ -47,12 +47,12 @@ func init() {
 	var present bool
 	handleCtrlC()
 
-	flag.Var(&addFile,   "add-file",   "give the sandbox access to a filesystem object")
+	flag.Var(&addFile, "add-file", "give the sandbox access to a filesystem object")
 	flag.Var(&addDevice, "add-device", "add a device to the sandbox (eg dri)")
 	flag.Var(&addSocket, "add-socket", "allow the sandbox to access another socket (eg x11)")
-	flag.Var(&rmFile,    "rm-file",    "revoke a file from the sandbox")
-	flag.Var(&rmDevice,  "rm-device",  "remove access to a device")
-	flag.Var(&rmSocket,  "rm-socket",  "disable a socket")
+	flag.Var(&rmFile, "rm-file", "revoke a file from the sandbox")
+	flag.Var(&rmDevice, "rm-device", "remove access to a device")
+	flag.Var(&rmSocket, "rm-socket", "disable a socket")
 
 	// Prefer AppImage-provided variable `ARGV0` if present
 	if argv0, present = os.LookupEnv("ARGV0"); !present {
@@ -160,10 +160,10 @@ func (i *arrayFlags) Type() string {
 
 func flagUsed(name string) bool {
 	found := false
-    flag.Visit(func(f *flag.Flag) {
-        if f.Name == name {
-            found = true
-        }
-    })
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
 	return found
 }

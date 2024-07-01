@@ -8,16 +8,16 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"strconv"
+	"strings"
 
+	xdg "github.com/adrg/xdg"
 	helpers "github.com/mgord9518/aisap/helpers"
-	ini     "gopkg.in/ini.v1"
-	xdg     "github.com/adrg/xdg"
+	ini "gopkg.in/ini.v1"
 )
 
 var (
-    InvalidSocket = errors.New("socket invalid")
+	InvalidSocket = errors.New("socket invalid")
 )
 
 type File struct {
@@ -35,7 +35,7 @@ func SocketFromString(socketString string) (Socket, error) {
 		return socket, InvalidSocket
 	}
 
-    return socket, nil
+	return socket, nil
 }
 
 const (
@@ -73,18 +73,18 @@ var (
 )
 
 type AppImagePerms struct {
-	Level        int    `json:"level"`       // How much access to system files
-	Files      []string `json:"filesystem"`  // Grant permission to access files
-	Devices    []string `json:"devices"`     // Access device files (eg: dri, input)
-	Sockets    []Socket `json:"sockets"`     // Use sockets (eg: x11, pulseaudio, network)
+	Level   int      `json:"level"`      // How much access to system files
+	Files   []string `json:"filesystem"` // Grant permission to access files
+	Devices []string `json:"devices"`    // Access device files (eg: dri, input)
+	Sockets []Socket `json:"sockets"`    // Use sockets (eg: x11, pulseaudio, network)
 
 	// TODO: rename to PersistentHome or something
-	DataDir    bool     `json:"data_dir"` // Whether or not a data dir should be created (only
+	DataDir bool `json:"data_dir"` // Whether or not a data dir should be created (only
 	// use if the AppImage saves ZERO data eg: 100% online or a game without
 	// save files)
 
 	// Only intended for unmarshalling, should not be used for other purposes
-	Names []string `json:"names"` 
+	Names []string `json:"names"`
 }
 
 // FromIni attempts to read permissions from a provided *ini.File, if fail, it
@@ -93,8 +93,8 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 	p := &AppImagePerms{}
 
 	// Get permissions from keys
-	level       := e.Section("X-App Permissions").Key("Level").Value()
-	filePerms   := e.Section("X-App Permissions").Key("Files").Value()
+	level := e.Section("X-App Permissions").Key("Level").Value()
+	filePerms := e.Section("X-App Permissions").Key("Files").Value()
 	devicePerms := e.Section("X-App Permissions").Key("Devices").Value()
 	socketPerms := e.Section("X-App Permissions").Key("Sockets").Value()
 
@@ -103,7 +103,7 @@ func FromIni(e *ini.File) (*AppImagePerms, error) {
 		p.DataDir = false
 	} else {
 		p.DataDir = true
-    }
+	}
 
 	l, err := strconv.Atoi(level)
 	if err != nil || l < 0 || l > 3 {
@@ -153,12 +153,16 @@ func FromSystem(name string) (*AppImagePerms, error) {
 
 func FromReader(r io.Reader) (*AppImagePerms, error) {
 	b, err := ioutil.ReadAll(r)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	b = bytes.ReplaceAll(b, []byte(";"), []byte("；"))
-	
+
 	e, err := ini.Load(b)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	return FromIni(e)
 }
@@ -177,13 +181,15 @@ func (p *AppImagePerms) AddDevices(s ...string) {
 }
 
 func (p *AppImagePerms) AddSockets(socketStrings ...string) error {
-	if len(socketStrings) == 0 { return nil}
+	if len(socketStrings) == 0 {
+		return nil
+	}
 
 	p.RemoveSockets(socketStrings...)
 
-	for i := range(socketStrings) {
+	for i := range socketStrings {
 		socket, err := SocketFromString(socketStrings[i])
-		
+
 		if err != nil {
 			return err
 		}
@@ -198,17 +204,17 @@ func (p *AppImagePerms) removeFile(str string) {
 	// Done this way to ensure there is an `extension` eg: `:ro` on the string,
 	// it will then be used to detect if that file already exists
 	str = helpers.CleanFiles([]string{str})[0]
-	s  := strings.Split(str, ":")
+	s := strings.Split(str, ":")
 	str = strings.Join(s[:len(s)-1], ":")
 
 	if i, present := helpers.ContainsAny(p.Files,
-	[]string{ str + ":ro", str + ":rw" }); present {
+		[]string{str + ":ro", str + ":rw"}); present {
 		p.Files = append(p.Files[:i], p.Files[i+1:]...)
 	}
 }
 
 func (p *AppImagePerms) RemoveFiles(s ...string) {
-	for i := range(s) {
+	for i := range s {
 		p.removeFile(s[i])
 	}
 }
@@ -220,7 +226,7 @@ func (p *AppImagePerms) removeDevice(str string) {
 }
 
 func (p *AppImagePerms) RemoveDevices(s ...string) {
-	for i := range(s) {
+	for i := range s {
 		p.removeDevice(s[i])
 	}
 }
@@ -235,7 +241,7 @@ func (p *AppImagePerms) removeSocket(str string) {
 }
 
 func (p *AppImagePerms) RemoveSockets(s ...string) {
-	for i := range(s) {
+	for i := range s {
 		p.removeSocket(s[i])
 	}
 }

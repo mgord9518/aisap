@@ -31,13 +31,9 @@ Destroy() error
 // directory in '$XDG_RUNTIME_DIR/aisap/mount'
 Mount(dest ...string) error by
 
-// If AppImage.Perms.Level > 0, the AppImage will be sandboxed with
-// AppImage.Perms, if 0, it will run unsandboxed. args are passed directly to
-// the AppImage
-Run(args []string) error
-
-// Identical to AppImage.Run, except AppImage.Perms.Level equaling 0 is an
-// error condition
+// Executes AppImage through bwrap and creates a portable home if one doesn't
+// already exist
+// Returns error if AppImagePerms.Level < 1
 Sandbox(args []string) error
 
 // Generates bwrap arguments for sandboxing based on the AppImage's permissions
@@ -59,15 +55,15 @@ Thumbnail() (io.Reader, error)
 // Returns the type of the AppImage, currently only supports type 2 and shImg
 // (-2). PRs for supporting type 1 and possibly other (well-defined) unofficial
 // AppImage implementations are welcome
-Type()
+Type() int
 
 // Returns the TempDir of the AppImage, which only exists if the AppImage is
 // mounted, otherwise returns an empty string
-TempDir()
+TempDir() string
 
 // Returns the directory the AppImage is mounted to. If not mounted, it will
 // return an empty string
-MountDir()
+MountDir() string
 
 // Change the root directory exposed to the sandbox. This could be useful for
 // running an AppImage designed for another Linux distro
