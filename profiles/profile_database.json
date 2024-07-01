@@ -255,6 +255,18 @@
     "data_dir": true
   },
   {
+    "names": [ "cpu-x" ],
+    "level": 2,
+    "filesystem": null,
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11"
+    ],
+    "data_dir": true
+  },
+  {
     "names": [ "cro-mag rally" ],
     "level": 3,
     "filesystem": null,
@@ -772,6 +784,22 @@
     "data_dir": true
   },
   {
+    "names": [ "libreoffice" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-documents:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "audio",
+      "network"
+    ],
+    "data_dir": true
+  },
+  {
     "names": [ "librewolf" ],
     "level": 2,
     "filesystem": [
@@ -973,6 +1001,23 @@
     "data_dir": true
   },
   {
+    "names": [ "mpv media player" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-videos:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network",
+      "dbus"
+    ],
+    "data_dir": true
+  },
+  {
     "names": [ "nx-software-center" ],
     "level": 2,
     "filesystem": [
@@ -1130,7 +1175,8 @@
       "~/Roms:ro"
     ],
     "devices": [
-      "dri"
+      "dri",
+      "input"
     ],
     "sockets": [
       "x11",
@@ -1144,6 +1190,21 @@
     "filesystem": null,
     "devices": null,
     "sockets": null,
+    "data_dir": true
+  },
+  {
+    "names": [ "qbittorrent", "qbittorrent-enhanced-edition" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "network"
+    ],
     "data_dir": true
   },
   {
