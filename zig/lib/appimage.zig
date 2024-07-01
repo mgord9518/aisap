@@ -381,7 +381,6 @@ pub const AppImage = struct {
 
     pub const SocketPermissions = enum {
         alsa,
-        audio,
         cgroup,
         dbus,
         ipc,
@@ -394,6 +393,30 @@ pub const AppImage = struct {
         uts,
         wayland,
         x11,
+
+        const JsonSocket = struct {
+            name: []const u8,
+            flags: ?[]const []const u8 = null,
+        };
+
+        // Parses the built-in JSON database into a HashMap
+        // TODO: do this comptime
+        pub fn initDatabase(allocator: std.mem.Allocator) !void {
+            const sockets_json = @embedFile("../sockets.json");
+
+            const parsed = try std.json.parseFromSlice(
+                []JsonSocket,
+                allocator,
+                sockets_json,
+                .{},
+            );
+            defer parsed.deinit();
+
+            for (parsed.value) |val| {
+                std.debug.print("name:  {s}\n", .{val.name});
+                std.debug.print("flags: {?s}\n", .{val.flags});
+            }
+        }
 
         pub fn fromString(sock: []const u8) !SocketPermissions {
             return std.meta.stringToEnum(
@@ -419,6 +442,14 @@ pub const AppImage = struct {
             );
         }
 
+        //        pub fn toBwrapArgs(allocator: std.mem.Allocator, opts: SocketOptions,) ![]const []const u8 {
+        //            _ = opts;
+        //
+        //            var list = std.ArrayList([]const u8).init(allocator);
+        //
+        //
+        //        }
+
         /// Generates bwrap args from socket. Memory is cleared on each call
         /// to the method
         pub fn toBwrapArgs(
@@ -439,37 +470,6 @@ pub const AppImage = struct {
                     "--ro-bind-try", "/etc/alsa",       "/etc/alsa",
                     "--ro-bind-try", "/etc/group",      "/etc/group",
                     "--dev-bind",    "/dev/snd",        "/dev/snd",
-                },
-                .audio => blk: {
-                    const runtime_pulse_dir = try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/pulse",
-                        .{opts.runtime_dir},
-                    );
-                    defer allocator.free(runtime_pulse_dir);
-
-                    const dest_pulse_dir = try std.fmt.allocPrint(
-                        allocator,
-                        "/run/user/{d}/pulse",
-                        .{opts.uid},
-                    );
-                    defer allocator.free(dest_pulse_dir);
-
-                    var list = std.ArrayList([]const u8).init(allocator);
-
-                    try list.appendSlice(
-                        &[_][]const u8{
-                            "--ro-bind-try", runtime_pulse_dir,       dest_pulse_dir,
-                            "--ro-bind-try", "/usr/share/alsa",       "/usr/share/alsa",
-                            "--ro-bind-try", "/usr/share/pulseaudio", "/usr/share/pulseaudio",
-                            "--ro-bind-try", "/etc/alsa",             "/etc/alsa",
-                            "--ro-bind-try", "/etc/group",            "/etc/group",
-                            "--ro-bind-try", "/etc/pulse",            "/etc/pulse",
-                            "--dev-bind",    "/dev/snd",              "/dev/snd",
-                        },
-                    );
-
-                    break :blk try list.toOwnedSlice();
                 },
                 .cgroup => &[_][]const u8{},
                 .dbus => blk: {
@@ -689,17 +689,16 @@ pub const AppImage = struct {
 
     // TODO: finish implementing in Zig
     // TODO: free allocated memory. Currently, this should just be allocated using an arena
-    pub fn wrapArgs(ai: *AppImage, allocator: std.mem.Allocator) ![]const []const u8 {
+    pub fn wrapArgs(
+        ai: *AppImage,
+        allocator: std.mem.Allocator,
+        perms: Permissions,
+    ) ![]const []const u8 {
         if (ai.mount_dir == null) {
             return WrapArgsError.BundleNotMounted;
         }
 
-        var perms = try ai.permissions(allocator) orelse {
-            return WrapArgsError.NoPermissions;
-        };
-        defer perms.deinit();
-
-        //if (perms.level == 0) return WrapArgsError.SandboxLevelTooLow;
+        if (perms.level == 0) return WrapArgsError.SandboxLevelTooLow;
 
         const home = try known_folders.getPath(allocator, .home) orelse {
             return WrapArgsError.HomeNotFound;
@@ -708,360 +707,358 @@ pub const AppImage = struct {
         var list = std.ArrayList([]const u8).init(allocator);
         try list.append("bwrap");
 
-        if (perms.level > 0) {
-            var md5_buf: [33]u8 = undefined;
-            const ai_md5 = try ai.md5(&md5_buf);
+        var md5_buf: [33]u8 = undefined;
+        const ai_md5 = try ai.md5(&md5_buf);
 
-            // TODO: fallback if `LOGNAME` not present
-            const logname = std.posix.getenv("LOGNAME") orelse "";
-            const user = try std.process.getUserInfo(logname);
+        // TODO: fallback if `LOGNAME` not present
+        const logname = std.posix.getenv("LOGNAME") orelse "";
+        const user = try std.process.getUserInfo(logname);
 
-            // Bwrap args for AppImages regardless of level
+        // Bwrap args for AppImages regardless of level
+        try list.appendSlice(&[_][]const u8{
+            "--setenv",      "TMPDIR",                             "/tmp",
+            "--setenv",      "HOME",                               home,
+            "--setenv",      "ARGV0",                              fs.path.basename(ai.path),
+
+            // If these directories are symlinks, they will be resolved,
+            // otherwise
+            "--ro-bind-try", try resolve(allocator, "/opt"),       "/opt",
+            "--ro-bind-try", try resolve(allocator, "/bin"),       "/bin",
+            "--ro-bind-try", try resolve(allocator, "/sbin"),      "/sbin",
+            "--ro-bind-try", try resolve(allocator, "/lib"),       "/lib",
+            "--ro-bind-try", try resolve(allocator, "/lib32"),     "/lib32",
+            "--ro-bind-try", try resolve(allocator, "/lib64"),     "/lib64",
+            "--ro-bind-try", try resolve(allocator, "/usr/bin"),   "/usr/bin",
+            "--ro-bind-try", try resolve(allocator, "/usr/sbin"),  "/usr/sbin",
+            "--ro-bind-try", try resolve(allocator, "/usr/lib"),   "/usr/lib",
+            "--ro-bind-try", try resolve(allocator, "/usr/lib32"), "/usr/lib32",
+            "--ro-bind-try", try resolve(allocator, "/usr/lib64"), "/usr/lib64",
+
+            "--setenv",      "APPDIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "/tmp/.mount_{s}",
+                .{ai_md5},
+            ),
+
+            "--setenv",      "APPIMAGE",
+            try std.fmt.allocPrint(
+                allocator,
+                "/app/{s}",
+                .{fs.path.basename(ai.path)},
+            ),
+
+            // Set generic paths for all XDG standard dirs
+            "--setenv",      "XDG_DESKTOP_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Desktop",
+                .{home},
+            ),
+            "--setenv",      "XDG_DOWNLOAD_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Downloads",
+                .{home},
+            ),
+            "--setenv",      "XDG_DOCUMENTS_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Documents",
+                .{home},
+            ),
+            "--setenv",      "XDG_MUSIC_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Music",
+                .{home},
+            ),
+            "--setenv",      "XDG_PICTURES_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Pictures",
+                .{home},
+            ),
+            "--setenv",      "XDG_VIDEOS_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Videos",
+                .{home},
+            ),
+            "--setenv",      "XDG_TEMPLATES_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Templates",
+                .{home},
+            ),
+            "--setenv",      "XDG_PUBLICSHARE_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/Share",
+                .{home},
+            ),
+            "--setenv",      "XDG_DATA_HOME",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/.local/share",
+                .{home},
+            ),
+            "--setenv",      "XDG_CONFIG_HOME",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/.config",
+                .{home},
+            ),
+            "--setenv",      "XDG_CACHE_HOME",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/.cache",
+                .{home},
+            ),
+            "--setenv",      "XDG_STATE_HOME",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/.local/state",
+                .{home},
+            ),
+            "--setenv",      "XDG_RUNTIME_DIR",
+            try std.fmt.allocPrint(
+                allocator,
+                "/run/user/{d}",
+                .{user.uid},
+            ),
+            "--perms",    "0700", //
+            "--dir",
+            try std.fmt.allocPrint(
+                allocator,
+                "/run/user/{d}",
+                .{user.uid},
+            ),
+            "--dev",      "/dev",
+            "--proc",     "/proc",
+            "--dir",      "/app",
+
+            "--bind",     ai.path,
+            try std.fmt.allocPrint(
+                allocator,
+                "/app/{s}",
+                .{fs.path.basename(ai.path)},
+            ),
+
+            // TODO: fallback if no cache
+            "--bind-try",
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/appimage/{s}",
+                .{
+                    (try known_folders.getPath(allocator, .cache)).?,
+                    ai_md5,
+                },
+            ),
+            try std.fmt.allocPrint(
+                allocator,
+                "{s}/.cache",
+                .{home},
+            ),
+
+            "--die-with-parent",
+        });
+
+        const config = (try known_folders.getPath(allocator, .local_configuration)).?;
+
+        // Per-level arguments
+        try list.appendSlice(switch (perms.level) {
+            0 => unreachable,
+            1 => &[_][]const u8{
+                "--dev-bind",    "/dev",         "/dev",
+                "--ro-bind",     "/sys",         "/sys",
+                "--ro-bind-try", "/usr",         "/usr",
+                "--ro-bind-try", "/etc",         "/etc",
+                "--ro-bind-try", "/run/systemd", "/run/systemd",
+                // TODO: do this a better way
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/.fonts",
+                    .{home},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/.fonts",
+                    .{home},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/fontconfig",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/fontconfig",
+                    .{config},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/gtk-3.0",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/gtk-3.0",
+                    .{config},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/kdeglobals",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/kdeglobals",
+                    .{config},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/lxde/lxde.conf",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/lxde/lxde.conf",
+                    .{config},
+                ),
+            },
+            2 => &[_][]const u8{
+                "--ro-bind-try", "/etc/fonts",              "/etc/fonts",
+                "--ro-bind-try", "/etc/ld.so.cache",        "/etc/ld.so.cache",
+                "--ro-bind-try", "/etc/mime.types",         "/etc/mime.types",
+                "--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
+                "--ro-bind-try", "/usr/share/fonts",        "/usr/share/fonts",
+                "--ro-bind-try", "/usr/share/icons",        "/usr/share/icons",
+                "--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
+                "--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
+                "--ro-bind-try", "/usr/share/libdrm",       "/usr/share/libdrm",
+                "--ro-bind-try", "/usr/share/glvnd",        "/usr/share/glvnd",
+                "--ro-bind-try", "/usr/share/glib-2.0",     "/usr/share/glib-2.0",
+                "--ro-bind-try", "/usr/share/terminfo",     "/usr/share/terminfo",
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/.fonts",
+                    .{home},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/.fonts",
+                    .{home},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/fontconfig",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/fontconfig",
+                    .{config},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/gtk-3.0",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/gtk-3.0",
+                    .{config},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/kdeglobals",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/kdeglobals",
+                    .{config},
+                ),
+                "--ro-bind-try",
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/lxde/lxde.conf",
+                    .{config},
+                ),
+                try std.fmt.allocPrint(
+                    allocator,
+                    "{s}/lxde/lxde.conf",
+                    .{config},
+                ),
+            },
+            3 => &[_][]const u8{},
+        });
+
+        if (perms.data_dir) {
+            //                    try list.appendSlice(
+            //                        "--bind",
+            //                        ai.
+            //                    );
+        } else {
             try list.appendSlice(&[_][]const u8{
-                "--setenv",      "TMPDIR",                             "/tmp",
-                "--setenv",      "HOME",                               home,
-                "--setenv",      "ARGV0",                              fs.path.basename(ai.path),
+                "--tmpfs",
+                home,
+            });
+        }
 
-                // If these directories are symlinks, they will be resolved,
-                // otherwise
-                "--ro-bind-try", try resolve(allocator, "/opt"),       "/opt",
-                "--ro-bind-try", try resolve(allocator, "/bin"),       "/bin",
-                "--ro-bind-try", try resolve(allocator, "/sbin"),      "/sbin",
-                "--ro-bind-try", try resolve(allocator, "/lib"),       "/lib",
-                "--ro-bind-try", try resolve(allocator, "/lib32"),     "/lib32",
-                "--ro-bind-try", try resolve(allocator, "/lib64"),     "/lib64",
-                "--ro-bind-try", try resolve(allocator, "/usr/bin"),   "/usr/bin",
-                "--ro-bind-try", try resolve(allocator, "/usr/sbin"),  "/usr/sbin",
-                "--ro-bind-try", try resolve(allocator, "/usr/lib"),   "/usr/lib",
-                "--ro-bind-try", try resolve(allocator, "/usr/lib32"), "/usr/lib32",
-                "--ro-bind-try", try resolve(allocator, "/usr/lib64"), "/usr/lib64",
+        if (perms.filesystem) |files| {
+            for (files) |*file| {
+                try list.appendSlice(
+                    try file.toBwrapArgs(allocator),
+                );
+            }
+        }
 
-                "--setenv",      "APPDIR",
+        if (perms.sockets) |sockets| {
+            for (sockets) |socket| {
+                const socket_slice = try socket.toBwrapArgs(allocator, .{
+                    // TODO: DO NOT HARD CODE
+                    .runtime_dir = "/run/user/1000",
+                    .uid = 1000,
+                });
+                defer allocator.free(socket_slice);
+
+                try list.appendSlice(socket_slice);
+            }
+        }
+
+        if (ai.mount_dir) |mount_dir| {
+            try list.appendSlice(&[_][]const u8{
+                "--bind",
+                mount_dir,
                 try std.fmt.allocPrint(
                     allocator,
                     "/tmp/.mount_{s}",
-                    .{ai_md5},
-                ),
-
-                "--setenv",      "APPIMAGE",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "/app/{s}",
-                    .{fs.path.basename(ai.path)},
-                ),
-
-                // Set generic paths for all XDG standard dirs
-                "--setenv",      "XDG_DESKTOP_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Desktop",
-                    .{home},
-                ),
-                "--setenv",      "XDG_DOWNLOAD_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Downloads",
-                    .{home},
-                ),
-                "--setenv",      "XDG_DOCUMENTS_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Documents",
-                    .{home},
-                ),
-                "--setenv",      "XDG_MUSIC_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Music",
-                    .{home},
-                ),
-                "--setenv",      "XDG_PICTURES_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Pictures",
-                    .{home},
-                ),
-                "--setenv",      "XDG_VIDEOS_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Videos",
-                    .{home},
-                ),
-                "--setenv",      "XDG_TEMPLATES_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Templates",
-                    .{home},
-                ),
-                "--setenv",      "XDG_PUBLICSHARE_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/Share",
-                    .{home},
-                ),
-                "--setenv",      "XDG_DATA_HOME",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/.local/share",
-                    .{home},
-                ),
-                "--setenv",      "XDG_CONFIG_HOME",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/.config",
-                    .{home},
-                ),
-                "--setenv",      "XDG_CACHE_HOME",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/.cache",
-                    .{home},
-                ),
-                "--setenv",      "XDG_STATE_HOME",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/.local/state",
-                    .{home},
-                ),
-                "--setenv",      "XDG_RUNTIME_DIR",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "/run/user/{d}",
-                    .{user.uid},
-                ),
-                "--perms",    "0700", //
-                "--dir",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "/run/user/{d}",
-                    .{user.uid},
-                ),
-                "--dev",      "/dev",
-                "--proc",     "/proc",
-                "--dir",      "/app",
-
-                "--bind",     ai.path,
-                try std.fmt.allocPrint(
-                    allocator,
-                    "/app/{s}",
-                    .{fs.path.basename(ai.path)},
-                ),
-
-                // TODO: fallback if no cache
-                "--bind-try",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/appimage/{s}",
                     .{
-                        (try known_folders.getPath(allocator, .cache)).?,
                         ai_md5,
                     },
                 ),
-                try std.fmt.allocPrint(
-                    allocator,
-                    "{s}/.cache",
-                    .{home},
-                ),
-
-                "--die-with-parent",
-            });
-
-            const config = (try known_folders.getPath(allocator, .local_configuration)).?;
-
-            // Per-level arguments
-            try list.appendSlice(switch (perms.level) {
-                0 => unreachable,
-                1 => &[_][]const u8{
-                    "--dev-bind",    "/dev",         "/dev",
-                    "--ro-bind",     "/sys",         "/sys",
-                    "--ro-bind-try", "/usr",         "/usr",
-                    "--ro-bind-try", "/etc",         "/etc",
-                    "--ro-bind-try", "/run/systemd", "/run/systemd",
-                    // TODO: do this a better way
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/.fonts",
-                        .{home},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/.fonts",
-                        .{home},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/fontconfig",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/fontconfig",
-                        .{config},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/gtk-3.0",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/gtk-3.0",
-                        .{config},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/kdeglobals",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/kdeglobals",
-                        .{config},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/lxde/lxde.conf",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/lxde/lxde.conf",
-                        .{config},
-                    ),
-                },
-                2 => &[_][]const u8{
-                    "--ro-bind-try", "/etc/fonts",              "/etc/fonts",
-                    "--ro-bind-try", "/etc/ld.so.cache",        "/etc/ld.so.cache",
-                    "--ro-bind-try", "/etc/mime.types",         "/etc/mime.types",
-                    "--ro-bind-try", "/usr/share/fontconfig",   "/usr/share/fontconfig",
-                    "--ro-bind-try", "/usr/share/fonts",        "/usr/share/fonts",
-                    "--ro-bind-try", "/usr/share/icons",        "/usr/share/icons",
-                    "--ro-bind-try", "/usr/share/applications", "/usr/share/applications",
-                    "--ro-bind-try", "/usr/share/mime",         "/usr/share/mime",
-                    "--ro-bind-try", "/usr/share/libdrm",       "/usr/share/libdrm",
-                    "--ro-bind-try", "/usr/share/glvnd",        "/usr/share/glvnd",
-                    "--ro-bind-try", "/usr/share/glib-2.0",     "/usr/share/glib-2.0",
-                    "--ro-bind-try", "/usr/share/terminfo",     "/usr/share/terminfo",
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/.fonts",
-                        .{home},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/.fonts",
-                        .{home},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/fontconfig",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/fontconfig",
-                        .{config},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/gtk-3.0",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/gtk-3.0",
-                        .{config},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/kdeglobals",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/kdeglobals",
-                        .{config},
-                    ),
-                    "--ro-bind-try",
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/lxde/lxde.conf",
-                        .{config},
-                    ),
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "{s}/lxde/lxde.conf",
-                        .{config},
-                    ),
-                },
-                3 => &[_][]const u8{},
-            });
-
-            if (perms.data_dir) {
-                //                    try list.appendSlice(
-                //                        "--bind",
-                //                        ai.
-                //                    );
-            } else {
-                try list.appendSlice(&[_][]const u8{
-                    "--tmpfs",
-                    home,
-                });
-            }
-
-            if (perms.filesystem) |files| {
-                for (files) |*file| {
-                    try list.appendSlice(
-                        try file.toBwrapArgs(allocator),
-                    );
-                }
-            }
-
-            if (perms.sockets) |sockets| {
-                for (sockets) |socket| {
-                    const socket_slice = try socket.toBwrapArgs(allocator, .{
-                        // TODO: DO NOT HARD CODE
-                        .runtime_dir = "/run/user/1000",
-                        .uid = 1000,
-                    });
-                    defer allocator.free(socket_slice);
-
-                    try list.appendSlice(socket_slice);
-                }
-            }
-
-            if (ai.mount_dir) |mount_dir| {
-                try list.appendSlice(&[_][]const u8{
-                    "--bind",
-                    mount_dir,
-                    try std.fmt.allocPrint(
-                        allocator,
-                        "/tmp/.mount_{s}",
-                        .{
-                            ai_md5,
-                        },
-                    ),
-                });
-            }
-
-            try list.appendSlice(&[_][]const u8{
-                "--",
-                try std.fmt.allocPrint(
-                    allocator,
-                    "/tmp/.mount_{s}/AppRun",
-                    .{ai_md5},
-                ),
             });
         }
+
+        try list.appendSlice(&[_][]const u8{
+            "--",
+            try std.fmt.allocPrint(
+                allocator,
+                "/tmp/.mount_{s}/AppRun",
+                .{ai_md5},
+            ),
+        });
 
         return list.toOwnedSlice();
     }
@@ -1136,43 +1133,32 @@ pub const AppImage = struct {
         const off = try ai.offset();
 
         if (opts.foreground) {
-            try fuse_helper.mountImage(ai.path, ai.mount_dir.?, off);
+            @panic("not yet implemented");
+            //try fuse_helper.mountImage(ai.path, ai.mount_dir.?, off);
         } else {
-            const pid = try posix.fork();
-            if (pid == 0) {
-                //            _ = try std.Thread.spawn(
-                //                .{},
-                //                fuse_helper.mountImage,
-                //                .{ ai.path, ai.mount_dir.?, off },
-                //            );
+            // TODO: fix squashfuse-zig crash here
+            if (false) {
+                try fuse_helper.mountImage(
+                    ai.path,
+                    ai.mount_dir.?,
+                    off,
+                );
+            } else {
+                const offset_string = try std.fmt.allocPrint(
+                    ai.allocator,
+                    "-ooffset={d}",
+                    .{off},
+                );
+                defer ai.allocator.free(offset_string);
 
-                if (true) {
-                    try fuse_helper.mountImage(
-                        ai.path,
-                        ai.mount_dir.?,
-                        off,
-                    );
-                } else {
-                    const offset_string = try std.fmt.allocPrint(
-                        ai.allocator,
-                        "-ooffset={d}",
-                        .{off},
-                    );
-                    defer ai.allocator.free(offset_string);
+                var proc = std.process.Child.init(&[_][]const u8{
+                    "squashfuse",
+                    offset_string,
+                    ai.path,
+                    ai.mount_dir.?,
+                }, ai.allocator);
 
-                    var proc = std.process.Child.init(&[_][]const u8{
-                        "squashfuse",
-                        offset_string,
-                        ai.path,
-                        ai.mount_dir.?,
-                    }, ai.allocator);
-
-                    _ = try proc.spawnAndWait();
-                }
-
-                std.debug.print("UNMOUNT\n\n", .{});
-
-                posix.exit(0);
+                _ = try proc.spawnAndWait();
             }
 
             // Values in nanoseconds
@@ -1238,17 +1224,12 @@ pub const AppImage = struct {
     };
 
     // This can't be finished until AppImage.wrapArgs works correctly
-    pub fn sandbox(ai: *AppImage, opts: SandboxOptions) !void {
+    pub fn sandbox(ai: *AppImage, perms: Permissions, opts: SandboxOptions) !void {
         var arena = std.heap.ArenaAllocator.init(ai.allocator);
         const arena_allocator = arena.allocator();
         defer arena.deinit();
 
-        const wrap_args = try ai.wrapArgs(arena_allocator);
-
-        std.debug.print("DEBUG {s} {s}", .{
-            @src().fn_name,
-            wrap_args,
-        });
+        const wrap_args = try ai.wrapArgs(arena_allocator, perms);
 
         if (opts.args) |args| {
             var list = std.ArrayList([]const u8).init(arena_allocator);
