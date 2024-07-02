@@ -138,12 +138,15 @@ export fn aisap_appimage_wrapargs(
     //perms: *c.aisap_permissions,
     err: *CAppImageError,
 ) [*:null]?[*:0]const u8 {
-    const ai = getParent(c_ai);
+    _ = c_ai;
+    _ = err;
+    //const ai = getParent(c_ai);
 
-    return ai.wrapArgsZ(ai.allocator) catch {
-        err.* = .err;
-        return undefined;
-    };
+    unreachable;
+    //    return ai.wrapArgsZ(ai.allocator) catch {
+    //        err.* = .err;
+    //        return undefined;
+    //    };
 }
 
 // TODO: Re-implement wrap.go in Zig
@@ -180,20 +183,20 @@ export fn aisap_appimage_sandbox(
             i += 1;
         }
 
-        zig_ai.sandbox(.{
-            .args = args,
-        }) catch |e| {
-            std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
-            err.* = .err;
-        };
+        //            zig_ai.sandbox(.{
+        //                .args = args,
+        //            }) catch |e| {
+        //                std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
+        //                err.* = .err;
+        //            };
 
         return;
     }
 
-    zig_ai.sandbox(.{}) catch |e| {
-        std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
-        err.* = .err;
-    };
+    //    zig_ai.sandbox(.{}) catch |e| {
+    //        std.debug.print("{s} ERR: {!}\n", .{ @src().fn_name, e });
+    //        err.* = .err;
+    //    };
 }
 
 /// Get the SquashFS image offset of the AppImage
