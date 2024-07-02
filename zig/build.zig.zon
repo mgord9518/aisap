@@ -1,6 +1,6 @@
 .{
     .name = "aisap",
-    .version = "0.10.1-alpha",
+    .version = "0.10.2-alpha",
     .paths = [][]const u8 {""},
     .dependencies = .{
         .squashfuse = .{
