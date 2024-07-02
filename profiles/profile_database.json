@@ -1167,7 +1167,7 @@
     "data_dir": true
   },
   {
-    "names": [ "ppsspp" ],
+    "names": [ "ppsspp", "ppssppsdl" ],
     "level": 2,
     "filesystem": [
       "xdg-download:ro",
