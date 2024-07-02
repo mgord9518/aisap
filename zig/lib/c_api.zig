@@ -135,6 +135,7 @@ export fn aisap_appimage_md5(
 // Returned memory must be freed
 export fn aisap_appimage_wrapargs(
     c_ai: *c.aisap_appimage,
+    //perms: *c.aisap_permissions,
     err: *CAppImageError,
 ) [*:null]?[*:0]const u8 {
     const ai = getParent(c_ai);

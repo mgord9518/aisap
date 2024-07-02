@@ -12,11 +12,10 @@ typedef struct aisap_appimage {
 
 	// For Zig implemenation, points to Zig AppImage
 	void*        _zig_parent; 
-} aisap_appimage ;
+} aisap_appimage;
 
 typedef enum aisap_socket {
 	AISAP_SOCKET_ALSA,
-	AISAP_SOCKET_AUDIO,
 	AISAP_SOCKET_CGROUP,
 	AISAP_SOCKET_DBUS,
 	AISAP_SOCKET_IPC,
@@ -70,15 +69,12 @@ typedef uint8_t aisap_error;
 extern "C" {
 #endif
 
-// Zig-implemented C functions
-// `aisap_appimage_new` initializes both the Zig and Go AppImage structs, so
-// until I can get the rest of the functions ported over you'll still be able
-// to call all of them
+// Inits a new `aisap_appimage`
+// `path` is a null-terminated string
 extern aisap_appimage aisap_appimage_new(const char* path, aisap_error* err);
 
-// Like `aisap_appimage_new`, but takes a path length instead of a
-// null-terminated path. For this function, path does NOT have to be null-
-// terminated
+// Like `aisap_appimage_new`, but takes a path length instead of requiring a
+// null-terminated path
 extern aisap_appimage aisap_appimage_newn(const char* path, size_t path_len, aisap_error* err);
 
 extern void              aisap_appimage_destroy(aisap_appimage* ai);

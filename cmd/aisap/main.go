@@ -69,11 +69,6 @@ func main() {
 		return
 	}
 
-	perms, err := ai.Permissions()
-	if err != nil {
-		cli.Fatal(invalidPerms, err)
-		return
-	}
 
 	if *extractIcon != "" {
 		if *verbose {
@@ -125,6 +120,8 @@ func main() {
 
 		return
 	}
+
+	perms, err := ai.Permissions()
 
 	if *profile != "" {
 		f, err := os.Open(*profile)
@@ -288,7 +285,7 @@ func main() {
 
 	err = ai.Sandbox(perms, flag.Args()[1:])
 	if err != nil {
-		fmt.Fprintln(os.Stdout, "sandbox error:", err)
+        cli.Fatal("sandbox error:", err);
 		return
 	}
 }

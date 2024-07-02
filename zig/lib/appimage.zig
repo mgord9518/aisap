@@ -1064,14 +1064,14 @@ pub const AppImage = struct {
     }
 
     /// Returns a `char**` for use in C
-    pub fn wrapArgsZ(ai: *AppImage, allocator: std.mem.Allocator) ![*:null]?[*:0]const u8 {
+    pub fn wrapArgsZ(ai: *AppImage, allocator: std.mem.Allocator, perms: Permissions) ![*:null]?[*:0]const u8 {
         var list = std.ArrayList(?[*:0]const u8).init(allocator);
 
         var arena = std.heap.ArenaAllocator.init(allocator);
         const arena_allocator = arena.allocator();
         defer arena.deinit();
 
-        const args_slice = try ai.wrapArgs(arena_allocator);
+        const args_slice = try ai.wrapArgs(arena_allocator, perms);
 
         for (args_slice) |arg| {
             try list.append(try allocator.dupeZ(u8, arg));
