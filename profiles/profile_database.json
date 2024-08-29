@@ -1620,5 +1620,22 @@
       "network"
     ],
     "data_dir": true
+  },
+  {
+    "names": [ "zen browser" ],
+    "level": 2,
+    "filesystem": [
+      "xdg-download:rw"
+    ],
+    "devices": [
+      "dri"
+    ],
+    "sockets": [
+      "x11",
+      "pulseaudio",
+      "network",
+      "dbus"
+    ],
+    "data_dir": true
   }
 ]
