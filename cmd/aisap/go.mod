@@ -2,16 +2,6 @@ module github.com/mgord9518/aisap/cmd/aisap
 
 go 1.18
 
-replace github.com/mgord9518/aisap => ../../
-
-replace github.com/mgord9518/aisap/permissions => ../../permissions
-
-replace github.com/mgord9518/aisap/profiles => ../../profiles
-
-replace github.com/mgord9518/aisap/spooky => ../../spooky
-
-replace github.com/mgord9518/aisap/helpers => ../../helpers
-
 require (
 	github.com/gookit/color v1.5.4
 	github.com/mgord9518/aisap v0.0.0-00010101000000-000000000000

@@ -20,9 +20,13 @@ pub fn main() !void {
         return;
     };
 
+    const cwd = std.fs.cwd();
+    const file = try cwd.openFile(target, .{});
+    defer file.close();
+
     var appimage = try AppImage.open(
         allocator,
-        target,
+        file,
     );
     defer appimage.close();
 

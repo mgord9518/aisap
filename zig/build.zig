@@ -40,7 +40,8 @@ pub fn build(b: *std.Build) void {
 
     exe.linkLibrary(squashfuse_dep.artifact("zstd"));
     exe.linkLibrary(squashfuse_dep.artifact("deflate"));
-    //exe.linkLibrary(squashfuse_dep.artifact("deflate"));
+    exe.linkLibrary(squashfuse_dep.artifact("lzma"));
+    exe.linkLibrary(squashfuse_dep.artifact("lz4"));
 
     b.installArtifact(exe);
 }

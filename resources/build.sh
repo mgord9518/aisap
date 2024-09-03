@@ -3,7 +3,7 @@
 
 [ -z "$ARCH" ] && ARCH=$(uname -m)
 PATH="$PATH:$HOME/.local/bin"
-export VERSION=$(cat zig/build.zig.zon | grep '.version' | cut -d'"' -f2)
+export VERSION=$(cat zig/build.zig.zon | grep ' .version' | cut -d'"' -f2)
 
 if [ ! $(command -v 'go') ]; then
 	echo 'Failed to locate GoLang compiler! Unable to build'

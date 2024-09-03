@@ -5,7 +5,7 @@ const SquashFs = squashfuse.SquashFs;
 
 pub const AppImage = @This();
 
-sqfs: SquashFs,
+sqfs: *SquashFs,
 kind: Kind,
 allocator: std.mem.Allocator,
 
@@ -15,21 +15,22 @@ pub const Kind = enum {
     type2,
 };
 
-pub fn open(allocator: std.mem.Allocator, path: []const u8) !AppImage {
-    const cwd = std.fs.cwd();
-    const file = try cwd.openFile(path, .{});
-
+pub fn open(allocator: std.mem.Allocator, file: std.fs.File) !AppImage {
     std.debug.print("offset {d}\n", .{try offsetFromElf(file)});
 
+    const sqfs = try SquashFs.open(allocator, file, .{
+        .offset = try offsetFromElf(file),
+    });
+
     return .{
-        .sqfs = undefined,
+        .sqfs = sqfs,
         .kind = undefined,
         .allocator = allocator,
     };
 }
 
 pub fn close(appimage: *AppImage) void {
-    _ = appimage;
+    appimage.sqfs.close();
     return;
 }
 
