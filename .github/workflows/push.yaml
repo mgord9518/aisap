@@ -19,9 +19,9 @@ jobs:
         git submodule update --recursive --init
         ./resources/install_deps.sh
 
-    - name: Build libaisap
-      run: |
-        ./resources/build_libaisap.sh
+    #- name: Build libaisap
+    #  run: |
+    #  ./resources/build_libaisap.sh
 
     - name: Build aisap-cli
       run: |
@@ -42,5 +42,6 @@ jobs:
           *.AppImage
           *.shImg
           *.zsync
-          libaisap*.a
-          libaisap*.so
+          # TODO
+          #libaisap*.a
+          #libaisap*.so

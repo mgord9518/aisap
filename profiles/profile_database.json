@@ -145,7 +145,7 @@
   },
   {
     "names": [ "brave" ],
-    "level": 2,
+    "level": 1,
     "filesystem": [
       "xdg-download:rw"
     ],
@@ -208,7 +208,7 @@
   },
   {
     "names": [ "chromium" ],
-    "level": 2,
+    "level": 1,
     "filesystem": [
       "xdg-download:rw"
     ],
@@ -491,7 +491,7 @@
   },
   {
     "names": [ "firefox", "firefox beta", "firefox nightly" ],
-    "level": 2,
+    "level": 1,
     "filesystem": [
       "xdg-download:rw"
     ],
@@ -801,7 +801,7 @@
   },
   {
     "names": [ "librewolf" ],
-    "level": 2,
+    "level": 1,
     "filesystem": [
       "xdg-download:rw"
     ],
@@ -863,7 +863,7 @@
   },
   {
     "names": [ "microsoft edge" ],
-    "level": 2,
+    "level": 1,
     "filesystem": [
       "xdg-download:rw"
     ],
@@ -1623,7 +1623,7 @@
   },
   {
     "names": [ "zen browser" ],
-    "level": 2,
+    "level": 1,
     "filesystem": [
       "xdg-download:rw"
     ],

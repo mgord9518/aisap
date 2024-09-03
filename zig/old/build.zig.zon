@@ -1,0 +1,19 @@
+.{
+    .name = "aisap",
+    .version = "0.10.2-alpha",
+    .paths = [][]const u8 {""},
+    .dependencies = .{
+        .squashfuse = .{
+            .url = "https://github.com/mgord9518/squashfuse-zig/archive/refs/tags/continuous.tar.gz",
+            .hash = "1220e783b731a8fb6825fc1e2652ccd56890b8d7451d668064ed85b2fbddb790f8fa",
+        },
+        .fuse = .{
+            .url = "https://github.com/mgord9518/libfuse-zig/archive/refs/tags/continuous.tar.gz",
+            .hash = "12205592f7dc4b4c7256abd657a50bd9784459a0e9b8bfe8b0d1bbcc153a6d0f650a",
+        },
+        .known_folders = .{
+            .url = "https://github.com/ziglibs/known-folders/archive/cdcc6137ed2e92096b27d394db917d1861f156b3.tar.gz",
+            .hash = "1220863f0fc3e97cfd47a8edb28c7a3d109c42143235042fb513207b5c5a032fb93f",
+        },
+    },
+}

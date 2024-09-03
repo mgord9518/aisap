@@ -103,9 +103,7 @@ pub fn main() !void {
     //const wrapArgs = try ai.wrapArgs(allocator, permissions);
     //printWrapArgs(wrapArgs);
 
-    try ai.sandbox(permissions, .{
-        //.args = &[_][]const u8{"build"},
-    });
+    try ai.sandbox(permissions, .{});
 }
 
 fn printWrapArgs(args: []const []const u8) void {

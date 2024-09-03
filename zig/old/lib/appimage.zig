@@ -7,6 +7,7 @@ const span = std.mem.span;
 const expect = std.testing.expect;
 const os = std.os;
 const posix = std.posix;
+const parser = @import("../parser.zig");
 
 const Md5 = std.crypto.hash.Md5;
 
@@ -90,7 +91,6 @@ pub const AppImage = struct {
                 json_database,
                 .{},
             );
-
             defer parsed.deinit();
 
             var hash_map = std.StringHashMap(Permissions).init(allocator);
@@ -381,6 +381,7 @@ pub const AppImage = struct {
 
     pub const SocketPermissions = enum {
         alsa,
+        audio,
         cgroup,
         dbus,
         ipc,
@@ -394,6 +395,11 @@ pub const AppImage = struct {
         wayland,
         x11,
 
+        pub var map: ?std.AutoHashMap(
+            SocketPermissions,
+            []const u8,
+        ) = null;
+
         const JsonSocket = struct {
             name: []const u8,
             flags: ?[]const []const u8 = null,
@@ -402,6 +408,12 @@ pub const AppImage = struct {
         // Parses the built-in JSON database into a HashMap
         // TODO: do this comptime
         pub fn initDatabase(allocator: std.mem.Allocator) !void {
+            SocketPermissions.map = std.AutoHashMap(
+                SocketPermissions,
+                []const u8,
+            ).init(allocator);
+
+            populateEnviron();
             const sockets_json = @embedFile("../sockets.json");
 
             const parsed = try std.json.parseFromSlice(
@@ -414,8 +426,46 @@ pub const AppImage = struct {
 
             for (parsed.value) |val| {
                 std.debug.print("name:  {s}\n", .{val.name});
-                std.debug.print("flags: {?s}\n", .{val.flags});
+                try SocketPermissions.map.?.put(
+                    std.meta.stringToEnum(SocketPermissions, val.name).?,
+                    "teste",
+                );
+
+                if (val.flags) |flags| for (flags) |flag| {
+                    var it = try parser.SyntaxIterator.init(allocator, flag);
+                    while (it.next()) |token| {
+                        std.debug.print("flags: {?s}\n", .{token.string});
+                        allocator.free(token.string);
+                    }
+                };
+
+                std.debug.print(
+                    "map: {?s}\n",
+                    .{SocketPermissions.map.?.get(.x11)},
+                );
             }
+        }
+
+        fn populateEnviron() void {
+            var buf: [4096]u8 = undefined;
+
+            // TODO: Don't rely on $UID being present
+            // TODO: Don't hardcore UID
+            setDefault("XDG_RUNTIME_DIR", std.fmt.bufPrintZ(
+                &buf,
+                "/run/user/{s}",
+                .{posix.getenv("UID") orelse "1000"},
+            ) catch unreachable);
+            setDefault("TMPDIR", "/tmp");
+        }
+
+        fn setDefault(
+            env_var: [:0]const u8,
+            default_value: [:0]const u8,
+        ) void {
+            _ = posix.getenv(
+                env_var,
+            ) orelse setenv(env_var.ptr, default_value.ptr);
         }
 
         pub fn fromString(sock: []const u8) !SocketPermissions {
@@ -668,8 +718,14 @@ pub const AppImage = struct {
         return offsetFromPath(ai.path);
     }
 
-    pub fn md5(self: *const AppImage, buf: []u8) ![:0]const u8 {
+    /// Returns the bundle path's MD5
+    pub fn md5(self: *const AppImage, buf: []u8) ![]const u8 {
         return try md5FromPath(self.path, buf);
+    }
+
+    /// Returns the bundle path's MD5, null-terminated
+    pub fn md5Z(self: *const AppImage, buf: []u8) ![:0]const u8 {
+        return try md5FromPathZ(self.path, buf);
     }
 
     pub fn permissions(ai: *AppImage, allocator: std.mem.Allocator) !?Permissions {
@@ -1160,47 +1216,6 @@ pub const AppImage = struct {
 
                 _ = try proc.spawnAndWait();
             }
-
-            // Values in nanoseconds
-            var waited: usize = 0;
-            const wait_step = 1000;
-            const wait_max = 500_0000;
-
-            var buf: [4096]u8 = undefined;
-
-            var mounts = try cwd.openFile("/proc/mounts", .{});
-            defer mounts.close();
-
-            var buf_reader = std.io.bufferedReader(mounts.reader());
-            var in_stream = buf_reader.reader();
-
-            // Wait until we see the directory as a mountpoint
-            // This will need to be redone for the sake of not being a hacky
-            // block of shit but it works for the time being
-            while (waited < wait_max) {
-                time.sleep(wait_step);
-
-                // Loop through every line of `/proc/mounts` trying to see
-                // when the mount is established
-                // Not seeking back to the start of the file will avoid reading
-                // previous data multiple times
-                while (try in_stream.readUntilDelimiterOrEof(&buf, '\n')) |line| {
-                    var split_it = mem.split(u8, line, " ");
-
-                    if (mem.eql(u8, split_it.first(), "aisap_squashfuse")) {
-                        // This should never fail as `/proc/mounts` should
-                        // always be formatted correctly
-                        const line_mount_dir = split_it.next().?;
-
-                        // Found our mountpoint in `/proc/mounts`
-                        if (mem.eql(u8, line_mount_dir, ai.mount_dir.?)) {
-                            return;
-                        }
-                    }
-                }
-
-                waited += wait_step;
-            }
         }
     }
 
@@ -1245,6 +1260,9 @@ pub const AppImage = struct {
     }
 };
 
+// Requires libc to be linked for now
+extern fn setenv(key: [*:0]const u8, value: [*:0]const u8) c_int;
+
 // If path is a symlink, return its target. Otherwise, just return the path
 fn resolve(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
     const cwd = fs.cwd();
@@ -1257,7 +1275,7 @@ fn resolve(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
     return std.posix.readlink(path, buf);
 }
 
-pub fn md5FromPath(path: []const u8, buf: []u8) ![:0]const u8 {
+pub fn md5FromPath(path: []const u8, buf: []u8) ![]const u8 {
     if (buf.len < Md5.digest_length * 2 + 1) {
         return AppImageError.NoSpaceLeft;
     }
@@ -1271,9 +1289,14 @@ pub fn md5FromPath(path: []const u8, buf: []u8) ![:0]const u8 {
     h.final(&md5_buf);
 
     // Format as hexadecimal instead of raw bytes
-    return std.fmt.bufPrintZ(buf, "{x}", .{
+    return std.fmt.bufPrint(buf, "{x}", .{
         std.fmt.fmtSliceHexLower(&md5_buf),
     }) catch unreachable;
+}
+
+pub fn md5FromPathZ(path: []const u8, buf: []u8) ![:0]const u8 {
+    _ = try md5FromPath(path, buf[0 .. buf.len - 1]);
+    buf[buf.len - 1] = '\x00';
 }
 
 pub fn offsetFromPath(path: []const u8) !u64 {

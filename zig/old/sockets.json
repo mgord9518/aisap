@@ -9,7 +9,7 @@
     {
         "name": "dbus",
         "flags": [
-            "--ro-bind-try", "$XDG_RUNTIME_DIR/bus", "/run/user/$UID/bus"
+            "--ro-bind-try", "${XDG_RUNTIME_DIR}/bus", "/run/user/${UID}/bus"
         ]
     },
     { "name": "ipc" },
@@ -28,13 +28,13 @@
     {
         "name": "pipewire",
         "flags": [
-            "--ro-bind-try", "$XDG_RUNTIME_DIR/pipewire-0", "/run/user/$UID/pipewire-0"
+            "--ro-bind-try", "${XDG_RUNTIME_DIR}/pipewire-0", "/run/user/${UID}/pipewire-0"
         ]
     },
     {
         "name": "pulseaudio",
         "flags": [
-            "--ro-bind-try", "$XDG_RUNTIME_DIR/pulse", "/run/user/$UID/pulse",
+            "--ro-bind-try", "${XDG_RUNTIME_DIR}/pulse", "/run/user/${UID}/pulse",
             "--ro-bind-try", "/etc/pulse", "/etc/pulse"
         ]
     },
@@ -44,7 +44,7 @@
     {
         "name": "wayland",
         "flags": [
-            "--ro-bind-try", "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY", "/run/user/$UID/wayland-0",
+            "--ro-bind-try", "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}", "/run/user/${UID}/wayland-0",
             "--ro-bind-try", "/usr/share/X11", "/usr/share/X11",
             "--setenv", "WAYLAND_DISPLAY", "wayland-0",
             "--setenv", "_JAVA_AWT_WM_NONPARENTING", "1",
@@ -55,10 +55,10 @@
     {
         "name": "x11",
         "flags": [
-            "--ro-bind-try", "$XAUTHORITY","$HOME/.Xauthority",
-            "--ro-bind-try", "$TMPDIR/.X11-unix/X$DISPLAY", "/usr/share/X11",
+            "--ro-bind-try", "${XAUTHORITY}","${HOME}/.Xauthority",
+            "--ro-bind-try", "${TMPDIR}/.X11-unix/X${DISPLAY}", "/usr/share/X11",
             "--ro-bind-try", "/usr/share/X11", "/usr/share/X11",
-            "--setenv", "XAUTHORITY", "$HOME/.Xauthority"
+            "--setenv", "XAUTHORITY", "${HOME}/.Xauthority"
         ]
     }
 ]
