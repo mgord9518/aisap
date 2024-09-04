@@ -31,8 +31,8 @@ pub fn main() !void {
     defer appimage.close();
 
     try stdout.print("AppImage info:\n", .{});
-    //    try stdout.print("  compression: {s}\n", .{@tagName(sqfs.super_block.compression)});
-    //   try stdout.print("  block size:  {d}\n", .{sqfs.super_block.block_size});
+    try stdout.print("  kind:    {}\n", .{appimage.kind});
+    try stdout.print("  offset:  {d}\n", .{appimage.sqfs.opts.offset});
     //  try stdout.print("  inode count: {d}\n", .{sqfs.super_block.inode_count});
 
     try bw.flush();

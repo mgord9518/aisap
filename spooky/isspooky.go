@@ -1,8 +1,24 @@
 package spooky
 
 import (
+	"encoding/json"
 	"strings"
+
+	_ "embed"
 )
+
+type Database struct {
+    Paths []string `json:"paths"`
+    Trees []string `json:"trees"`
+}
+
+//go:embed spooky_database.json
+var jsonDatabase []byte
+
+// TODO: finish (need state machine to parse env variables out of the JSON)
+func isSpookyNew(path string) bool {
+
+}
 
 // Check if a file or directory is spooky (sandbox escape vector or possibly
 // suspiscious files to request) so that the user can be warned that their

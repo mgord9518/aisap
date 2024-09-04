@@ -29,10 +29,13 @@
   {
     "names": [ "apk editor studio" ],
     "level": 1,
-    "filesystem": [
-      "xdg-templates:rw",
-      "xdg-download:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_TEMPLATES_DIR}",
+        "${XDG_DOWNLOAD_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -44,9 +47,12 @@
   {
     "names": [ "appimage pool" ],
     "level": 2,
-    "filesystem": [
-      "~/Applications:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${HOME}/Applications"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -60,9 +66,12 @@
   {
     "names": [ "appimageupdate" ],
     "level": 2,
-    "filesystem": [
-      "~/Applications:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${HOME}/Applications"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -75,11 +84,14 @@
   {
     "names": [ "aranym", "aranym jit", "aranym mmu" ],
     "level": 3,
-    "filesystem": [
-      "xdg-download:ro",
-      "~/Games:ro",
-      "~/Roms:ro"
-    ],
+    "filesystem": {
+      "read_only": [
+        "xdg-download:ro",
+        "~/Games:ro",
+        "~/Roms:ro"
+      ],
+      "read_write": null
+    },
     "devices": [
       "dri",
       "input"
@@ -131,10 +143,13 @@
   {
     "names": [ "blender" ],
     "level": 2,
-    "filesystem": [
-      "xdg-templates:rw",
-      "xdg-documents:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_TEMPLATES_DIR}",
+        "${XDG_DOCUMENTS_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -146,9 +161,12 @@
   {
     "names": [ "brave" ],
     "level": 1,
-    "filesystem": [
-      "xdg-download:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOWNLOAD_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -176,9 +194,12 @@
   {
     "names": [ "calibre" ],
     "level": 2,
-    "filesystem": [
-      "xdg-documents:ro"
-    ],
+    "filesystem": {
+      "read_only": [
+        "${XDG_DOCUMENTS_DIR}"
+      ],
+      "read_write": null
+    },
     "devices": [
       "dri"
     ],
@@ -190,11 +211,13 @@
   {
     "names": [ "cemu" ],
     "level": 2,
-    "filesystem": [
-      "xdg-download:ro",
-      "~/Games:ro",
-      "~/Roms:ro"
-    ],
+    "filesystem": {
+      "read_only": [
+        "${XDG_DOWNLOAD_DIR}",
+        "${HOME}/Games"
+      ],
+      "read_write": null
+    },
     "devices": [
       "dri",
       "input"
@@ -209,9 +232,12 @@
   {
     "names": [ "chromium" ],
     "level": 1,
-    "filesystem": [
-      "xdg-download:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOWNLOAD_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -238,13 +264,16 @@
   {
     "names": [ "cool retro term" ],
     "level": 2,
-    "filesystem": [
-      "~/.config/nvim:ro",
-      "~/.profile:ro",
-      "~/.bashrc:ro",
-      "~/.zshrc:ro",
-      "~/.viminfo:ro"
-    ],
+    "filesystem": {
+      "read_only": [
+        "${XDG_CONFIG_HOME}/nvim",
+        "${HOME}/.profile",
+        "${HOME}/.bashrc",
+        "${HOME}/.zshrc",
+        "${HOME}/.viminfo"
+      ],
+      "read_write": null
+    },
     "devices": [
       "dri"
     ],
@@ -282,9 +311,12 @@
   {
     "names": [ "deemix-gui" ],
     "level": 2,
-    "filesystem": [
-      "xdg-music:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_MUSIC_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -298,9 +330,12 @@
   {
     "names": [ "deadbeef", "deadbeef nightly" ],
     "level": 2,
-    "filesystem": [
-      "xdg-music:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_MUSIC_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -314,9 +349,12 @@
   {
     "names": [ "densify" ],
     "level": 2,
-    "filesystem": [
-      "xdg-documents:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -328,11 +366,13 @@
   {
     "names": [ "desmume" ],
     "level": 2,
-    "filesystem": [
-      "xdg-download:rw",
-      "~/Games:rw",
-      "~/Roms:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOWNLOAD_DIR}",
+        "${HOME}/Games"
+      ]
+    },
     "devices": [
       "dri",
       "input"
@@ -360,11 +400,13 @@
   {
     "names": [ "dolphin emulator" ],
     "level": 2,
-    "filesystem": [
-      "xdg-download:ro",
-      "~/Games:ro",
-      "~/Roms:ro"
-    ],
+    "filesystem": {
+      "read_only": [
+        "${XDG_DOWNLOAD_DIR}",
+        "${HOME}/Games"
+      ],
+      "read_write": null
+    },
     "devices": [
       "dri",
       "input"
