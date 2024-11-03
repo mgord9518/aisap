@@ -89,6 +89,7 @@ func (ai *AppImage) mainWrapArgs(perms *permissions.AppImagePerms) []string {
 		"--setenv", "TMPDIR", "/tmp",
 		"--setenv", "HOME", xdg.Home,
 		"--setenv", "APPDIR", "/tmp/.mount_" + ai.md5,
+		"--setenv", "APPIMAGE_EXTRACT_AND_RUN", "1",
 		"--setenv", "APPIMAGE", filepath.Join("/app", path.Base(ai.Path)),
 		"--setenv", "ARGV0", filepath.Join(path.Base(ai.Path)),
 		"--setenv", "XDG_DESKTOP_DIR", filepath.Join(xdg.Home, "Desktop"),
