@@ -29,11 +29,15 @@ pub fn open(allocator: std.mem.Allocator, file: std.fs.File) !AppImage {
     });
     errdefer sqfs.close();
 
-    const appimage = AppImage{
+    var appimage = AppImage{
         .allocator = allocator,
         .sqfs = sqfs,
         .kind = kind,
     };
+
+    var buf: [4096]u8 = undefined;
+
+    _ = try appimage.loadDesktopEntry(&buf);
 
     std.debug.print("offset {d}\n", .{offset});
 
@@ -42,6 +46,30 @@ pub fn open(allocator: std.mem.Allocator, file: std.fs.File) !AppImage {
 
 pub fn close(appimage: *AppImage) void {
     appimage.sqfs.close();
+}
+
+fn loadDesktopEntry(appimage: *AppImage, buf: []u8) !usize {
+    var found = false;
+
+    var root = appimage.sqfs.root();
+    var it = try root.iterate();
+
+    while (try it.next()) |entry| {
+        const extension = std.fs.path.extension(entry.name);
+        if (!std.mem.eql(u8, extension, ".desktop")) continue;
+
+        found = true;
+
+        var file = try root.openFile(entry.name, .{});
+        const read_len = try file.reader().readAll(buf);
+
+        std.debug.print("entry {s} {s}\n", .{
+            entry.name,
+            buf[0..read_len],
+        });
+    }
+
+    return 0;
 }
 
 fn getKind(file: std.fs.File) !Kind {

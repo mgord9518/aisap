@@ -23,15 +23,6 @@ mkdir -p 'AppDir/usr/bin' \
 
 cd 'cmd/aisap'
 
-# Use local files for building
-echo 'replace github.com/mgord9518/aisap => ../../
-replace github.com/mgord9518/aisap/permissions => ../../permissions
-replace github.com/mgord9518/aisap/profiles => ../../profiles
-replace github.com/mgord9518/aisap/spooky => ../../spooky
-replace github.com/mgord9518/aisap/helpers => ../../helpers
-' >> go.mod
-go mod tidy
-
 CGO_ENABLED=0 go build \
     -o '../../AppDir/usr/bin' \
     --ldflags="-s -w -X github.com/mgord9518/aisap.Version=$VERSION"
@@ -79,19 +70,6 @@ sed -i 's/X-AppImage-Architecture.*/X-AppImage-Architecture=x86_64/' 'AppDir/io.
 
 ai_tool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 [ $? -ne 0 ] && exit $?
-
-# Build for ARM
-# Currently disabled because mkappimage doesn't yet allow cross-building
-#cd aisap-bin
-#CGO_ENABLED=0 GOARCH=arm GOARM=5 go build -ldflags '-s -w' -o '../AppDir/usr/bin'
-#cd ..
-#
-## Download squashfuse binary
-#wget "https://github.com/mgord9518/portable_squashfuse/releases/download/continuous/squashfuse_lz4_xz_zstd.$ARCH" -O 'AppDir/usr/bin/squashfuse'
-#chmod +x 'AppDir/usr/bin/squashfuse'
-#
-#export ARCH="armhf"
-#ai_tool -u "gh-releases-zsync|mgord9518|aisap|continuous|aisap-*$ARCH.AppImage.zsync" AppDir
 
 # Experimental multi-arch shImg build (x86_64, aarch64)
 mkdir -p 'AppDir/usr.aarch64/bin'
