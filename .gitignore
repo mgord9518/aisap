@@ -1,9 +1,8 @@
 *.a
 *.so
 *.o
-aisap
-a.out
-zig-*
+cmd/aisap/aisap
+zig-out
 *.bak
 test
 cmd/tablegen/tablegen
