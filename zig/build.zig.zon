@@ -1,13 +1,13 @@
 .{
     .name = "aisap",
-    .version = "0.10.4-alpha",
+    .version = "0.10.5-alpha",
     .minimum_zig_version = "0.13.0",
 
     .dependencies = .{
         .squashfuse = .{
-            //.url = "https://github.com/mgord9518/squashfuse-zig/archive/refs/tags/continuous.tar.gz",
-            //.hash = "12201e377e845eea92744b4cca7ed590e3cddc84f0ba61bb4f2121a89fde594b80b2",
-            .path = "../../squashfuse-zig",
+            .url = "https://github.com/mgord9518/squashfuse-zig/archive/refs/tags/continuous.tar.gz",
+            .hash = "12209f8ff57fe423ca6f08c9701617a5169f7d721e4ca405aaa0b0b8e839511f3196",
+            //.path = "../../squashfuse-zig",
         },
     },
 

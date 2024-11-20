@@ -39,8 +39,6 @@ pub fn open(allocator: std.mem.Allocator, file: std.fs.File) !AppImage {
 
     _ = try appimage.loadDesktopEntry(&buf);
 
-    std.debug.print("offset {d}\n", .{offset});
-
     return appimage;
 }
 
@@ -61,12 +59,7 @@ fn loadDesktopEntry(appimage: *AppImage, buf: []u8) !usize {
         found = true;
 
         var file = try root.openFile(entry.name, .{});
-        const read_len = try file.reader().readAll(buf);
-
-        std.debug.print("entry {s} {s}\n", .{
-            entry.name,
-            buf[0..read_len],
-        });
+        _ = try file.reader().readAll(buf);
     }
 
     return 0;

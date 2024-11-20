@@ -9,9 +9,8 @@ pub fn main() !void {
 
     var args = std.process.args();
 
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    const stdout_file = std.io.getStdOut();
+    const stdout = stdout_file.writer();
 
     _ = args.next();
 
@@ -34,6 +33,4 @@ pub fn main() !void {
     try stdout.print("  kind:    {}\n", .{appimage.kind});
     try stdout.print("  offset:  {d}\n", .{appimage.sqfs.opts.offset});
     //  try stdout.print("  inode count: {d}\n", .{sqfs.super_block.inode_count});
-
-    try bw.flush();
 }

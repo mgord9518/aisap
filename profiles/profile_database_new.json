@@ -421,10 +421,13 @@
   {
     "names": [ "dust3d" ],
     "level": 2,
-    "filesystem": [
-      "xdg-templates:rw",
-      "xdg-documents:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${XDG_TEMPLATES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -436,16 +439,18 @@
   {
     "names": [ "eagle mode" ],
     "level": 1,
-    "filesystem": [
-      "xdg-documents:rw",
-      "xdg-publicshare:rw",
-      "xdg-templates:rw",
-      "xdg-desktop:rw",
-      "xdg-documents:rw",
-      "xdg-download:rw",
-      "xdg-music:rw",
-      "xdg-videos:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${XDG_PUBLICSHARE_DIR}",
+        "${XDG_TEMPLATES_DIR}",
+        "${XDG_DESKTOP_DIR}",
+        "${XDG_DOWNLOAD_DIR}",
+        "${XDG_MUSIC_DIR}",
+        "${XDG_VIDEOS_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -458,13 +463,16 @@
   {
     "names": [ "edex-ui" ],
     "level": 2,
-    "filesystem": [
-      "~/.config/nvim:ro",
-      "~/.profile:ro",
-      "~/.bashrc:ro",
-      "~/.zshrc:ro",
-      "~/.viminfo:ro"
-    ],
+    "filesystem": {
+      "read_only": [
+        "${XDG_CONFIG_HOME}/nvim",
+        "${HOME}/.profile",
+        "${HOME}/.bashrc",
+        "${HOME}/.zshrc",
+        "${HOME}/.viminfo"
+      ],
+      "read_write": null
+    },
     "devices": [
       "dri"
     ],
@@ -491,10 +499,13 @@
   {
     "names": [ "endless sky" ],
     "level": 2,
-    "filesystem": [
-      "xdg-templates:rw",
-      "xdg-documents:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${XDG_TEMPLATES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -534,9 +545,12 @@
   {
     "names": [ "firefox", "firefox beta", "firefox nightly" ],
     "level": 1,
-    "filesystem": [
-      "xdg-download:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOWNLOAD_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -551,10 +565,13 @@
   {
     "names": [ "fontforge" ],
     "level": 2,
-    "filesystem": [
-      "xdg-documents:rw",
-      "~/.fonts:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${HOME}/.fonts"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -578,10 +595,13 @@
   {
     "names": [ "freecad", "freecad conda", "freecad weekly" ],
     "level": 1,
-    "filesystem": [
-      "xdg-documents:rw",
-      "xdg-templates:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${XDG_TEMPLATES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -593,11 +613,13 @@
   {
     "names": [ "gambatte_qt" ],
     "level": 2,
-    "filesystem": [
-      "xdg-download:rw",
-      "~/Games:rw",
-      "~/Roms:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOWNLOAD_DIR}",
+        "${HOME}/Games"
+      ]
+    },
     "devices": [
       "dri",
       "input"
@@ -611,9 +633,12 @@
   {
     "names": [ "geometrize" ],
     "level": 2,
-    "filesystem": [
-      "xdg-pictures:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_PICTURES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -625,9 +650,12 @@
   {
     "names": [ "gnu image manipulation program" ],
     "level": 1,
-    "filesystem": [
-      "xdg-pictures:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_PICTURES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -639,9 +667,12 @@
   {
     "names": [ "go" ],
     "level": 3,
-    "filesystem": [
-      "xdg-documents:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}"
+      ]
+    },
     "devices": null,
     "sockets": null,
     "data_dir": true
@@ -649,9 +680,12 @@
   {
     "names": [ "google chrome" ],
     "level": 2,
-    "filesystem": [
-      "xdg-download:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOWNLOAD_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -744,10 +778,13 @@
   {
     "names": [ "imagemagick" ],
     "level": 3,
-    "filesystem": [
-      "xdg-documents:rw",
-      "xdg-pictures:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${XDG_PICTURES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -757,10 +794,13 @@
   {
     "names": [ "inkscape" ],
     "level": 2,
-    "filesystem": [
-      "xdg-documents:rw",
-      "xdg-pictures:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}",
+        "${XDG_PICTURES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -784,9 +824,12 @@
   {
     "names": [ "joplin" ],
     "level": 2,
-    "filesystem": [
-      "xdg-documents:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_DOCUMENTS_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
@@ -799,9 +842,12 @@
   {
     "names": [ "krita" ],
     "level": 2,
-    "filesystem": [
-      "xdg-pictures:rw"
-    ],
+    "filesystem": {
+      "read_only": null,
+      "read_write": [
+        "${XDG_PICTURES_DIR}"
+      ]
+    },
     "devices": [
       "dri"
     ],
