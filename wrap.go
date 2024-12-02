@@ -137,6 +137,10 @@ func (ai *AppImage) mainWrapArgs(perms *permissions.AppImagePerms) []string {
 			"--ro-bind-try", filepath.Join(xdg.Home, ".fonts"), filepath.Join(xdg.Home, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config", "fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"), filepath.Join(xdg.Home, ".config", "gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-4.0"), filepath.Join(xdg.Home, ".config", "gtk-4.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "qt5ct"), filepath.Join(xdg.Home, ".config", "qt5ct"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "qt6ct"), filepath.Join(xdg.Home, ".config", "qt6ct"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "Kvantum"), filepath.Join(xdg.Home, ".config", "Kvantum"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config", "kdeglobals"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "lxde", "lxde.conf"), filepath.Join(xdg.Home, ".config", "lxde", "lxde.conf"),
 		}...)
@@ -163,6 +167,10 @@ func (ai *AppImage) mainWrapArgs(perms *permissions.AppImagePerms) []string {
 			"--ro-bind-try", filepath.Join(xdg.Home, ".fonts"), filepath.Join(xdg.Home, ".fonts"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "fontconfig"), filepath.Join(xdg.Home, ".config", "fontconfig"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-3.0"), filepath.Join(xdg.Home, ".config", "gtk-3.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "gtk-4.0"), filepath.Join(xdg.Home, ".config", "gtk-4.0"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "qt5ct"), filepath.Join(xdg.Home, ".config", "qt5ct"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "qt6ct"), filepath.Join(xdg.Home, ".config", "qt6ct"),
+			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "Kvantum"), filepath.Join(xdg.Home, ".config", "Kvantum"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "kdeglobals"), filepath.Join(xdg.Home, ".config", "kdeglobals"),
 			"--ro-bind-try", filepath.Join(xdg.ConfigHome, "lxde", "lxde.conf"), filepath.Join(xdg.Home, ".config", "lxde", "lxde.conf"),
 		}...)
